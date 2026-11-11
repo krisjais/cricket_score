@@ -1,187 +1,249 @@
 'use client'
 
 import { useState } from 'react'
-import { AplLogo } from '@/components/cricket/apl-logo'
+import { NplLogo } from '@/components/cricket/apl-logo'
 import {
   LayoutDashboard,
   Radio,
   CalendarDays,
+  CalendarClock,
+  MapPin,
   Shield,
   Users,
+  UserCog,
   Trophy,
+  BarChart3,
   ScrollText,
-  AlertTriangle,
+  Settings,
   ExternalLink,
   LogOut,
   Menu,
   X,
+  ArrowLeftRight,
+  FileText,
+  ArrowLeft,
 } from 'lucide-react'
 import type { AdminSession } from '@/lib/client'
+import { cn } from '@/lib/utils'
 
-export type AdminTab = 'dashboard' | 'scoring' | 'matches' | 'teams' | 'players' | 'awards' | 'log' | 'reset'
+export type AdminTab =
+  | 'dashboard'
+  | 'scoring'
+  | 'matches'
+  | 'schedule'
+  | 'turfs'
+  | 'teams'
+  | 'players'
+  | 'officials'
+  | 'results'
+  | 'awards'
+  | 'log'
+  | 'reset'
+
+export type ScorerSubView = 'score' | 'details' | 'log' | 'switch'
 
 interface AdminSidebarProps {
   currentTab: AdminTab
   onSelectTab: (tab: AdminTab) => void
+  scorerSubView?: ScorerSubView
+  onSelectScorerSubView?: (view: ScorerSubView) => void
   session: AdminSession
   navigate: (to: string) => void
   liveCount?: number
 }
 
-export function AdminSidebar({ currentTab, onSelectTab, session, navigate, liveCount = 0 }: AdminSidebarProps) {
+export function AdminSidebar({
+  currentTab,
+  onSelectTab,
+  scorerSubView = 'score',
+  onSelectScorerSubView,
+  session,
+  navigate,
+  liveCount = 0,
+}: AdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const isScorerMode = currentTab === 'scoring'
 
-  const navItems = [
+  const adminNavItems = [
     { key: 'dashboard' as AdminTab, label: 'Dashboard', icon: LayoutDashboard },
-    { key: 'scoring' as AdminTab, label: 'Scoring Console', icon: Radio, badge: liveCount > 0 ? `${liveCount} LIVE` : undefined },
-    { key: 'matches' as AdminTab, label: 'Matches Manager', icon: CalendarDays },
+    { key: 'scoring' as AdminTab, label: 'Scorer Panel', icon: Radio, badge: liveCount > 0 ? `${liveCount}` : undefined },
+    { key: 'matches' as AdminTab, label: 'Matches', icon: CalendarDays },
+    { key: 'schedule' as AdminTab, label: 'Schedule', icon: CalendarClock },
+    { key: 'turfs' as AdminTab, label: 'Turfs', icon: MapPin },
     { key: 'teams' as AdminTab, label: 'Teams', icon: Shield },
     { key: 'players' as AdminTab, label: 'Players', icon: Users },
-    { key: 'awards' as AdminTab, label: 'Awards & Leaders', icon: Trophy },
-    { key: 'log' as AdminTab, label: 'Match Event Log', icon: ScrollText },
-    { key: 'reset' as AdminTab, label: 'Danger Zone', icon: AlertTriangle },
+    { key: 'officials' as AdminTab, label: 'Officials', icon: UserCog },
+    { key: 'results' as AdminTab, label: 'Results', icon: Trophy },
+    { key: 'awards' as AdminTab, label: 'Statistics & Awards', icon: BarChart3 },
+    { key: 'log' as AdminTab, label: 'Match Log', icon: ScrollText },
+    { key: 'reset' as AdminTab, label: 'Settings', icon: Settings },
   ]
 
-  const handleSelect = (tab: AdminTab) => {
-    onSelectTab(tab)
-    setMobileOpen(false)
-  }
+  const scorerNavItems = [
+    { key: 'score' as ScorerSubView, label: 'Score Match', icon: Radio },
+    { key: 'details' as ScorerSubView, label: 'Match Details', icon: FileText },
+    { key: 'log' as ScorerSubView, label: 'Match Log', icon: ScrollText },
+    { key: 'switch' as ScorerSubView, label: 'Switch Match', icon: ArrowLeftRight },
+  ]
 
-  const handleLogout = async () => {
-    await session.logout()
-    navigate('/')
-  }
-
-  return (
-    <>
-      {/* Mobile Top Bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-[#e8e2d5] flex items-center justify-between px-4 h-14 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <AplLogo size="sm" />
-          <div>
-            <span className="font-serif font-black text-xs uppercase tracking-wider text-[#0d3a24] block leading-none">
-              APL Cricket
-            </span>
-            <span className="text-[10px] uppercase font-bold text-[#c59b27]">Admin Console</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 text-[#4b5563] hover:text-[#111827] rounded-lg hover:bg-stone-100 transition-colors"
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
+  const sidebarBody = (
+    <div className="flex flex-col h-full bg-[#121826] text-white">
+      {/* Brand Logo */}
+      <div className="px-5 py-5 border-b border-white/10">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="flex items-center text-left cursor-pointer focus:outline-none"
+        >
+          <NplLogo
+            size="sm"
+            variant="dark"
+            showText
+            title="NPL"
+            subtitle={isScorerMode ? 'Scorer Panel' : 'Admin Panel'}
+          />
+        </button>
       </div>
 
-      {/* Mobile Backdrop */}
-      {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-stone-900/40 backdrop-blur-xs"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+      {/* Navigation Links */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        {isScorerMode && onSelectScorerSubView ? (
+          <>
+            {scorerNavItems.map((item) => {
+              const Icon = item.icon
+              const active = scorerSubView === item.key
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => {
+                    onSelectScorerSubView(item.key)
+                    setMobileOpen(false)
+                  }}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer',
+                    active
+                      ? 'bg-[#7A1426] text-white shadow-sm'
+                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                  )}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              )
+            })}
 
-      {/* Main Sidebar */}
-      <aside
-        className={`fixed lg:sticky lg:top-0 top-0 left-0 h-dvh max-h-dvh z-50 w-64 border-r border-[#e8e2d5] bg-white flex flex-col transition-transform duration-200 shadow-xs ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0`}
-      >
-        {/* Logo Banner */}
-        <div className="px-5 h-16 flex items-center justify-between border-b border-[#e8e2d5] shrink-0 bg-[#faf8f5]">
-          <div className="flex items-center gap-3">
-            <AplLogo size="sm" />
-            <div>
-              <div className="font-serif font-bold text-sm tracking-wide text-[#0d3a24]">
-                APL Cricket
-              </div>
-              <div className="text-[10px] tracking-wider uppercase font-bold text-[#c59b27] flex items-center gap-1.5 mt-0.5">
-                <span>Cricket Admin</span>
-                {liveCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                )}
-              </div>
+            <div className="pt-4 mt-4 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectTab('dashboard')
+                  setMobileOpen(false)
+                }}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4 shrink-0" />
+                <span>Admin Dashboard</span>
+              </button>
             </div>
-          </div>
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="lg:hidden text-[#6b7280] hover:text-[#111827] p-1"
-            aria-label="Close menu"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Current Admin user info */}
-        <div className="px-4 py-3 border-b border-[#e8e2d5] bg-[#f8f6f0]/60 shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="w-7 h-7 rounded-lg bg-[#0d3a24] text-white flex items-center justify-center font-bold text-xs shrink-0">
-              {session.username?.charAt(0).toUpperCase() || 'A'}
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-bold text-[#111827] truncate leading-tight">
-                {session.username}
-              </p>
-              <p className="text-[10px] font-semibold text-[#0d3a24]">Head Scorer / Official</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation list */}
-        <nav className="flex-1 min-h-0 px-3 py-3 space-y-1 overflow-y-auto">
-          <p className="text-[10px] uppercase tracking-widest px-3 pb-1 text-[#9ca3af] font-bold">
-            Console Navigation
-          </p>
-          {navItems.map((item) => {
+          </>
+        ) : (
+          adminNavItems.map((item) => {
+            const Icon = item.icon
             const active = currentTab === item.key
             return (
               <button
                 key={item.key}
-                onClick={() => handleSelect(item.key)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                type="button"
+                onClick={() => {
+                  onSelectTab(item.key)
+                  setMobileOpen(false)
+                }}
+                className={cn(
+                  'w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer',
                   active
-                    ? 'bg-[#0d3a24]/10 text-[#0d3a24] font-bold border border-[#0d3a24]/20 shadow-xs'
-                    : 'text-[#4b5563] hover:text-[#111827] hover:bg-[#f4efe6]/80 font-medium'
-                }`}
+                    ? 'bg-[#7A1426] text-white shadow-sm'
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                )}
               >
-                <div className="flex items-center gap-2.5">
-                  <item.icon className={`w-4 h-4 shrink-0 ${active ? 'text-[#0d3a24]' : 'text-[#6b7280]'}`} />
+                <span className="flex items-center gap-2.5">
+                  <Icon className="w-4 h-4 shrink-0" />
                   <span>{item.label}</span>
-                </div>
+                </span>
                 {item.badge && (
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white animate-pulse">
-                    {item.badge}
+                  <span className="px-2 py-0.5 text-[10px] rounded-full font-bold bg-red-600 text-white">
+                    {item.badge} LIVE
                   </span>
                 )}
               </button>
             )
-          })}
-        </nav>
+          })
+        )}
+      </nav>
 
-        {/* Footer actions */}
-        <div className="px-3 pt-3 pb-5 border-t border-[#e8e2d5] space-y-1.5 shrink-0 bg-[#faf8f5]">
-          <button
-            onClick={() => navigate('/')}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#c59b27] hover:text-[#916922] hover:bg-amber-50/70 transition-colors border border-transparent hover:border-[#c59b27]/30 cursor-pointer"
-          >
-            <span className="flex items-center gap-2">
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Public Live Board</span>
-            </span>
-            <span className="text-xs">↗</span>
-          </button>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50/80 transition-colors active:scale-98 cursor-pointer border border-transparent hover:border-red-200"
-          >
-            <LogOut className="w-4 h-4 text-red-500 shrink-0" />
-            <span>Sign Out</span>
-          </button>
+      {/* Bottom Footer Actions */}
+      <div className="p-3 border-t border-white/10 space-y-1">
+        <button
+          type="button"
+          onClick={() => {
+            navigate('/')
+            setMobileOpen(false)
+          }}
+          className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer"
+        >
+          <span>Public Website</span>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            void session.logout()
+            setMobileOpen(false)
+          }}
+          className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition-all cursor-pointer"
+        >
+          <LogOut className="w-4 h-4 shrink-0" />
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Mobile Header Bar */}
+      <div className="md:hidden sticky top-0 z-40 flex items-center justify-between bg-[#121826] text-white px-4 py-3 shadow-sm">
+        <NplLogo
+          size="sm"
+          variant="dark"
+          showText
+          title="NPL"
+          subtitle={isScorerMode ? 'Scorer Panel' : 'Admin Panel'}
+        />
+        <button
+          type="button"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="p-2 rounded-lg text-gray-300 hover:bg-white/10"
+          aria-label="Toggle Menu"
+        >
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Mobile Drawer Overlay */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setMobileOpen(false)} />
+          <aside className="relative w-64 max-w-[80vw] h-full shadow-2xl z-10">{sidebarBody}</aside>
         </div>
+      )}
+
+      {/* Desktop Left Dark Sidebar */}
+      <aside className="hidden md:flex flex-col w-60 lg:w-64 shrink-0 h-screen sticky top-0 shadow-md">
+        {sidebarBody}
       </aside>
+
     </>
   )
 }

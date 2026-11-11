@@ -106,7 +106,7 @@ export function MatchesAdmin({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{matches.length} match(es)</p>
-        <Button className="bg-emerald-800 hover:bg-emerald-900" onClick={() => setCreateOpen(true)}>
+        <Button className="bg-[#7A1426] hover:bg-[#5E0E1D]" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" aria-hidden /> New match
         </Button>
       </div>
@@ -141,7 +141,7 @@ export function MatchesAdmin({
 
               <div className="flex flex-wrap gap-2 lg:justify-end">
                 {(m.status === 'LIVE' || m.status === 'PAUSED' || m.status === 'INNINGS_BREAK') && (
-                  <Button size="sm" className="bg-[#0d3a24] hover:bg-[#154d32] text-white rounded-xl shadow-xs font-bold text-xs" onClick={() => handleScore(m.id)}>
+                  <Button size="sm" className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white rounded-xl shadow-xs font-bold text-xs" onClick={() => handleScore(m.id)}>
                     <Play className="h-3.5 w-3.5" aria-hidden /> Score
                   </Button>
                 )}
@@ -151,7 +151,7 @@ export function MatchesAdmin({
                   </Button>
                 )}
                 {m.status === 'TOSS_DONE' && (
-                  <Button size="sm" className="bg-emerald-800 hover:bg-emerald-900" onClick={() => setStartMatch(m)}>
+                  <Button size="sm" className="bg-[#7A1426] hover:bg-[#5E0E1D]" onClick={() => setStartMatch(m)}>
                     <Play className="h-3.5 w-3.5" aria-hidden /> Start match
                   </Button>
                 )}
@@ -279,7 +279,7 @@ export function MatchesAdmin({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-emerald-800 hover:bg-emerald-900"
+              className="bg-[#7A1426] hover:bg-[#5E0E1D]"
               onClick={async () => {
                 if (!confirmEnd) return
                 const isAbandon = confirmEnd.label.includes('Abandon')
@@ -423,7 +423,7 @@ function MatchFormDialog({
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            className="bg-emerald-800 hover:bg-emerald-900"
+            className="bg-[#7A1426] hover:bg-[#5E0E1D]"
             disabled={!teamAId || !teamBId || teamAId === teamBId || (format === 'CUSTOM' && (!Number(overs) || Number(overs) < 1))}
             onClick={() =>
               onSubmit({
@@ -497,7 +497,7 @@ export function TossDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button className="bg-emerald-800 hover:bg-emerald-900" onClick={() => onSubmit({ tossWinnerId: winner, decision })}>
+          <Button className="bg-[#7A1426] hover:bg-[#5E0E1D]" onClick={() => onSubmit({ tossWinnerId: winner, decision })}>
             Save toss
           </Button>
         </DialogFooter>
@@ -609,7 +609,7 @@ export function StartInningsDialog({
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
-            className="bg-emerald-800 hover:bg-emerald-900"
+            className="bg-[#7A1426] hover:bg-[#5E0E1D]"
             disabled={!strikerId || !nonStrikerId || !bowlerId || strikerId === nonStrikerId}
             onClick={() => onSubmit({ strikerId, nonStrikerId, bowlerId })}
           >

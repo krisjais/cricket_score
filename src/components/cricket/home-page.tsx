@@ -1,34 +1,16 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import {
-  Trophy,
-  CalendarDays,
-  Users,
-  ArrowRight,
-  Radio,
-  ChevronRight,
-  Sparkles,
-} from 'lucide-react'
+import { useMemo } from 'react'
+import { CalendarDays, Trophy, Users, ArrowRight, Radio } from 'lucide-react'
 import { MatchCard } from '@/components/cricket/match-card'
-import {
-  CricketGroundBackdrop,
-  CricketBatIcon,
-  CricketStumpsIcon,
-  CricketBallIcon,
-} from '@/components/cricket/cricket-graphics'
-import { TeamLogo, StatusBadge } from '@/components/cricket/ui-bits'
+import { TeamLogo, LiveBadge } from '@/components/cricket/ui-bits'
 import type { MatchSummary } from '@/lib/client'
-import { cn } from '@/lib/utils'
 
-const STATUS_ORDER: Record<string, number> = {
-  LIVE: 0,
-  INNINGS_BREAK: 1,
-  PAUSED: 2,
-  TOSS_DONE: 3,
-  SCHEDULED: 4,
-  COMPLETED: 5,
-  ABANDONED: 6,
+function calcCrr(runs: number, oversDisplay: string): string {
+  const [ovPart, ballPart] = (oversDisplay || '0.0').split('.')
+  const totalOvers = Number(ovPart || 0) + Number(ballPart || 0) / 6
+  if (!totalOvers || totalOvers <= 0) return '0.00'
+  return (runs / totalOvers).toFixed(2)
 }
 
 export function HomePage({
@@ -40,17 +22,8 @@ export function HomePage({
   loading: boolean
   navigate: (to: string) => void
 }) {
-  const [filterTab, setFilterTab] = useState<'ALL' | 'LIVE' | 'UPCOMING' | 'COMPLETED'>('ALL')
-
   const live = useMemo(
     () => matches.filter((m) => m.status === 'LIVE' || m.status === 'PAUSED' || m.status === 'INNINGS_BREAK'),
-    [matches]
-  )
-  const recent = useMemo(
-    () =>
-      matches
-        .filter((m) => m.status === 'COMPLETED')
-        .sort((a, b) => (b.endedAt ?? b.createdAt).localeCompare(a.endedAt ?? a.createdAt)),
     [matches]
   )
   const upcoming = useMemo(
@@ -60,451 +33,265 @@ export function HomePage({
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     [matches]
   )
-
-  const sortedAll = useMemo(() => {
-    return [...matches].sort((a, b) => {
-      const orderA = STATUS_ORDER[a.status] ?? 9
-      const orderB = STATUS_ORDER[b.status] ?? 9
-      if (orderA !== orderB) return orderA - orderB
-      return b.createdAt.localeCompare(a.createdAt)
-    })
-  }, [matches])
-
-  const stats = useMemo(() => {
-    const completed = matches.filter((m) => m.status === 'COMPLETED').length
-    const runs = matches.reduce((sum, m) => sum + m.scores.reduce((s, sc) => s + sc.runs, 0), 0)
-    const wickets = matches.reduce((sum, m) => sum + m.scores.reduce((s, sc) => s + sc.wickets, 0), 0)
-    return { completed, runs, wickets }
-  }, [matches])
-
-  const displayedMatches = useMemo(() => {
-    if (filterTab === 'LIVE') return live
-    if (filterTab === 'UPCOMING') return upcoming
-    if (filterTab === 'COMPLETED') return recent
-    return sortedAll
-  }, [filterTab, live, upcoming, recent, sortedAll])
-
-  // Featured live match for the spotlight hero (or next scheduled fixture if no live match)
-  const featuredLive = live[0] ?? null
-  const nextFixture = !featuredLive ? (upcoming[0] ?? recent[0] ?? null) : null
+  const recent = useMemo(
+    () =>
+      matches
+        .filter((m) => m.status === 'COMPLETED')
+        .sort((a, b) => (b.endedAt ?? b.createdAt).localeCompare(a.endedAt ?? a.createdAt)),
+    [matches]
+  )
 
   return (
-    <div className="space-y-8">
-      {/* ===================== HERO SECTION ===================== */}
-      <CricketGroundBackdrop className="border border-[#c59b27]/30 shadow-xl" showPitch={false}>
-        <div className="p-6 sm:p-8 lg:p-10 bg-gradient-to-r from-black/75 via-black/55 to-black/75 backdrop-blur-[2px]">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Column: Heading & Value Proposition */}
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#c59b27]/20 border border-[#c59b27]/40 text-[#c59b27] text-xs font-bold uppercase tracking-wider backdrop-blur-xs">
-                <Trophy className="w-3.5 h-3.5 text-[#c59b27]" />
-                <span>Season 8 • Official Match Center</span>
-              </div>
+    <div className="space-y-7">
+      {/* ===================== HERO SECTION (Panel 1 Reference) ===================== */}
+      <section className="relative overflow-hidden rounded-2xl border border-gray-200 bg-[#F3F4F6] shadow-sm min-h-[220px] sm:min-h-[260px] flex items-center">
+        {/* Background Batsman Image */}
+        <img
+          src="/npl-hero-banner.jpg"
+          alt="Nexcore Premier League Cricket"
+          className="absolute inset-0 h-full w-full object-cover object-right select-none pointer-events-none"
+        />
+        {/* Clean Left Readability Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F3F4F6] via-[#F3F4F6]/90 to-transparent sm:via-[#F3F4F6]/75" />
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black tracking-tight text-white leading-[1.15] drop-shadow-md">
-                Live Cricket Scoring & Match Center
-              </h1>
+        {/* Diagonal Maroon Decorative Accent */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-12 top-0 bottom-0 w-16 bg-[#7A1426]/85 -skew-x-12 hidden md:block"
+        />
 
-              <p className="text-sm sm:text-base text-[#f8f6f0]/85 leading-relaxed font-normal max-w-xl">
-                Real-time ball-by-ball commentary, delivery speeds, live run rates, fall of wickets, and complete tournament scorecards updated instantly.
-              </p>
+        <div className="relative z-10 p-6 sm:p-10 max-w-2xl space-y-2.5">
+          <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-[#111827] tracking-tight leading-[1.12]">
+            Nexcore
+            <br />
+            Premier League
+          </h1>
+          <p className="text-base sm:text-xl font-medium text-gray-700">
+            Cricket Tournament 2026
+          </p>
+          <p className="text-xs sm:text-sm font-medium text-gray-500 pt-1">
+            Live Scores &bull; Match Updates &bull; Statistics
+          </p>
+        </div>
+      </section>
 
-              <div className="pt-2 flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => navigate('/matches')}
-                  className="bg-[#c59b27] hover:bg-[#b58c20] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
-                >
-                  <CricketBallIcon size={14} variant="gold" />
-                  <span>Browse Fixtures</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => navigate('/teams')}
-                  className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all border border-white/20 flex items-center gap-2 cursor-pointer active:scale-98 backdrop-blur-xs"
-                >
-                  <Users className="w-4 h-4 text-[#c59b27]" />
-                  <span>Team Squads</span>
-                </button>
-                <button
-                  onClick={() => navigate('/awards')}
-                  className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all border border-white/20 flex items-center gap-2 cursor-pointer active:scale-98 backdrop-blur-xs"
-                >
-                  <Trophy className="w-4 h-4 text-[#c59b27]" />
-                  <span>Awards &amp; Leaders</span>
-                </button>
-              </div>
-            </div>
+      {/* ===================== LIVE MATCHES SECTION ===================== */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-lg sm:text-xl font-bold text-[#111827] tracking-tight">
+              Live Matches
+            </h2>
+            {live.length > 0 && <LiveBadge />}
+          </div>
 
-            {/* Right Column: Live Match Spotlight OR Next Fixture / Tournament Summary */}
-            <div className="lg:col-span-5">
-              {featuredLive ? (
-                /* Active Live Match Spotlight Card */
-                (() => {
-                  const scoreA = featuredLive.scores.find((s) => s.battingTeamId === featuredLive.teamA.id)
-                  const scoreB = featuredLive.scores.find((s) => s.battingTeamId === featuredLive.teamB.id)
-                  const currentInningsScore = featuredLive.scores.find((s) => s.number === featuredLive.currentInnings)
-                  const isBattingA = currentInningsScore?.battingTeamId === featuredLive.teamA.id
-                  const isBattingB = currentInningsScore?.battingTeamId === featuredLive.teamB.id
+          <button
+            type="button"
+            onClick={() => navigate('/matches')}
+            className="text-xs font-semibold text-gray-700 hover:text-[#7A1426] transition-colors inline-flex items-center gap-1 cursor-pointer"
+          >
+            <span>View All Matches</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
-                  return (
-                    <div
-                      onClick={() => navigate(`/match/${featuredLive.id}`)}
-                      className="group bg-black/50 hover:bg-black/60 border border-[#c59b27]/40 hover:border-[#c59b27] rounded-3xl p-5 sm:p-6 backdrop-blur-md shadow-2xl transition-all duration-300 cursor-pointer space-y-4"
-                    >
-                      <div className="flex items-center justify-between pb-3 border-b border-white/15">
-                        <span className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 font-bold text-xs uppercase tracking-wider">
-                          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                          <span>Live Now</span>
-                        </span>
-                        <span className="text-xs text-white/75 font-semibold">
-                          {featuredLive.format === 'CUSTOM' ? `${featuredLive.totalOvers} Over Match` : featuredLive.format}
-                          {featuredLive.venue ? ` • ${featuredLive.venue}` : ''}
-                        </span>
-                      </div>
+        {loading ? (
+          <div className="grid gap-5 md:grid-cols-2">
+            {[0, 1].map((i) => (
+              <div key={i} className="h-52 animate-pulse rounded-2xl bg-white border border-gray-200" />
+            ))}
+          </div>
+        ) : live.length > 0 ? (
+          <div className="grid gap-5 md:grid-cols-2">
+            {live.map((m, idx) => {
+              const activeInnings =
+                m.scores.find((s) => s.number === m.currentInnings) ?? m.scores[m.scores.length - 1]
+              const crr = activeInnings ? calcCrr(activeInnings.runs, activeInnings.overs) : '0.00'
 
-                      {/* Teams and Scores in Spotlight */}
-                      <div className="space-y-3 py-1">
-                        {/* Team A */}
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <TeamLogo
-                              name={featuredLive.teamA.name}
-                              shortName={featuredLive.teamA.shortName}
-                              color={featuredLive.teamA.color}
-                              logoUrl={featuredLive.teamA.logoUrl}
-                              size="md"
-                            />
-                            <div className="min-w-0 flex-1 flex items-center gap-2">
-                              <span className="font-serif font-bold text-base text-white truncate">
-                                {featuredLive.teamA.name}
-                              </span>
-                              {isBattingA && (
-                                <span className="inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">
-                                  <CricketBatIcon size={10} />
-                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            {scoreA ? (
-                              <span className="font-mono font-black text-lg text-white tabular-nums">
-                                {scoreA.runs}/{scoreA.wickets}
-                                <span className="text-xs text-white/60 ml-1">({scoreA.overs} ov)</span>
-                              </span>
-                            ) : (
-                              <span className="text-xs text-white/60 font-medium">Yet to bat</span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Team B */}
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <TeamLogo
-                              name={featuredLive.teamB.name}
-                              shortName={featuredLive.teamB.shortName}
-                              color={featuredLive.teamB.color}
-                              logoUrl={featuredLive.teamB.logoUrl}
-                              size="md"
-                            />
-                            <div className="min-w-0 flex-1 flex items-center gap-2">
-                              <span className="font-serif font-bold text-base text-white truncate">
-                                {featuredLive.teamB.name}
-                              </span>
-                              {isBattingB && (
-                                <span className="inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">
-                                  <CricketBatIcon size={10} />
-                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            {scoreB ? (
-                              <span className="font-mono font-black text-lg text-white tabular-nums">
-                                {scoreB.runs}/{scoreB.wickets}
-                                <span className="text-xs text-white/60 ml-1">({scoreB.overs} ov)</span>
-                              </span>
-                            ) : (
-                              <span className="text-xs text-white/60 font-medium">Yet to bat</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action Link Footer */}
-                      <div className="pt-3 border-t border-white/15 flex items-center justify-between text-xs text-emerald-300 font-bold group-hover:text-emerald-200">
-                        <span className="flex items-center gap-1.5">
-                          <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
-                          <span>Live Delivery Coverage</span>
-                        </span>
-                        <span className="flex items-center gap-1 text-[#c59b27] group-hover:translate-x-1 transition-transform">
-                          <span>Enter Match Center</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })()
-              ) : nextFixture ? (
-                /* Next Upcoming Match / Latest Result Spotlight */
+              return (
                 <div
-                  onClick={() => navigate(`/match/${nextFixture.id}`)}
-                  className="group bg-black/45 hover:bg-black/55 border border-white/20 hover:border-[#c59b27] rounded-3xl p-5 sm:p-6 backdrop-blur-md shadow-xl transition-all duration-300 cursor-pointer space-y-4"
+                  key={m.id}
+                  className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all p-5 flex flex-col justify-between gap-4"
                 >
-                  <div className="flex items-center justify-between pb-3 border-b border-white/10 text-xs font-bold">
-                    <span className="flex items-center gap-2 uppercase tracking-wider text-[#c59b27]">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>{nextFixture.status === 'COMPLETED' ? 'Latest Result' : 'Upcoming Fixture'}</span>
+                  {/* Card Top: Turf / Venue + Live Badge */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-[#111827]">
+                      {m.venue || `Turf 0${idx + 1}`}
                     </span>
-                    <StatusBadge status={nextFixture.status} />
+                    <LiveBadge />
                   </div>
 
-                  <div className="space-y-3 py-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <TeamLogo
-                          name={nextFixture.teamA.name}
-                          shortName={nextFixture.teamA.shortName}
-                          color={nextFixture.teamA.color}
-                          logoUrl={nextFixture.teamA.logoUrl}
-                          size="md"
-                        />
-                        <span className="font-serif font-bold text-sm text-white">{nextFixture.teamA.name}</span>
-                      </div>
-                      <span className="text-xs text-white/60 font-mono">
-                        {nextFixture.scores.find((s) => s.battingTeamId === nextFixture.teamA.id)?.runs ?? '—'}
+                  {/* Teams & Center Score Row */}
+                  <div className="flex items-center justify-between gap-3 py-1">
+                    <div className="flex flex-col items-center text-center gap-1.5 w-[32%]">
+                      <TeamLogo
+                        name={m.teamA.name}
+                        shortName={m.teamA.shortName}
+                        color={m.teamA.color}
+                        logoUrl={m.teamA.logoUrl}
+                        size="lg"
+                      />
+                      <span className="text-xs sm:text-sm font-bold text-[#111827] truncate w-full">
+                        {m.teamA.name}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <TeamLogo
-                          name={nextFixture.teamB.name}
-                          shortName={nextFixture.teamB.shortName}
-                          color={nextFixture.teamB.color}
-                          logoUrl={nextFixture.teamB.logoUrl}
-                          size="md"
-                        />
-                        <span className="font-serif font-bold text-sm text-white">{nextFixture.teamB.name}</span>
+                    <div className="flex flex-col items-center text-center">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-[#111827] tabular-nums tracking-tight leading-none">
+                        {activeInnings ? `${activeInnings.runs}/${activeInnings.wickets}` : '0/0'}
                       </div>
-                      <span className="text-xs text-white/60 font-mono">
-                        {nextFixture.scores.find((s) => s.battingTeamId === nextFixture.teamB.id)?.runs ?? '—'}
+                      <div className="text-xs font-medium text-gray-500 mt-1 tabular-nums">
+                        {activeInnings ? `${activeInnings.overs} Overs` : '0.0 Overs'}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center text-center gap-1.5 w-[32%]">
+                      <TeamLogo
+                        name={m.teamB.name}
+                        shortName={m.teamB.shortName}
+                        color={m.teamB.color}
+                        logoUrl={m.teamB.logoUrl}
+                        size="lg"
+                      />
+                      <span className="text-xs sm:text-sm font-bold text-[#111827] truncate w-full">
+                        {m.teamB.name}
                       </span>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-white/80 group-hover:text-[#c59b27]">
-                    <span>{nextFixture.venue || 'Tournament Ground'}</span>
-                    <span className="flex items-center gap-1 font-bold group-hover:translate-x-1 transition-transform">
-                      <span>View Fixture</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                /* Fallback Tournament Overview Card */
-                <div className="bg-black/40 border border-white/15 rounded-3xl p-6 backdrop-blur-md shadow-xl space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-white/10 text-xs font-bold text-white/80">
-                    <span className="flex items-center gap-2 uppercase tracking-wider text-[#c59b27]">
-                      <Trophy className="w-4 h-4" />
-                      <span>Tournament Snapshot</span>
-                    </span>
-                    <span className="text-emerald-400 font-mono">Season 8</span>
+                  {/* Meta Info */}
+                  <div className="text-center text-xs font-semibold text-gray-600">
+                    <span>CRR <b className="text-[#111827] font-bold">{crr}</b></span>
+                    {m.target ? (
+                      <>
+                        <span className="mx-2 text-gray-300">&bull;</span>
+                        <span>Target <b className="text-[#7A1426] font-bold">{m.target}</b></span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="mx-2 text-gray-300">&bull;</span>
+                        <span>{m.format === 'CUSTOM' ? `${m.totalOvers} Overs` : m.format}</span>
+                      </>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 py-2">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-                      <div className="text-2xl font-serif font-black text-[#c59b27]">{matches.length}</div>
-                      <div className="text-[10px] uppercase font-bold text-white/70 mt-0.5">Fixtures</div>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-                      <div className="text-2xl font-serif font-black text-white">{stats.runs}</div>
-                      <div className="text-[10px] uppercase font-bold text-white/70 mt-0.5">Total Runs</div>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
-                      <div className="text-2xl font-serif font-black text-emerald-400">{stats.wickets}</div>
-                      <div className="text-[10px] uppercase font-bold text-white/70 mt-0.5">Wickets</div>
-                    </div>
-                  </div>
-
+                  {/* Watch Live Maroon CTA */}
                   <button
-                    onClick={() => navigate('/matches')}
-                    className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    type="button"
+                    onClick={() => navigate(`/match/${m.id}`)}
+                    className="w-full rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold text-xs py-2.5 shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.99]"
                   >
-                    <span>View All Tournament Fixtures</span>
-                    <ChevronRight className="w-4 h-4" />
+                    <span>Watch Live</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </CricketGroundBackdrop>
-
-      {/* ===================== TOURNAMENT METRICS PULSE STRIP ===================== */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        {/* Metric 1: Live Matches */}
-        <div className="bg-white border border-[#e8e2d5] rounded-2xl p-4 shadow-xs flex items-center justify-between">
-          <div className="space-y-0.5 min-w-0">
-            <div className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider flex items-center gap-1.5">
-              {live.length > 0 && <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />}
-              <span>Live Action</span>
-            </div>
-            <div className="text-2xl font-serif font-black text-[#111827]">{live.length}</div>
-            <div className="text-[11px] text-[#0d3a24] font-semibold truncate">
-              {live.length > 0 ? 'Match in progress' : 'Awaiting match toss'}
-            </div>
-          </div>
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-            <Radio className={cn('w-5 h-5', live.length > 0 && 'animate-pulse text-emerald-600')} />
-          </div>
-        </div>
-
-        {/* Metric 2: Total Fixtures */}
-        <div className="bg-white border border-[#e8e2d5] rounded-2xl p-4 shadow-xs flex items-center justify-between">
-          <div className="space-y-0.5 min-w-0">
-            <div className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider">Fixtures</div>
-            <div className="text-2xl font-serif font-black text-[#111827]">{matches.length}</div>
-            <div className="text-[11px] text-[#6b7280] truncate">
-              {upcoming.length} upcoming • {stats.completed} done
-            </div>
-          </div>
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#0d3a24]/10 text-[#0d3a24] flex items-center justify-center shrink-0">
-            <Trophy className="w-5 h-5 text-[#c59b27]" />
-          </div>
-        </div>
-
-        {/* Metric 3: Tournament Runs */}
-        <div className="bg-white border border-[#e8e2d5] rounded-2xl p-4 shadow-xs flex items-center justify-between">
-          <div className="space-y-0.5 min-w-0">
-            <div className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider">Tournament Runs</div>
-            <div className="text-2xl font-serif font-black text-[#0d3a24]">{stats.runs}</div>
-            <div className="text-[11px] text-[#6b7280] truncate">Cumulative aggregate</div>
-          </div>
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#c59b27]/15 text-[#c59b27] flex items-center justify-center shrink-0">
-            <CricketBatIcon size={22} />
-          </div>
-        </div>
-
-        {/* Metric 4: Total Wickets */}
-        <div className="bg-white border border-[#e8e2d5] rounded-2xl p-4 shadow-xs flex items-center justify-between">
-          <div className="space-y-0.5 min-w-0">
-            <div className="text-[11px] font-bold text-[#6b7280] uppercase tracking-wider">Total Wickets</div>
-            <div className="text-2xl font-serif font-black text-rose-700">{stats.wickets}</div>
-            <div className="text-[11px] text-[#6b7280] truncate">Dismissals recorded</div>
-          </div>
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-rose-50 text-rose-700 flex items-center justify-center shrink-0">
-            <CricketStumpsIcon size={20} broken={true} />
-          </div>
-        </div>
-      </div>
-
-      {/* ===================== MATCHES SECTION WITH CLEAN TABS ===================== */}
-      <section className="space-y-4">
-        {/* Section Header & Tab Pills */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#e8e2d5]">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#111827]">
-              Tournament Match Center
-            </h2>
-            <p className="text-xs text-[#6b7280] mt-0.5">
-              Select a fixture to access live ball telemetry, wagon wheel data, and full scorecards.
-            </p>
-          </div>
-
-          {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 bg-[#f4efe6] p-1 rounded-2xl border border-[#e8e2d5] self-start sm:self-auto overflow-x-auto max-w-full">
-            <button
-              onClick={() => setFilterTab('ALL')}
-              className={cn(
-                'px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap',
-                filterTab === 'ALL'
-                  ? 'bg-[#0d3a24] text-white shadow-xs'
-                  : 'text-[#6b7280] hover:text-[#0d3a24]'
-              )}
-            >
-              All Matches ({matches.length})
-            </button>
-            <button
-              onClick={() => setFilterTab('LIVE')}
-              className={cn(
-                'px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5',
-                filterTab === 'LIVE'
-                  ? 'bg-[#0d3a24] text-white shadow-xs'
-                  : 'text-[#6b7280] hover:text-[#0d3a24]'
-              )}
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Live ({live.length})</span>
-            </button>
-            <button
-              onClick={() => setFilterTab('UPCOMING')}
-              className={cn(
-                'px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap',
-                filterTab === 'UPCOMING'
-                  ? 'bg-[#0d3a24] text-white shadow-xs'
-                  : 'text-[#6b7280] hover:text-[#0d3a24]'
-              )}
-            >
-              Upcoming ({upcoming.length})
-            </button>
-            <button
-              onClick={() => setFilterTab('COMPLETED')}
-              className={cn(
-                'px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap',
-                filterTab === 'COMPLETED'
-                  ? 'bg-[#0d3a24] text-white shadow-xs'
-                  : 'text-[#6b7280] hover:text-[#0d3a24]'
-              )}
-            >
-              Results ({recent.length})
-            </button>
-          </div>
-        </div>
-
-        {/* Fixtures Grid */}
-        {loading ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {[0, 1].map((i) => (
-              <div key={i} className="h-44 animate-pulse rounded-2xl bg-[#e8e2d5]/60" />
-            ))}
-          </div>
-        ) : displayedMatches.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-[#e8e2d5] bg-white p-12 text-center space-y-2">
-            <CalendarDays className="mx-auto h-8 w-8 text-[#9ca3af]" />
-            <p className="text-base font-serif font-bold text-[#111827]">
-              {filterTab === 'LIVE'
-                ? 'No Matches Currently Live'
-                : filterTab === 'UPCOMING'
-                ? 'No Upcoming Fixtures Scheduled'
-                : filterTab === 'COMPLETED'
-                ? 'No Matches Concluded Yet'
-                : 'No Tournament Fixtures Created'}
-            </p>
-            <p className="text-xs text-[#6b7280] max-w-sm mx-auto">
-              {filterTab === 'LIVE'
-                ? 'Check upcoming matches or navigate to the Matches tab to view schedule.'
-                : 'Administrators can create and schedule matches through the Admin Console.'}
-            </p>
-            {filterTab !== 'ALL' && (
-              <button
-                onClick={() => setFilterTab('ALL')}
-                className="mt-3 text-xs font-bold text-[#0d3a24] hover:underline cursor-pointer"
-              >
-                View all fixtures
-              </button>
-            )}
+              )
+            })}
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {displayedMatches.map((m) => (
-              <MatchCard key={m.id} match={m} navigate={navigate} />
-            ))}
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center shadow-xs space-y-2">
+            <Radio className="w-7 h-7 text-[#7A1426] mx-auto opacity-80" />
+            <h3 className="text-sm font-bold text-[#111827]">No Live Matches at the Moment</h3>
+            <p className="text-xs text-gray-500 max-w-md mx-auto">
+              Check upcoming fixtures below or explore completed match scorecards and standings.
+            </p>
           </div>
         )}
       </section>
+
+      {/* ===================== 3 QUICK LINKS CARDS ===================== */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <button
+          type="button"
+          onClick={() => navigate('/matches')}
+          className="bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-[#7A1426]/40 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5 text-left cursor-pointer group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#7A1426]/10 text-[#7A1426] flex items-center justify-center shrink-0 group-hover:bg-[#7A1426] group-hover:text-white transition-colors">
+            <CalendarDays className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-[#111827]">Match Schedule</div>
+            <div className="text-xs text-gray-500 mt-0.5">Check upcoming matches</div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/points-table')}
+          className="bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-[#7A1426]/40 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5 text-left cursor-pointer group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#7A1426]/10 text-[#7A1426] flex items-center justify-center shrink-0 group-hover:bg-[#7A1426] group-hover:text-white transition-colors">
+            <Trophy className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-[#111827]">Points Table</div>
+            <div className="text-xs text-gray-500 mt-0.5">Team standings &amp; awards</div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/teams')}
+          className="bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-[#7A1426]/40 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all flex items-center gap-3.5 text-left cursor-pointer group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#7A1426]/10 text-[#7A1426] flex items-center justify-center shrink-0 group-hover:bg-[#7A1426] group-hover:text-white transition-colors">
+            <Users className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-[#111827]">Teams</div>
+            <div className="text-xs text-gray-500 mt-0.5">View all participating teams</div>
+          </div>
+        </button>
+      </section>
+
+      {/* ===================== UPCOMING & RECENT RESULTS PREVIEW ===================== */}
+      {(upcoming.length > 0 || recent.length > 0) && (
+        <section className="grid gap-6 lg:grid-cols-2 pt-1">
+          {upcoming.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-600">
+                  Upcoming Fixtures ({upcoming.length})
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => navigate('/matches')}
+                  className="text-xs font-semibold text-[#7A1426] hover:underline cursor-pointer"
+                >
+                  Schedule &rarr;
+                </button>
+              </div>
+              <div className="space-y-3">
+                {upcoming.slice(0, 2).map((m) => (
+                  <MatchCard key={m.id} match={m} navigate={navigate} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {recent.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-600">
+                  Recent Results ({recent.length})
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => navigate('/matches')}
+                  className="text-xs font-semibold text-[#7A1426] hover:underline cursor-pointer"
+                >
+                  All Results &rarr;
+                </button>
+              </div>
+              <div className="space-y-3">
+                {recent.slice(0, 2).map((m) => (
+                  <MatchCard key={m.id} match={m} navigate={navigate} />
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   )
 }

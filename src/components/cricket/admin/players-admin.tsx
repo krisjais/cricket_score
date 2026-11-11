@@ -159,9 +159,9 @@ export function PlayersAdmin() {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#e8e2d5] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5E7EB] pb-5">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#c59b27] mb-1">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#7A1426] mb-1">
             <Users className="w-3.5 h-3.5" />
             <span>Tournament Players Registry</span>
           </div>
@@ -189,25 +189,25 @@ export function PlayersAdmin() {
           {/* CSV Import Button */}
           <button
             onClick={() => setImportOpen(true)}
-            className="bg-white border border-[#e8e2d5] hover:bg-[#f4efe6] text-[#0d3a24] text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+            className="bg-white border border-[#E5E7EB] hover:bg-[#F3F4F6] text-[#7A1426] text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-98"
           >
-            <FileSpreadsheet className="h-4 w-4 text-[#c59b27]" aria-hidden />
+            <FileSpreadsheet className="h-4 w-4 text-[#7A1426]" aria-hidden />
             <span>Import CSV</span>
           </button>
 
           {/* Add Player Button */}
           <button
             onClick={() => setPlayerDialog({ open: true })}
-            className="bg-[#0d3a24] hover:bg-[#154d32] text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+            className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-98"
           >
-            <Plus className="h-4 w-4 text-[#c59b27]" aria-hidden />
+            <Plus className="h-4 w-4 text-white" aria-hidden />
             <span>Add Player</span>
           </button>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 justify-between bg-white p-4 rounded-2xl border border-[#e8e2d5] shadow-xs">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 justify-between bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
         {/* Search Input */}
         <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
@@ -216,7 +216,7 @@ export function PlayersAdmin() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search players by name, jersey, or team..."
-            className="w-full bg-[#faf8f5] border border-[#e8e2d5] rounded-xl pl-9 pr-3.5 py-2 text-xs font-medium text-[#111827] placeholder:text-[#9ca3af] focus:outline-none focus:border-[#0d3a24]"
+            className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl pl-9 pr-3.5 py-2 text-xs font-medium text-[#111827] placeholder:text-[#9ca3af] focus:outline-none focus:border-[#7A1426]"
           />
         </div>
 
@@ -225,7 +225,7 @@ export function PlayersAdmin() {
           <select
             value={teamFilter}
             onChange={(e) => setTeamFilter(e.target.value)}
-            className="bg-[#faf8f5] border border-[#e8e2d5] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#0d3a24] cursor-pointer"
+            className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#7A1426] cursor-pointer"
           >
             <option value="ALL">All Franchises ({players?.length ?? 0})</option>
             <option value="UNASSIGNED">Unassigned / Free Agents ({unassignedCount})</option>
@@ -240,7 +240,7 @@ export function PlayersAdmin() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-[#faf8f5] border border-[#e8e2d5] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#0d3a24] cursor-pointer"
+            className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#7A1426] cursor-pointer"
           >
             <option value="ALL">All Roles</option>
             <option value="BATTER">Batters</option>
@@ -253,7 +253,7 @@ export function PlayersAdmin() {
           <select
             value={genderFilter}
             onChange={(e) => setGenderFilter(e.target.value)}
-            className="bg-[#faf8f5] border border-[#e8e2d5] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#0d3a24] cursor-pointer"
+            className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#7A1426] cursor-pointer"
           >
             <option value="ALL">All Divisions</option>
             <option value="MALE">Men&apos;s Division</option>
@@ -266,12 +266,12 @@ export function PlayersAdmin() {
       {!players ? (
         <div className="grid gap-3">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-2xl bg-[#e8e2d5]/60" />
+            <div key={i} className="h-16 animate-pulse rounded-2xl bg-[#E5E7EB]/60" />
           ))}
         </div>
       ) : filteredPlayers.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[#e8e2d5] bg-white p-12 text-center">
-          <Users className="mx-auto mb-3 h-8 w-8 text-[#c59b27]" aria-hidden />
+        <div className="rounded-3xl border border-dashed border-[#E5E7EB] bg-white p-12 text-center">
+          <Users className="mx-auto mb-3 h-8 w-8 text-[#7A1426]" aria-hidden />
           <p className="text-base font-bold text-[#111827]">
             {search || teamFilter !== 'ALL' || roleFilter !== 'ALL' || genderFilter !== 'ALL'
               ? 'No Players Match Your Filter'
@@ -285,26 +285,26 @@ export function PlayersAdmin() {
           <div className="mt-4 flex items-center justify-center gap-3">
             <button
               onClick={() => setImportOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-[#e8e2d5] hover:bg-[#f4efe6] text-[#0d3a24] text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-[#E5E7EB] hover:bg-[#F3F4F6] text-[#7A1426] text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4 text-[#c59b27]" />
+              <FileSpreadsheet className="w-4 h-4 text-[#7A1426]" />
               <span>Import CSV</span>
             </button>
             <button
               onClick={() => setPlayerDialog({ open: true })}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0d3a24] hover:bg-[#154d32] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
-              <Plus className="w-4 h-4 text-[#c59b27]" />
+              <Plus className="w-4 h-4 text-white" />
               <span>Add Player</span>
             </button>
           </div>
         </div>
       ) : (
-        <Card className="rounded-3xl border border-[#e8e2d5] bg-white shadow-xs overflow-hidden">
+        <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#f4efe6] border-b border-[#e8e2d5]">
-                <tr className="font-bold text-[#0d3a24] uppercase tracking-wider">
+              <thead className="bg-[#F3F4F6] border-b border-[#E5E7EB]">
+                <tr className="font-bold text-[#7A1426] uppercase tracking-wider">
                   <th className="pl-6 py-3.5 w-16">Jersey #</th>
                   <th className="px-4 py-3.5">Player Name</th>
                   <th className="px-4 py-3.5">Division</th>
@@ -313,12 +313,12 @@ export function PlayersAdmin() {
                   <th className="pr-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#e8e2d5]">
+              <tbody className="divide-y divide-[#E5E7EB]">
                 {filteredPlayers.map((p) => {
                   const assignedTeam = teams.find((t) => t.id === p.teamId) || p.team
                   const isFemale = p.gender === 'FEMALE'
                   return (
-                    <tr key={p.id} className="hover:bg-[#f8f6f0] transition-colors">
+                    <tr key={p.id} className="hover:bg-[#F4F5F7] transition-colors">
                       <td className="pl-6 py-3.5 font-bold tabular-nums text-[#6b7280]">
                         {p.jerseyNumber != null ? `#${p.jerseyNumber}` : '—'}
                       </td>
@@ -328,16 +328,16 @@ export function PlayersAdmin() {
                             <img
                               src={p.avatarUrl}
                               alt={p.name}
-                              className="w-7 h-7 rounded-full object-cover border border-[#e8e2d5] shrink-0"
+                              className="w-7 h-7 rounded-full object-cover border border-[#E5E7EB] shrink-0"
                             />
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-[#f4efe6] border border-[#e8e2d5] flex items-center justify-center text-[10px] font-bold text-[#0d3a24] shrink-0">
+                            <div className="w-7 h-7 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] flex items-center justify-center text-[10px] font-bold text-[#7A1426] shrink-0">
                               {p.name.slice(0, 2).toUpperCase()}
                             </div>
                           )}
                           <span>{p.name}</span>
                           {assignedTeam?.captain === p.name && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#c59b27]/20 border border-[#c59b27]/40 text-[#916922]">
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#7A1426]/20 border border-[#7A1426]/40 text-[#916922]">
                               Captain
                             </span>
                           )}
@@ -361,20 +361,20 @@ export function PlayersAdmin() {
                             'inline-block text-[11px] font-bold px-2.5 py-1 rounded-lg border cursor-pointer transition-colors',
                             isFemale
                               ? 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
-                              : 'bg-emerald-50 border-emerald-200 text-[#0d3a24] hover:bg-emerald-100'
+                              : 'bg-emerald-50 border-emerald-200 text-[#7A1426] hover:bg-emerald-100'
                           )}
                         >
                           {isFemale ? 'Women' : 'Men'}
                         </button>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-[#faf8f5] border border-[#e8e2d5] text-[#0d3a24]">
+                        <span className="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] text-[#7A1426]">
                           {ROLE_LABEL[p.role] ?? p.role}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
                         {assignedTeam ? (
-                          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[#f4efe6] border border-[#e8e2d5]">
+                          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
                             <TeamLogo
                               name={assignedTeam.name}
                               shortName={assignedTeam.shortName}
@@ -382,10 +382,10 @@ export function PlayersAdmin() {
                               logoUrl={assignedTeam.logoUrl}
                               size="xs"
                             />
-                            <span className="font-bold text-xs text-[#0d3a24]">{assignedTeam.name}</span>
+                            <span className="font-bold text-xs text-[#7A1426]">{assignedTeam.name}</span>
                             <button
                               onClick={() => setAssignDialog({ open: true, player: p })}
-                              className="ml-1 text-[10px] font-bold text-[#6b7280] hover:text-[#0d3a24] hover:underline cursor-pointer"
+                              className="ml-1 text-[10px] font-bold text-[#6b7280] hover:text-[#7A1426] hover:underline cursor-pointer"
                               title="Change team assignment"
                             >
                               Change
@@ -399,7 +399,7 @@ export function PlayersAdmin() {
                             </span>
                             <button
                               onClick={() => setAssignDialog({ open: true, player: p })}
-                              className="px-2.5 py-1 rounded-xl bg-[#0d3a24] hover:bg-[#154d32] text-white text-[11px] font-bold shadow-2xs transition-all cursor-pointer"
+                              className="px-2.5 py-1 rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-[11px] font-bold shadow-2xs transition-all cursor-pointer"
                             >
                               Put in Team
                             </button>
@@ -410,14 +410,14 @@ export function PlayersAdmin() {
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             onClick={() => setAssignDialog({ open: true, player: p })}
-                            className="p-1.5 rounded-lg border border-[#e8e2d5] hover:bg-[#f4efe6] text-[#0d3a24] transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg border border-[#E5E7EB] hover:bg-[#F3F4F6] text-[#7A1426] transition-colors cursor-pointer"
                             title="Move / Assign to Team"
                           >
                             <ArrowRightLeft className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => setPlayerDialog({ open: true, player: p })}
-                            className="p-1.5 rounded-lg border border-[#e8e2d5] hover:bg-[#f4efe6] text-[#0d3a24] transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg border border-[#E5E7EB] hover:bg-[#F3F4F6] text-[#7A1426] transition-colors cursor-pointer"
                             title="Edit Player"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -484,7 +484,7 @@ export function PlayersAdmin() {
 
       {/* Delete Player Alert Dialog */}
       <AlertDialog open={!!deletePlayer} onOpenChange={(o) => !o && setDeletePlayer(null)}>
-        <AlertDialogContent className="bg-white border border-[#e8e2d5] rounded-3xl p-6 shadow-xl">
+        <AlertDialogContent className="bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-lg font-serif font-bold text-[#111827]">
               Delete Player “{deletePlayer?.name}”?
@@ -494,7 +494,7 @@ export function PlayersAdmin() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 pt-2">
-            <AlertDialogCancel className="rounded-xl border-[#e8e2d5] text-xs font-bold hover:bg-[#f4efe6]">
+            <AlertDialogCancel className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -513,7 +513,7 @@ export function PlayersAdmin() {
 
       {/* Delete All Players Confirmation Dialog */}
       <AlertDialog open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
-        <AlertDialogContent className="bg-white border border-[#e8e2d5] rounded-3xl p-6 shadow-xl max-w-md">
+        <AlertDialogContent className="bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl max-w-md">
           <AlertDialogHeader>
             <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center mb-1">
               <Trash2 className="w-6 h-6" />
@@ -534,7 +534,7 @@ export function PlayersAdmin() {
           <AlertDialogFooter className="gap-2 pt-3">
             <AlertDialogCancel
               disabled={busy}
-              className="rounded-xl border-[#e8e2d5] text-xs font-bold hover:bg-[#f4efe6]"
+              className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]"
             >
               Cancel
             </AlertDialogCancel>
@@ -587,7 +587,7 @@ function PlayerFormDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md bg-white border border-[#e8e2d5] rounded-3xl p-6 shadow-xl">
+      <DialogContent className="sm:max-w-md bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-serif font-bold text-[#111827]">
             {player ? 'Edit Player Details' : 'Add New Player'}
@@ -606,7 +606,7 @@ function PlayerFormDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Virat Kohli"
-              className="rounded-xl border-[#e8e2d5] text-xs font-medium focus-visible:ring-[#0d3a24]"
+              className="rounded-xl border-[#E5E7EB] text-xs font-medium focus-visible:ring-[#7A1426]"
             />
           </div>
 
@@ -615,10 +615,10 @@ function PlayerFormDialog({
             <div className="space-y-2">
               <Label className="text-xs font-bold text-[#111827]">Playing Role</Label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="rounded-xl border-[#e8e2d5] text-xs font-medium bg-[#faf8f5]">
+                <SelectTrigger className="rounded-xl border-[#E5E7EB] text-xs font-medium bg-[#F9FAFB]">
                   <SelectValue placeholder="Select playing role" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-[#e8e2d5] rounded-xl shadow-lg">
+                <SelectContent className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg">
                   <SelectItem value="ALL_ROUNDER">All-Rounder</SelectItem>
                   <SelectItem value="BATTER">Batter</SelectItem>
                   <SelectItem value="BOWLER">Bowler</SelectItem>
@@ -630,10 +630,10 @@ function PlayerFormDialog({
             <div className="space-y-2">
               <Label className="text-xs font-bold text-[#111827]">Division (Awards)</Label>
               <Select value={gender} onValueChange={(v) => setGender(v === 'FEMALE' ? 'FEMALE' : 'MALE')}>
-                <SelectTrigger className="rounded-xl border-[#e8e2d5] text-xs font-medium bg-[#faf8f5]">
+                <SelectTrigger className="rounded-xl border-[#E5E7EB] text-xs font-medium bg-[#F9FAFB]">
                   <SelectValue placeholder="Select division" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-[#e8e2d5] rounded-xl shadow-lg">
+                <SelectContent className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg">
                   <SelectItem value="MALE">Men (Male)</SelectItem>
                   <SelectItem value="FEMALE">Women (Female)</SelectItem>
                 </SelectContent>
@@ -645,16 +645,16 @@ function PlayerFormDialog({
           <div className="space-y-2">
             <Label className="text-xs font-bold text-[#111827]">Assign to Team Franchise</Label>
             <Select value={teamId} onValueChange={setTeamId}>
-              <SelectTrigger className="rounded-xl border-[#e8e2d5] text-xs font-medium bg-[#faf8f5]">
+              <SelectTrigger className="rounded-xl border-[#E5E7EB] text-xs font-medium bg-[#F9FAFB]">
                 <SelectValue placeholder="Select team franchise" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-[#e8e2d5] rounded-xl shadow-lg">
+              <SelectContent className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg">
                 <SelectItem value="none">
                   <span className="text-[#9ca3af] font-medium">Unassigned / Free Agent (Assign later)</span>
                 </SelectItem>
                 {teams.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
-                    <span className="font-bold text-[#0d3a24]">{t.name}</span> ({t.shortName})
+                    <span className="font-bold text-[#7A1426]">{t.name}</span> ({t.shortName})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -675,7 +675,7 @@ function PlayerFormDialog({
               value={jersey}
               onChange={(e) => setJersey(e.target.value)}
               placeholder="e.g. 18"
-              className="rounded-xl border-[#e8e2d5] text-xs font-bold tabular-nums focus-visible:ring-[#0d3a24]"
+              className="rounded-xl border-[#E5E7EB] text-xs font-bold tabular-nums focus-visible:ring-[#7A1426]"
             />
           </div>
 
@@ -687,17 +687,17 @@ function PlayerFormDialog({
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
               placeholder="e.g. https://res.cloudinary.com/...jpg"
-              className="rounded-xl border-[#e8e2d5] text-xs font-medium focus-visible:ring-[#0d3a24]"
+              className="rounded-xl border-[#E5E7EB] text-xs font-medium focus-visible:ring-[#7A1426]"
             />
           </div>
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl border-[#e8e2d5] text-xs font-bold hover:bg-[#f4efe6]" onClick={onClose}>
+          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            className="bg-[#0d3a24] hover:bg-[#154d32] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98"
+            className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98"
             disabled={!name.trim()}
             onClick={() => {
               const jNum = jersey.trim() ? parseInt(jersey, 10) : null
@@ -734,7 +734,7 @@ function AssignTeamDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md bg-white border border-[#e8e2d5] rounded-3xl p-6 shadow-xl">
+      <DialogContent className="sm:max-w-md bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-serif font-bold text-[#111827]">
             Put Player in a Team
@@ -748,16 +748,16 @@ function AssignTeamDialog({
           <div className="space-y-2">
             <Label className="text-xs font-bold text-[#111827]">Select Franchise Team</Label>
             <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-              <SelectTrigger className="rounded-xl border-[#e8e2d5] text-xs font-medium bg-[#faf8f5]">
+              <SelectTrigger className="rounded-xl border-[#E5E7EB] text-xs font-medium bg-[#F9FAFB]">
                 <SelectValue placeholder="Choose a franchise team" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-[#e8e2d5] rounded-xl shadow-lg">
+              <SelectContent className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg">
                 <SelectItem value="none">
                   <span className="text-amber-800 font-bold">Unassigned / Free Agent Pool</span>
                 </SelectItem>
                 {teams.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
-                    <span className="font-bold text-[#0d3a24]">{t.name}</span> ({t.shortName})
+                    <span className="font-bold text-[#7A1426]">{t.name}</span> ({t.shortName})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -766,11 +766,11 @@ function AssignTeamDialog({
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl border-[#e8e2d5] text-xs font-bold hover:bg-[#f4efe6]" onClick={onClose}>
+          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            className="bg-[#0d3a24] hover:bg-[#154d32] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98"
+            className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98"
             onClick={() => onSubmit(selectedTeamId === 'none' ? null : selectedTeamId)}
           >
             Confirm Assignment
@@ -901,9 +901,9 @@ function ImportCsvDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-2xl bg-white border border-[#e8e2d5] rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#c59b27] mb-0.5">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#7A1426] mb-0.5">
             <FileSpreadsheet className="w-4 h-4" />
             <span>Bulk Auction Import</span>
           </div>
@@ -917,7 +917,7 @@ function ImportCsvDialog({
 
         <div className="space-y-4 py-2">
           {/* File Upload Box */}
-          <div className="border-2 border-dashed border-[#e8e2d5] hover:border-[#c59b27] rounded-2xl p-6 text-center bg-[#faf8f5] transition-all">
+          <div className="border-2 border-dashed border-[#E5E7EB] hover:border-[#7A1426] rounded-2xl p-6 text-center bg-[#F9FAFB] transition-all">
             <input
               ref={fileInputRef}
               type="file"
@@ -925,7 +925,7 @@ function ImportCsvDialog({
               onChange={handleFileUpload}
               className="hidden"
             />
-            <FileSpreadsheet className="w-10 h-10 text-[#c59b27] mx-auto mb-2" />
+            <FileSpreadsheet className="w-10 h-10 text-[#7A1426] mx-auto mb-2" />
             <p className="text-xs font-bold text-[#111827]">
               Choose a CSV file or drag and drop here
             </p>
@@ -935,9 +935,9 @@ function ImportCsvDialog({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="mt-3 px-4 py-2 rounded-xl bg-white border border-[#e8e2d5] hover:bg-[#f4efe6] text-xs font-bold text-[#0d3a24] shadow-2xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+              className="mt-3 px-4 py-2 rounded-xl bg-white border border-[#E5E7EB] hover:bg-[#F3F4F6] text-xs font-bold text-[#7A1426] shadow-2xs transition-all cursor-pointer inline-flex items-center gap-1.5"
             >
-              <Upload className="w-3.5 h-3.5 text-[#c59b27]" />
+              <Upload className="w-3.5 h-3.5 text-[#7A1426]" />
               <span>Browse CSV File</span>
             </button>
           </div>
@@ -964,15 +964,15 @@ function ImportCsvDialog({
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
               placeholder="Paste comma-separated rows here e.g. ID,Name,Skills,Gender,Base Price,Status,Sold To..."
-              className="w-full bg-[#faf8f5] border border-[#e8e2d5] rounded-xl p-3 text-xs font-mono text-[#111827] focus:outline-none focus:border-[#0d3a24]"
+              className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-3 text-xs font-mono text-[#111827] focus:outline-none focus:border-[#7A1426]"
             />
           </div>
 
           {/* Parsed Preview Section */}
           {parsedPreview && (
-            <div className="bg-[#f4efe6]/60 border border-[#e8e2d5] rounded-2xl p-4 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e8e2d5] pb-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#0d3a24]">
+            <div className="bg-[#F3F4F6]/60 border border-[#E5E7EB] rounded-2xl p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E5E7EB] pb-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#7A1426]">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>Detected {parsedPreview.totalRows} Players</span>
                 </div>
@@ -989,7 +989,7 @@ function ImportCsvDialog({
                     {parsedPreview.teams.map((tName) => (
                       <span
                         key={tName}
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-[#e8e2d5] text-[#0d3a24]"
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-[#E5E7EB] text-[#7A1426]"
                       >
                         {tName}
                       </span>
@@ -1001,10 +1001,10 @@ function ImportCsvDialog({
               {/* Sample Rows Preview */}
               <div className="space-y-1">
                 <span className="text-[11px] font-bold text-[#111827] block">First 5 Sample Records:</span>
-                <div className="overflow-x-auto rounded-xl border border-[#e8e2d5] bg-white">
+                <div className="overflow-x-auto rounded-xl border border-[#E5E7EB] bg-white">
                   <table className="w-full text-left text-[11px]">
-                    <thead className="bg-[#f8f6f0] border-b border-[#e8e2d5]">
-                      <tr className="font-bold text-[#0d3a24]">
+                    <thead className="bg-[#F4F5F7] border-b border-[#E5E7EB]">
+                      <tr className="font-bold text-[#7A1426]">
                         <th className="p-2">Name</th>
                         <th className="p-2">Gender</th>
                         <th className="p-2">Skills</th>
@@ -1012,13 +1012,13 @@ function ImportCsvDialog({
                         <th className="p-2">Photo</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#e8e2d5]">
+                    <tbody className="divide-y divide-[#E5E7EB]">
                       {parsedPreview.sampleRows.map((r, i) => (
-                        <tr key={i} className="hover:bg-[#faf8f5]">
+                        <tr key={i} className="hover:bg-[#F9FAFB]">
                           <td className="p-2 font-bold text-[#111827]">{r['Name'] || r['name'] || '—'}</td>
                           <td className="p-2 font-semibold text-[#6b7280]">{r['Gender'] || r['gender'] || 'Male'}</td>
                           <td className="p-2 text-[#6b7280]">{r['Skills'] || r['skills'] || '—'}</td>
-                          <td className="p-2 font-bold text-[#0d3a24]">{r['Sold To'] || r['sold to'] || 'Unsold'}</td>
+                          <td className="p-2 font-bold text-[#7A1426]">{r['Sold To'] || r['sold to'] || 'Unsold'}</td>
                           <td className="p-2 text-[#6b7280]">
                             {r['Photo URL'] || r['photo url'] ? 'Yes' : 'No'}
                           </td>
@@ -1035,7 +1035,7 @@ function ImportCsvDialog({
                   type="checkbox"
                   checked={autoCreateTeams}
                   onChange={(e) => setAutoCreateTeams(e.target.checked)}
-                  className="rounded text-[#0d3a24] focus:ring-[#0d3a24] h-4 w-4"
+                  className="rounded text-[#7A1426] focus:ring-[#7A1426] h-4 w-4"
                 />
                 <span className="text-xs font-bold text-[#111827]">
                   Automatically create missing franchises from "Sold To" and assign players
@@ -1046,11 +1046,11 @@ function ImportCsvDialog({
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl border-[#e8e2d5] text-xs font-bold hover:bg-[#f4efe6]" onClick={onClose}>
+          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            className="bg-[#0d3a24] hover:bg-[#154d32] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98 disabled:opacity-50"
+            className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98 disabled:opacity-50"
             disabled={!parsedPreview || loading}
             onClick={handleImport}
           >

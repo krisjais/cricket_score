@@ -3,10 +3,10 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "CricketLive — Ball-by-ball cricket scoring",
+  title: "Nexcore Premier League — Live Cricket Scoring",
   description:
-    "Live cricket scoring with real-time scoreboards. Admins control matches ball-by-ball; the audience watches live.",
-  keywords: ["cricket", "live score", "cricket scoring", "scorecard", "ball-by-ball"],
+    "Official Nexcore Premier League match center with real-time ball-by-ball scoring, live scorecards, points table, and umpire console.",
+  keywords: ["Nexcore Premier League", "NPL", "cricket", "live score", "cricket scoring", "scorecard"],
   icons: {
     icon: "/logo.svg",
   },
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#052e16",
+  themeColor: "#7A1426",
 };
 
 export default function RootLayout({

@@ -9,8 +9,8 @@ import type { MatchSummary } from '@/lib/client'
 const FILTERS = [
   { key: 'ALL', label: 'All Matches' },
   { key: 'LIVE', label: 'Live' },
-  { key: 'COMPLETED', label: 'Results' },
   { key: 'UPCOMING', label: 'Upcoming' },
+  { key: 'COMPLETED', label: 'Results' },
   { key: 'ABANDONED', label: 'Abandoned' },
 ]
 
@@ -27,15 +27,17 @@ export function MatchesPage({
   const [search, setSearch] = useState('')
 
   const filtered = matches.filter((m) => {
-    // Status filter
     if (filter === 'UPCOMING') {
-      const isUp = m.status === 'SCHEDULED' || m.status === 'TOSS_DONE' || m.status === 'INNINGS_BREAK' || m.status === 'PAUSED'
+      const isUp =
+        m.status === 'SCHEDULED' ||
+        m.status === 'TOSS_DONE' ||
+        m.status === 'INNINGS_BREAK' ||
+        m.status === 'PAUSED'
       if (!isUp) return false
     } else if (filter !== 'ALL') {
       if (m.status !== filter) return false
     }
 
-    // Search query
     if (search.trim()) {
       const q = search.toLowerCase()
       const matchText = `${m.teamA.name} ${m.teamA.shortName} ${m.teamB.name} ${m.teamB.shortName} ${m.venue || ''} ${m.format}`.toLowerCase()
@@ -47,37 +49,36 @@ export function MatchesPage({
 
   return (
     <div className="space-y-6">
-      {/* Page Title & Filter Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#e8e2d5] pb-5">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-200 pb-5">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#c59b27] mb-1">
+          <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#7A1426] mb-1">
             <Trophy className="w-3.5 h-3.5" />
-            <span>APL Tournament Center</span>
+            <span>Nexcore Premier League</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-black text-[#111827]">
-            Fixtures & Scorecards
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+            Matches &amp; Schedule
           </h1>
-          <p className="text-xs sm:text-sm text-[#6b7280] mt-1">
-            Real-time ball-by-ball updates, completed results, and upcoming tournament fixtures.
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            Live fixtures across all turfs, upcoming schedule, and completed match results.
           </p>
         </div>
 
-        {/* Search Input */}
         <div className="relative min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search teams or venue..."
-            className="w-full bg-white border border-[#e8e2d5] rounded-xl pl-9 pr-3.5 py-2 text-xs font-medium text-[#111827] placeholder:text-[#9ca3af] focus:outline-none focus:border-[#0d3a24] shadow-2xs"
+            placeholder="Search teams, turf or format..."
+            className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-3.5 py-2 text-xs font-medium text-[#111827] placeholder:text-gray-400 focus:outline-none focus:border-[#7A1426] shadow-2xs"
           />
         </div>
       </div>
 
-      {/* Segmented Filter Pills */}
+      {/* Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2">
-        <div role="tablist" aria-label="Match filter" className="flex flex-wrap gap-1.5 p-1 bg-[#f4efe6] border border-[#e8e2d5] rounded-2xl">
+        <div role="tablist" aria-label="Match filter" className="flex flex-wrap gap-1.5 p-1 bg-white border border-gray-200 rounded-xl shadow-2xs">
           {FILTERS.map((f) => {
             const active = filter === f.key
             return (
@@ -87,37 +88,37 @@ export function MatchesPage({
                 aria-selected={active}
                 onClick={() => setFilter(f.key)}
                 className={cn(
-                  'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer',
+                  'rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer',
                   active
-                    ? 'bg-[#0d3a24] text-white shadow-xs'
-                    : 'text-[#6b7280] hover:text-[#0d3a24] hover:bg-white/60'
+                    ? 'bg-[#7A1426] text-white shadow-xs'
+                    : 'text-gray-600 hover:text-[#111827] hover:bg-gray-100'
                 )}
               >
                 <span>{f.label}</span>
                 {f.key === 'LIVE' && matches.some((m) => m.status === 'LIVE') && (
-                  <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse align-middle" aria-label="live" />
+                  <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-red-400 animate-pulse align-middle" aria-label="live" />
                 )}
               </button>
             )
           })}
         </div>
-        <span className="text-xs text-[#6b7280] ml-auto font-medium">
+        <span className="text-xs text-gray-500 ml-auto font-medium">
           Showing <b className="text-[#111827]">{filtered.length}</b> fixture{filtered.length === 1 ? '' : 's'}
         </span>
       </div>
 
-      {/* Match Cards Grid */}
+      {/* Fixtures Grid */}
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-2xl bg-[#e8e2d5]/60" />
+            <div key={i} className="h-40 animate-pulse rounded-2xl bg-gray-200/70" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-[#e8e2d5] bg-white p-12 text-center">
-          <CalendarDays className="mx-auto mb-3 h-8 w-8 text-[#c59b27]" aria-hidden />
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center">
+          <CalendarDays className="mx-auto mb-3 h-8 w-8 text-[#7A1426]" aria-hidden />
           <p className="text-base font-bold text-[#111827]">No Matches Found</p>
-          <p className="text-xs text-[#6b7280] mt-1 max-w-sm mx-auto">
+          <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
             {search ? 'Try adjusting your search criteria or switch filter tabs.' : 'No matches available in this category.'}
           </p>
         </div>

@@ -147,7 +147,7 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
             type="button"
             disabled={resetBusy || !teams || teams.length === 0}
             onClick={() => setConfirmReset('teams')}
-            className="bg-white hover:bg-[#f4efe6] border border-[#e8e2d5] text-[#111827] text-xs font-bold px-3.5 py-2 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
+            className="bg-white hover:bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] text-xs font-bold px-3.5 py-2 rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
           >
             <RefreshCcw className="h-3.5 w-3.5 text-[#6b7280]" aria-hidden />
             <span>Reset All Teams</span>
@@ -156,18 +156,18 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
           <button
             type="button"
             onClick={() => setTeamDialog({ open: true })}
-            className="bg-[#0d3a24] hover:bg-[#154d32] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
+            className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-98"
           >
-            <Plus className="h-4 w-4 text-[#c59b27]" aria-hidden />
+            <Plus className="h-4 w-4 text-white" aria-hidden />
             <span>Add Team</span>
           </button>
         </div>
       </div>
 
       {/* ---------------- Auction-Style Window Frame ---------------- */}
-      <div className="rounded-2xl border border-[#e8e2d5] bg-white shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-[#E5E7EB] bg-white shadow-xs overflow-hidden">
         {/* Window Chrome Bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#e8e2d5]/80 bg-[#faf8f5]/60">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#E5E7EB]/80 bg-[#F9FAFB]/60">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-rose-300/80" />
             <span className="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
@@ -181,10 +181,10 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
             type="button"
             disabled={resetBusy}
             onClick={() => void runReset('demo')}
-            className="text-[11px] font-semibold text-[#6b7280] hover:text-[#0d3a24] transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            className="text-[11px] font-semibold text-[#6b7280] hover:text-[#7A1426] transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
             title="Load sample clubs and squads for quick testing"
           >
-            <Database className="h-3 w-3 text-[#c59b27]" aria-hidden />
+            <Database className="h-3 w-3 text-[#7A1426]" aria-hidden />
             <span>Load Demo Teams</span>
           </button>
         </div>
@@ -194,12 +194,12 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
           {!teams ? (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="h-44 animate-pulse rounded-2xl bg-[#e8e2d5]/50" />
+                <div key={i} className="h-44 animate-pulse rounded-2xl bg-[#E5E7EB]/50" />
               ))}
             </div>
           ) : teams.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#e8e2d5] bg-[#faf8f5]/50 p-12 text-center space-y-3">
-              <Shield className="mx-auto h-8 w-8 text-[#c59b27]" aria-hidden />
+            <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-[#F9FAFB]/50 p-12 text-center space-y-3">
+              <Shield className="mx-auto h-8 w-8 text-[#7A1426]" aria-hidden />
               <p className="text-sm font-bold text-[#111827]">No Cricket Clubs Enrolled Yet</p>
               <p className="text-xs text-[#6b7280] max-w-sm mx-auto">
                 Click &quot;+ Add Team&quot; above to register your first franchise, or load demo teams to rehearse live scoring.
@@ -222,7 +222,7 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
                         setSquadTeamId(t.id)
                       }
                     }}
-                    className="group rounded-2xl border border-[#e8e2d5] bg-white p-4 hover:border-[#111827] hover:shadow-md transition-all duration-150 cursor-pointer flex flex-col justify-between gap-3 focus-visible:ring-2 focus-visible:ring-[#0d3a24] focus-visible:outline-none"
+                    className="group rounded-2xl border border-[#E5E7EB] bg-white p-4 hover:border-[#111827] hover:shadow-md transition-all duration-150 cursor-pointer flex flex-col justify-between gap-3 focus-visible:ring-2 focus-visible:ring-[#7A1426] focus-visible:outline-none"
                   >
                     {/* Card Top: Logo + Name/Captain + Player Count */}
                     <div className="flex items-start justify-between gap-2">
@@ -233,7 +233,7 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
                           color={t.color}
                           logoUrl={t.logoUrl}
                           size="md"
-                          className="rounded-xl ring-1 ring-[#e8e2d5]"
+                          className="rounded-xl ring-1 ring-[#E5E7EB]"
                         />
                         <div className="min-w-0 flex-1">
                           <h3 className="truncate font-bold text-sm text-[#111827] leading-tight">
@@ -265,9 +265,9 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
                           {readinessPct}% ready
                         </span>
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-[#e8e2d5]/80 overflow-hidden">
+                      <div className="h-1.5 w-full rounded-full bg-[#E5E7EB]/80 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-[#0d3a24] transition-all duration-300"
+                          className="h-full rounded-full bg-[#7A1426] transition-all duration-300"
                           style={{ width: `${readinessPct}%` }}
                         />
                       </div>
@@ -280,7 +280,7 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
                         e.stopPropagation()
                         setSquadTeamId(t.id)
                       }}
-                      className="w-full rounded-xl bg-[#f4efe6] hover:bg-[#e8e2d5] border border-[#e8e2d5]/80 py-2 text-xs font-bold text-[#111827] transition-colors cursor-pointer"
+                      className="w-full rounded-xl bg-[#F3F4F6] hover:bg-[#E5E7EB] border border-[#E5E7EB]/80 py-2 text-xs font-bold text-[#111827] transition-colors cursor-pointer"
                     >
                       Squad ({t.players.length})
                     </button>
@@ -293,21 +293,21 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
                       <button
                         type="button"
                         onClick={() => setTeamDialog({ open: true, team: t })}
-                        className="rounded-lg border border-[#e8e2d5] bg-white hover:bg-[#faf8f5] py-1.5 text-[11px] font-bold text-[#111827] transition-colors cursor-pointer"
+                        className="rounded-lg border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] py-1.5 text-[11px] font-bold text-[#111827] transition-colors cursor-pointer"
                       >
                         Edit
                       </button>
                       <button
                         type="button"
                         onClick={() => setPlayerDialog({ open: true, teamId: t.id })}
-                        className="rounded-lg border border-[#e8e2d5] bg-white hover:bg-amber-50/70 py-1.5 text-[11px] font-bold text-[#a16207] transition-colors cursor-pointer"
+                        className="rounded-lg border border-[#E5E7EB] bg-white hover:bg-amber-50/70 py-1.5 text-[11px] font-bold text-[#a16207] transition-colors cursor-pointer"
                       >
                         + Player
                       </button>
                       <button
                         type="button"
                         onClick={() => setDeleteTeam(t)}
-                        className="rounded-lg border border-[#e8e2d5] bg-white hover:bg-rose-50 py-1.5 text-[11px] font-bold text-rose-600 transition-colors cursor-pointer"
+                        className="rounded-lg border border-[#E5E7EB] bg-white hover:bg-rose-50 py-1.5 text-[11px] font-bold text-rose-600 transition-colors cursor-pointer"
                       >
                         Delete
                       </button>
@@ -323,7 +323,7 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
       {/* ---------------- Team Squad & Full Info Modal ---------------- */}
       {squadTeam && (
         <Dialog open onOpenChange={(o) => !o && setSquadTeamId(null)}>
-          <DialogContent className="sm:max-w-lg bg-white border border-[#e8e2d5] rounded-3xl p-6 shadow-xl">
+          <DialogContent className="sm:max-w-lg bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
             <DialogHeader>
               <div className="flex items-center gap-3">
                 <TeamLogo
@@ -332,20 +332,20 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
                   color={squadTeam.color}
                   logoUrl={squadTeam.logoUrl}
                   size="lg"
-                  className="rounded-2xl ring-1 ring-[#e8e2d5]"
+                  className="rounded-2xl ring-1 ring-[#E5E7EB]"
                 />
                 <div className="min-w-0 flex-1 text-left">
                   <DialogTitle className="text-xl font-serif font-bold text-[#111827] flex items-center gap-2">
                     <span className="truncate">{squadTeam.name}</span>
-                    <span className="text-[11px] font-mono font-bold uppercase px-2 py-0.5 rounded-md bg-[#f4efe6] border border-[#e8e2d5] text-[#0d3a24] shrink-0">
+                    <span className="text-[11px] font-mono font-bold uppercase px-2 py-0.5 rounded-md bg-[#F3F4F6] border border-[#E5E7EB] text-[#7A1426] shrink-0">
                       {squadTeam.shortName}
                     </span>
                   </DialogTitle>
                   <DialogDescription className="text-xs text-[#6b7280] mt-0.5 flex items-center gap-3">
                     <span>{squadTeam.players.length} squad player(s)</span>
                     {squadTeam.captain && (
-                      <span className="inline-flex items-center gap-1 text-[#0d3a24] font-semibold">
-                        <UserCheck className="w-3.5 h-3.5 text-[#c59b27]" />
+                      <span className="inline-flex items-center gap-1 text-[#7A1426] font-semibold">
+                        <UserCheck className="w-3.5 h-3.5 text-[#7A1426]" />
                         Captain: {squadTeam.captain}
                       </span>
                     )}
@@ -354,7 +354,7 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
               </div>
             </DialogHeader>
 
-            <div className="max-h-80 overflow-y-auto rounded-2xl border border-[#e8e2d5] bg-[#faf8f5] p-3 space-y-1.5 my-2">
+            <div className="max-h-80 overflow-y-auto rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-3 space-y-1.5 my-2">
               {squadTeam.players.length === 0 ? (
                 <div className="py-8 text-center text-xs text-[#6b7280]">
                   No players assigned to {squadTeam.name} yet.
@@ -366,22 +366,22 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
                   .map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center gap-2.5 rounded-xl bg-white border border-[#e8e2d5]/70 px-3 py-2 text-xs hover:border-[#0d3a24]/40 transition-colors"
+                      className="flex items-center gap-2.5 rounded-xl bg-white border border-[#E5E7EB]/70 px-3 py-2 text-xs hover:border-[#7A1426]/40 transition-colors"
                     >
-                      <span className="w-8 text-center font-mono font-bold text-[#6b7280] bg-[#f4efe6] py-0.5 rounded-md tabular-nums">
+                      <span className="w-8 text-center font-mono font-bold text-[#6b7280] bg-[#F3F4F6] py-0.5 rounded-md tabular-nums">
                         {p.jerseyNumber ? `#${p.jerseyNumber}` : '—'}
                       </span>
                       <span className="min-w-0 flex-1 truncate font-bold text-[#111827] text-sm">
                         {p.name}
                       </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#f4efe6] border border-[#e8e2d5] text-[#0d3a24]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#F3F4F6] border border-[#E5E7EB] text-[#7A1426]">
                         {ROLE_LABEL[p.role] ?? p.role}
                       </span>
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => setPlayerDialog({ open: true, teamId: squadTeam.id, player: p })}
-                          className="rounded-lg p-1.5 hover:bg-[#f4efe6] text-[#0d3a24] cursor-pointer"
+                          className="rounded-lg p-1.5 hover:bg-[#F3F4F6] text-[#7A1426] cursor-pointer"
                           aria-label={`Edit player ${p.name}`}
                         >
                           <Pencil className="h-3.5 w-3.5" aria-hidden />
@@ -404,7 +404,7 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl border-[#e8e2d5] text-xs font-bold hover:bg-[#f4efe6] text-[#0d3a24]"
+                className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6] text-[#7A1426]"
                 onClick={() => setTeamDialog({ open: true, team: squadTeam })}
               >
                 <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit Team Info
@@ -413,17 +413,17 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-xl border-[#e8e2d5] text-xs font-bold"
+                  className="rounded-xl border-[#E5E7EB] text-xs font-bold"
                   onClick={() => setSquadTeamId(null)}
                 >
                   Close
                 </Button>
                 <Button
                   type="button"
-                  className="bg-[#0d3a24] hover:bg-[#154d32] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer"
+                  className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer"
                   onClick={() => setPlayerDialog({ open: true, teamId: squadTeam.id })}
                 >
-                  <Users className="w-3.5 h-3.5 text-[#c59b27] mr-1.5" /> Add Player
+                  <Users className="w-3.5 h-3.5 text-white mr-1.5" /> Add Player
                 </Button>
               </div>
             </DialogFooter>
@@ -570,7 +570,7 @@ function TeamFormDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md bg-white border border-[#e8e2d5] rounded-3xl p-6 shadow-xl">
+      <DialogContent className="sm:max-w-md bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-serif font-bold text-[#111827]">
             {team ? 'Edit Team Franchise' : 'Create Team Franchise'}
@@ -584,13 +584,13 @@ function TeamFormDialog({
           {/* Logo Upload */}
           <div className="space-y-2">
             <Label className="text-xs font-bold text-[#111827] uppercase tracking-wider">Team Logo</Label>
-            <div className="flex items-center gap-4 p-3.5 rounded-2xl border border-[#e8e2d5] bg-[#faf8f5]">
+            <div className="flex items-center gap-4 p-3.5 rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB]">
               {logoUrl ? (
                 <div className="relative group shrink-0">
                   <img
                     src={logoUrl}
                     alt="Team Logo Preview"
-                    className="w-16 h-16 rounded-2xl object-cover border border-[#e8e2d5] bg-white shadow-xs"
+                    className="w-16 h-16 rounded-2xl object-cover border border-[#E5E7EB] bg-white shadow-xs"
                   />
                   <button
                     type="button"
@@ -605,8 +605,8 @@ function TeamFormDialog({
                   </button>
                 </div>
               ) : (
-                <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-[#e8e2d5] bg-white flex flex-col items-center justify-center text-[#9ca3af] shrink-0">
-                  <ImageIcon className="w-6 h-6 text-[#c59b27]" />
+                <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-[#E5E7EB] bg-white flex flex-col items-center justify-center text-[#9ca3af] shrink-0">
+                  <ImageIcon className="w-6 h-6 text-[#7A1426]" />
                   <span className="text-[9px] mt-0.5 font-bold uppercase tracking-wider">No Logo</span>
                 </div>
               )}
@@ -622,9 +622,9 @@ function TeamFormDialog({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-3.5 py-2 rounded-xl bg-white border border-[#e8e2d5] hover:bg-[#f4efe6] text-xs font-bold text-[#0d3a24] shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+                  className="px-3.5 py-2 rounded-xl bg-white border border-[#E5E7EB] hover:bg-[#F3F4F6] text-xs font-bold text-[#7A1426] shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-98"
                 >
-                  <Upload className="w-3.5 h-3.5 text-[#c59b27]" />
+                  <Upload className="w-3.5 h-3.5 text-[#7A1426]" />
                   <span>{logoUrl ? 'Change Logo Image' : 'Upload Team Logo'}</span>
                 </button>
                 <p className="text-[11px] text-[#6b7280]">
@@ -641,7 +641,7 @@ function TeamFormDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Rising Stars CC"
-              className="rounded-xl border-[#e8e2d5] text-xs font-medium focus-visible:ring-[#0d3a24]"
+              className="rounded-xl border-[#E5E7EB] text-xs font-medium focus-visible:ring-[#7A1426]"
             />
           </div>
 
@@ -653,7 +653,7 @@ function TeamFormDialog({
               maxLength={5}
               onChange={(e) => setShortName(e.target.value.toUpperCase())}
               placeholder="e.g. RSC"
-              className="rounded-xl border-[#e8e2d5] text-xs font-bold uppercase focus-visible:ring-[#0d3a24]"
+              className="rounded-xl border-[#E5E7EB] text-xs font-bold uppercase focus-visible:ring-[#7A1426]"
             />
           </div>
 
@@ -664,23 +664,23 @@ function TeamFormDialog({
               value={captain}
               onChange={(e) => setCaptain(e.target.value)}
               placeholder="e.g. Rohit Sharma"
-              className="rounded-xl border-[#e8e2d5] text-xs font-medium focus-visible:ring-[#0d3a24]"
+              className="rounded-xl border-[#E5E7EB] text-xs font-medium focus-visible:ring-[#7A1426]"
             />
           </div>
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl border-[#e8e2d5] text-xs font-bold hover:bg-[#f4efe6]" onClick={onClose}>
+          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            className="bg-[#0d3a24] hover:bg-[#154d32] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98"
+            className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98"
             disabled={!name.trim() || !shortName.trim()}
             onClick={() =>
               onSubmit({
                 name: name.trim(),
                 shortName: shortName.trim(),
-                color: team?.color || '#0d3a24',
+                color: team?.color || '#7A1426',
                 logoUrl: logoUrl || null,
                 captain: captain.trim() || undefined,
               })
@@ -713,7 +713,7 @@ function PlayerFormDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-sm bg-white border border-[#e8e2d5] rounded-3xl p-6 shadow-xl">
+      <DialogContent className="sm:max-w-sm bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-serif font-bold text-[#111827]">
             {player ? 'Edit player' : 'Add player'}
@@ -728,14 +728,14 @@ function PlayerFormDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Full name"
-              className="rounded-xl border-[#e8e2d5]"
+              className="rounded-xl border-[#E5E7EB]"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label className="text-xs font-bold">Role</Label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger aria-label="Role" className="rounded-xl border-[#e8e2d5]"><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Role" className="rounded-xl border-[#E5E7EB]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(ROLE_LABEL).map(([k, v]) => (
                     <SelectItem key={k} value={k}>{v}</SelectItem>
@@ -753,15 +753,15 @@ function PlayerFormDialog({
                 value={jersey}
                 onChange={(e) => setJersey(e.target.value)}
                 placeholder="e.g. 7"
-                className="rounded-xl border-[#e8e2d5]"
+                className="rounded-xl border-[#E5E7EB]"
               />
             </div>
           </div>
         </div>
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl border-[#e8e2d5] text-xs font-bold" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold" onClick={onClose}>Cancel</Button>
           <Button
-            className="bg-[#0d3a24] hover:bg-[#154d32] text-white text-xs font-bold rounded-xl"
+            className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold rounded-xl"
             disabled={!name.trim()}
             onClick={() =>
               onSubmit({

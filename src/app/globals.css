@@ -40,40 +40,40 @@
 
 :root {
   --radius: 0.75rem;
-  --background: #f8f6f0;
+  --background: #F4F5F7;
   --foreground: #111827;
-  --card: #ffffff;
+  --card: #FFFFFF;
   --card-foreground: #111827;
-  --popover: #ffffff;
+  --popover: #FFFFFF;
   --popover-foreground: #111827;
-  --primary: #0d3a24;
-  --primary-foreground: #ffffff;
-  --secondary: #f4efe6;
-  --secondary-foreground: #0d3a24;
-  --muted: #f4efe6;
-  --muted-foreground: #6b7280;
-  --accent: #c59b27;
-  --accent-foreground: #ffffff;
-  --destructive: #dc2626;
-  --border: #e8e2d5;
-  --input: #e8e2d5;
-  --ring: #0d3a24;
+  --primary: #7A1426;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F3F4F6;
+  --secondary-foreground: #111827;
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
+  --accent: #7A1426;
+  --accent-foreground: #FFFFFF;
+  --destructive: #B91C1C;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #7A1426;
 }
 
 ::selection {
-  background: rgba(201, 162, 39, 0.35);
-  color: #0d3a24;
+  background: rgba(122, 20, 38, 0.18);
+  color: #7A1426;
 }
 
 /* Custom scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(13, 58, 36, 0.2) transparent;
+  scrollbar-color: rgba(122, 20, 38, 0.22) transparent;
 }
 *::-webkit-scrollbar { width: 5px; height: 5px; }
 *::-webkit-scrollbar-track { background: transparent; }
-*::-webkit-scrollbar-thumb { background: rgba(13, 58, 36, 0.2); border-radius: 999px; }
-*::-webkit-scrollbar-thumb:hover { background: rgba(13, 58, 36, 0.4); }
+*::-webkit-scrollbar-thumb { background: rgba(122, 20, 38, 0.22); border-radius: 999px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(122, 20, 38, 0.45); }
 
 @keyframes pulse-subtle {
   0%, 100% { opacity: 1; transform: scale(1); }
