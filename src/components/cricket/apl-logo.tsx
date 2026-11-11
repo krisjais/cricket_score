@@ -2,50 +2,67 @@
 
 import { cn } from '@/lib/utils'
 
+export type LogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
+
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: LogoSize
   className?: string
+  imgClassName?: string
   showText?: boolean
   title?: string
   subtitle?: string
   variant?: 'light' | 'dark'
+  lazy?: boolean
+  priority?: boolean
+  alt?: string
+}
+
+const SIZE_MAP: Record<LogoSize, string> = {
+  xs: 'h-8',
+  sm: 'h-10',
+  md: 'h-12',
+  lg: 'h-20',
+  xl: 'h-24',
+  '2xl': 'h-28 xl:h-32',
 }
 
 export function NplLogo({
   size = 'md',
   className = '',
+  imgClassName = '',
   showText = false,
   title = 'Nexcore Premier League',
   subtitle = 'Cricket Tournament',
   variant = 'light',
+  lazy = false,
+  priority = false,
+  alt,
 }: LogoProps) {
-  const sizeMap = {
-    sm: 'w-9 h-9',
-    md: 'w-10 h-10',
-    lg: 'w-13 h-13',
-    xl: 'w-16 h-16',
-  }
+  const resolvedAlt = alt ?? (showText ? '' : `${title} — APL Season 9 Logo`)
 
   return (
-    <div className={cn('flex items-center gap-2.5', className)}>
-      <div
-        className={cn(
-          'relative shrink-0 rounded-full flex items-center justify-center shadow-xs border',
-          variant === 'dark'
-            ? 'bg-[#1D2538] border-white/15'
-            : 'bg-white border-gray-200',
-          sizeMap[size]
-        )}
-      >
-        {/* Clean Vector NPL Crest */}
-        <svg viewBox="0 0 40 40" className="w-[82%] h-[82%]" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="20" r="18" stroke="#7A1426" strokeWidth="2.5" />
-          <path d="M12 29L27 11" stroke={variant === 'dark' ? '#FFFFFF' : '#111827'} strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M28 29L13 11" stroke="#7A1426" strokeWidth="2.4" strokeLinecap="round" />
-          <circle cx="20" cy="12.5" r="3" fill="#7A1426" />
-          <circle cx="20" cy="27.5" r="2.2" fill={variant === 'dark' ? '#E5E7EB' : '#1F2937'} />
-        </svg>
-      </div>
+    <div className={cn('inline-flex items-center gap-2.5', className)}>
+      <picture className="inline-flex shrink-0 items-center justify-center">
+        <source srcSet="/apl-logo-s9.avif" type="image/avif" />
+        <source srcSet="/apl-logo-s9.webp" type="image/webp" />
+        <img
+          src="/apl-logo-s9.png"
+          alt={resolvedAlt}
+          width={400}
+          height={478}
+          decoding="async"
+          loading={lazy ? 'lazy' : undefined}
+          fetchPriority={priority ? 'high' : undefined}
+          className={cn(
+            'w-auto object-contain select-none pointer-events-none',
+            SIZE_MAP[size],
+            variant === 'dark'
+              ? 'drop-shadow-[0_6px_16px_rgba(0,0,0,0.45)]'
+              : 'drop-shadow-[0_2px_4px_rgba(17,24,39,0.2)]',
+            imgClassName
+          )}
+        />
+      </picture>
 
       {showText && (
         <div className="flex flex-col text-left leading-tight">

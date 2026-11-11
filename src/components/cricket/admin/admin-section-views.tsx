@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarClock, MapPin, Trophy, UserCog, ArrowRight, Play, ShieldCheck, CheckCircle2 } from 'lucide-react'
+import { CalendarClock, Trophy, UserCog, Play, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { StatusBadge, TeamLogo } from '@/components/cricket/ui-bits'
 import type { AdminSession, MatchSummary } from '@/lib/client'
 import type { AdminTab } from '@/components/cricket/admin/admin-sidebar'
@@ -82,90 +82,6 @@ export function ScheduleAdminView({
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-export function TurfsAdminView({
-  matches,
-  onScoreMatch,
-}: {
-  matches: MatchSummary[]
-  onScoreMatch: (id: string) => void
-}) {
-  const byVenue = new Map<string, MatchSummary[]>()
-  for (const m of matches) {
-    const key = (m.venue || 'Turf 01').trim()
-    const list = byVenue.get(key) ?? []
-    list.push(m)
-    byVenue.set(key, list)
-  }
-
-  const venues = [...byVenue.entries()]
-
-  return (
-    <div className="p-4 sm:p-6 lg:p-8 min-h-full bg-[#F4F5F7] pb-8 space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] flex items-center gap-2.5 tracking-tight">
-          <span className="p-2 rounded-xl bg-[#7A1426]/10 text-[#7A1426]">
-            <MapPin className="w-5 h-5" />
-          </span>
-          <span>Turfs &amp; Venues</span>
-        </h1>
-        <p className="text-xs text-gray-500 mt-1 font-medium">
-          Ground assignments and live turf status across all scheduled and active matches
-        </p>
-      </div>
-
-      {venues.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center text-xs text-gray-500">
-          No venues or turfs registered on fixtures yet. Create a match with a venue name (e.g. Turf 01, Turf 02).
-        </div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2">
-          {venues.map(([venue, list]) => {
-            const liveHere = list.filter((m) => m.status === 'LIVE')
-            return (
-              <div key={venue} className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-                <div className="px-5 py-3.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                  <span className="font-bold text-sm text-[#111827] flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#7A1426]" />
-                    <span>{venue}</span>
-                  </span>
-                  <span className="text-[11px] font-bold text-gray-500">
-                    {liveHere.length > 0 ? `${liveHere.length} Live` : `${list.length} Match(es)`}
-                  </span>
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {list.map((m) => (
-                    <div key={m.id} className="p-4 flex items-center justify-between gap-3 hover:bg-gray-50">
-                      <div className="min-w-0">
-                        <div className="font-bold text-xs sm:text-sm text-[#111827] truncate">
-                          {m.teamA.name} vs {m.teamB.name}
-                        </div>
-                        <div className="text-[11px] text-gray-500 mt-0.5">
-                          {m.format} ({m.totalOvers} ov)
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <StatusBadge status={m.status} />
-                        <button
-                          type="button"
-                          onClick={() => onScoreMatch(m.id)}
-                          className="text-xs font-bold text-[#7A1426] hover:underline inline-flex items-center gap-0.5 cursor-pointer"
-                        >
-                          <span>Manage</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }

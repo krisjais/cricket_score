@@ -9,6 +9,24 @@ import { ChevronLeft, Trophy, Users, UserCheck, Shield } from 'lucide-react'
 import { api, ROLE_LABEL } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
 
+interface TeamPlayerRow {
+  id: string
+  playerCode?: string | null
+  name: string
+  role: string
+  jerseyNumber: number | null
+  designation?: string
+  membershipStatus?: string
+}
+
+interface TeamSeasonOption {
+  id: string
+  name: string
+  code: string
+  year: number
+  status: string
+}
+
 interface TeamDetail {
   id: string
   name: string
@@ -16,7 +34,9 @@ interface TeamDetail {
   color: string
   logoUrl?: string | null
   captain: string | null
-  players: { id: string; name: string; role: string; jerseyNumber: number | null }[]
+  selectedSeasonId?: string | null
+  seasons?: TeamSeasonOption[]
+  players: TeamPlayerRow[]
   stats: Record<
     string,
     {
@@ -37,13 +57,26 @@ interface TeamDetail {
 
 export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate: (to: string) => void }) {
   const [team, setTeam] = useState<TeamDetail | null>(null)
+  const [seasonId, setSeasonId] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api<TeamDetail>(`/api/teams/${teamId}`)
-      .then(setTeam)
-      .catch((e) => setError(e.message))
-  }, [teamId])
+    let alive = true
+    const qs = seasonId ? `?seasonId=${encodeURIComponent(seasonId)}` : ''
+    api<TeamDetail>(`/api/teams/${teamId}${qs}`)
+      .then((res) => {
+        if (!alive) return
+        setTeam(res)
+        setError(null)
+      })
+      .catch((e) => {
+        if (!alive) return
+        setError(e.message)
+      })
+    return () => {
+      alive = false
+    }
+  }, [teamId, seasonId])
 
   if (error) {
     return (
@@ -123,41 +156,86 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
       {/* Squad Roster Table */}
       <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs overflow-hidden">
         <CardHeader className="bg-[#F9FAFB] border-b border-[#E5E7EB] p-5">
-          <CardTitle className="text-base font-serif font-bold text-[#111827] flex items-center justify-between">
-            <span>Official Squad Roster</span>
-            <span className="text-xs font-bold text-[#6b7280]">{players.length} players listed</span>
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base font-serif font-bold text-[#111827]">
+                Official Squad Roster
+              </CardTitle>
+              <p className="text-xs font-bold text-[#6b7280] mt-0.5">{players.length} players listed</p>
+            </div>
+            {team.seasons && team.seasons.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label htmlFor="team-season-filter" className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                  Season Roster
+                </label>
+                <select
+                  id="team-season-filter"
+                  value={seasonId}
+                  onChange={(e) => setSeasonId(e.target.value)}
+                  className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#111827]"
+                >
+                  <option value="">Current Squad & All-Time</option>
+                  {team.seasons.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.year})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-[#F3F4F6]">
-              <TableRow className="border-b border-[#E5E7EB]">
-                <TableHead className="pl-6 text-[#7A1426] font-bold text-[11px] uppercase tracking-wider w-16">Jersey #</TableHead>
-                <TableHead className="text-[#7A1426] font-bold text-[11px] uppercase tracking-wider">Player Name</TableHead>
-                <TableHead className="text-[#7A1426] font-bold text-[11px] uppercase tracking-wider text-right">Role</TableHead>
-                {hasAnyStat && (
-                  <TableHead className="text-[#7A1426] font-bold text-[11px] uppercase tracking-wider text-right pr-6">
-                    Tournament Record
-                  </TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {players.map((p) => {
-                const s = team.stats[p.id]
-                return (
-                  <TableRow key={p.id} className="border-b border-[#E5E7EB] hover:bg-[#F4F5F7] transition-colors">
-                    <TableCell className="pl-6 font-bold tabular-nums text-xs text-[#6b7280]">
-                      {p.jerseyNumber != null ? `#${p.jerseyNumber}` : '—'}
+          <div className="table-wrapper" tabIndex={0}>
+            <Table>
+              <TableHeader className="bg-[#F3F4F6]">
+                <TableRow className="border-b border-[#E5E7EB]">
+                  <TableHead className="pl-6 text-[#7A1426] font-bold text-[11px] uppercase tracking-wider w-16">Jersey #</TableHead>
+                  <TableHead className="text-[#7A1426] font-bold text-[11px] uppercase tracking-wider">Player Name</TableHead>
+                  <TableHead className="text-[#7A1426] font-bold text-[11px] uppercase tracking-wider text-right">Role</TableHead>
+                  {hasAnyStat && (
+                    <TableHead className="text-[#7A1426] font-bold text-[11px] uppercase tracking-wider text-right pr-6">
+                      {seasonId ? 'Season Record' : 'Tournament Record'}
+                    </TableHead>
+                  )}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {players.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={hasAnyStat ? 4 : 3} className="py-10 text-center text-xs text-gray-500">
+                      No squad memberships recorded for this selection yet.
                     </TableCell>
-                    <TableCell className="font-bold text-sm text-[#111827]">
-                      {p.name}
-                      {team.captain === p.name && (
-                        <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#7A1426]/20 border border-[#7A1426]/40 text-[#916922]">
-                          Captain
-                        </span>
-                      )}
-                    </TableCell>
+                  </TableRow>
+                ) : (
+                  players.map((p) => {
+                    const s = team.stats[p.id]
+                    return (
+                      <TableRow key={p.id} className="border-b border-[#E5E7EB] hover:bg-[#F4F5F7] transition-colors">
+                        <TableCell className="pl-6 font-bold tabular-nums text-xs text-[#6b7280]">
+                          {p.jerseyNumber != null ? `#${p.jerseyNumber}` : '—'}
+                        </TableCell>
+                        <TableCell className="font-bold text-sm text-[#111827]">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/players/${encodeURIComponent(p.playerCode || p.id)}`)}
+                              className="hover:text-[#7A1426] hover:underline cursor-pointer text-left font-bold"
+                            >
+                              {p.name}
+                            </button>
+                            {p.playerCode && (
+                              <span className="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200 text-gray-600">
+                                {p.playerCode}
+                              </span>
+                            )}
+                            {team.captain === p.name && (
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#7A1426]/20 border border-[#7A1426]/40 text-[#916922]">
+                                Captain
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
                     <TableCell className="text-right">
                       <span className="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] text-[#7A1426]">
                         {ROLE_LABEL[p.role] ?? p.role}
@@ -176,11 +254,13 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
                         )}
                       </TableCell>
                     )}
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

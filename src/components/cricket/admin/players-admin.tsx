@@ -45,6 +45,8 @@ import {
   FileText,
   CheckCircle2,
   AlertCircle,
+  ExternalLink,
+  BadgeCheck,
 } from 'lucide-react'
 import { api, ROLE_LABEL } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
@@ -62,6 +64,10 @@ interface TeamItem {
 
 interface PlayerItem {
   id: string
+  playerCode?: string | null
+  isClaimed?: boolean
+  isVerified?: boolean
+  status?: string
   name: string
   role: string
   gender?: 'MALE' | 'FEMALE'
@@ -71,7 +77,7 @@ interface PlayerItem {
   team?: TeamItem | null
 }
 
-export function PlayersAdmin() {
+export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } = {}) {
   const { toast } = useToast()
   const [players, setPlayers] = useState<PlayerItem[] | null>(null)
   const [teams, setTeams] = useState<TeamItem[]>([])
@@ -144,7 +150,7 @@ export function PlayersAdmin() {
       // Search filter
       if (search.trim()) {
         const q = search.toLowerCase()
-        const text = `${p.name} ${p.jerseyNumber ?? ''} ${p.team?.name ?? ''} ${p.team?.shortName ?? ''}`.toLowerCase()
+        const text = `${p.name} ${p.playerCode ?? ''} ${p.jerseyNumber ?? ''} ${p.team?.name ?? ''} ${p.team?.shortName ?? ''}`.toLowerCase()
         if (!text.includes(q)) return false
       }
 
@@ -335,12 +341,31 @@ export function PlayersAdmin() {
                               {p.name.slice(0, 2).toUpperCase()}
                             </div>
                           )}
-                          <span>{p.name}</span>
-                          {assignedTeam?.captain === p.name && (
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#7A1426]/20 border border-[#7A1426]/40 text-[#916922]">
-                              Captain
-                            </span>
-                          )}
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span>{p.name}</span>
+                              {p.isVerified && (
+                                <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" aria-label="Verified profile" />
+                              )}
+                              {assignedTeam?.captain === p.name && (
+                                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#7A1426]/20 border border-[#7A1426]/40 text-[#916922]">
+                                  Captain
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                              {p.playerCode && (
+                                <span className="font-mono text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.2 rounded">
+                                  {p.playerCode}
+                                </span>
+                              )}
+                              {p.isClaimed === false && (
+                                <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
+                                  Unclaimed
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
@@ -408,6 +433,16 @@ export function PlayersAdmin() {
                       </td>
                       <td className="pr-6 py-3.5 text-right">
                         <div className="inline-flex items-center gap-1.5">
+                          {navigate && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/players/${encodeURIComponent(p.playerCode || p.id)}`)}
+                              className="p-1.5 rounded-lg border border-[#E5E7EB] hover:bg-[#F3F4F6] text-gray-700 transition-colors cursor-pointer"
+                              title="View Public Career Profile"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => setAssignDialog({ open: true, player: p })}
                             className="p-1.5 rounded-lg border border-[#E5E7EB] hover:bg-[#F3F4F6] text-[#7A1426] transition-colors cursor-pointer"

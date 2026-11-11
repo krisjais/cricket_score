@@ -144,7 +144,10 @@ export interface HashRoute {
 }
 
 function parseHash(): HashRoute {
-  const raw = window.location.hash.replace(/^#\/?/, '')
+  const hashRaw = window.location.hash.replace(/^#\/?/, '')
+  const raw =
+    hashRaw ||
+    `${window.location.pathname.replace(/^\/?/, '')}${window.location.search || ''}`
   const [pathPart, queryPart] = raw.split('?')
   return {
     segments: pathPart ? pathPart.split('/').filter(Boolean) : [],
@@ -152,12 +155,12 @@ function parseHash(): HashRoute {
   }
 }
 
-let lastRawHash: string | null = null
+let lastRawLocation: string | null = null
 let lastRoute: HashRoute = { segments: [], query: new URLSearchParams() }
 function getHashSnapshot(): HashRoute {
-  const raw = window.location.hash
-  if (raw !== lastRawHash) {
-    lastRawHash = raw
+  const raw = `${window.location.hash}||${window.location.pathname}${window.location.search}`
+  if (raw !== lastRawLocation) {
+    lastRawLocation = raw
     lastRoute = parseHash()
   }
   return lastRoute
@@ -172,13 +175,23 @@ function subscribeHash(onChange: () => void): () => void {
     onChange()
   }
   window.addEventListener('hashchange', listener)
-  return () => window.removeEventListener('hashchange', listener)
+  window.addEventListener('popstate', listener)
+  return () => {
+    window.removeEventListener('hashchange', listener)
+    window.removeEventListener('popstate', listener)
+  }
 }
 
 export function useHashRoute(): [HashRoute, (to: string) => void] {
   const route = useSyncExternalStore(subscribeHash, getHashSnapshot, getServerHashSnapshot)
   const navigate = useCallback((to: string) => {
-    window.location.hash = to.startsWith('/') ? to : `/${to}`
+    const clean = to.startsWith('/') ? to : `/${to}`
+    if (window.location.pathname !== '/' && typeof window.history?.replaceState === 'function') {
+      window.history.replaceState(null, '', `/#${clean}`)
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+      return
+    }
+    window.location.hash = clean
   }, [])
   return [route, navigate]
 }
@@ -216,7 +229,9 @@ export function useAdminSession(): AdminSession {
 
   useEffect(() => {
     mounted.current = true
-    void refresh()
+    queueMicrotask(() => {
+      if (mounted.current) void refresh()
+    })
     return () => {
       mounted.current = false
     }
@@ -228,6 +243,106 @@ export function useAdminSession(): AdminSession {
   }, [refresh])
 
   return { ...session, loading, refresh, logout }
+}
+
+// ---------------------------------------------------------------------------
+// Player session
+// ---------------------------------------------------------------------------
+
+export interface PlayerSessionUser {
+  id: string
+  name: string
+  email: string | null
+  mobile: string | null
+  role: string
+  emailVerified: boolean
+  mobileVerified: boolean
+  playerId: string | null
+}
+
+export interface PlayerSessionProfile {
+  id: string
+  playerCode: string | null
+  name: string
+  role: string
+  avatarUrl: string | null
+  isVerified: boolean
+}
+
+export interface PlayerSession {
+  isAuthenticated: boolean
+  user: PlayerSessionUser | null
+  player: PlayerSessionProfile | null
+  currentMembership: {
+    id: string
+    team?: { id: string; name: string; shortName: string; color: string; logoUrl?: string | null } | null
+    season?: { id: string; name: string; year: number; status: string } | null
+  } | null
+  loading: boolean
+  refresh: () => Promise<void>
+  logout: () => Promise<void>
+}
+
+export function usePlayerSession(): PlayerSession {
+  const [state, setState] = useState<Omit<PlayerSession, 'loading' | 'refresh' | 'logout'>>({
+    isAuthenticated: false,
+    user: null,
+    player: null,
+    currentMembership: null,
+  })
+  const [loading, setLoading] = useState(true)
+  const mounted = useRef(true)
+
+  const refresh = useCallback(async () => {
+    try {
+      type PlayerMePayload = {
+        isAuthenticated: boolean
+        user: PlayerSessionUser | null
+        player: PlayerSessionProfile | null
+        currentMembership: PlayerSession['currentMembership']
+      }
+      let me = await api<PlayerMePayload>('/api/player-auth/me')
+      if (!me.isAuthenticated) {
+        try {
+          await api('/api/player-auth/refresh', { method: 'POST' })
+          me = await api<PlayerMePayload>('/api/player-auth/me')
+        } catch {
+          // No valid refresh cookie; remain signed out
+        }
+      }
+      if (mounted.current) {
+        setState({
+          isAuthenticated: Boolean(me.isAuthenticated),
+          user: me.user,
+          player: me.player,
+          currentMembership: me.currentMembership ?? null,
+        })
+      }
+    } catch {
+      if (mounted.current) {
+        setState({ isAuthenticated: false, user: null, player: null, currentMembership: null })
+      }
+    } finally {
+      if (mounted.current) setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    mounted.current = true
+    queueMicrotask(() => {
+      if (mounted.current) void refresh()
+    })
+    return () => {
+      mounted.current = false
+    }
+  }, [refresh])
+
+  const logout = useCallback(async () => {
+    await api('/api/player-auth/logout', { method: 'POST' })
+    await refresh()
+  }, [refresh])
+
+  return { ...state, loading, refresh, logout }
 }
 
 // ---------------------------------------------------------------------------

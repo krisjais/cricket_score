@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { CalendarDays, Trophy, Users, ArrowRight, Radio } from 'lucide-react'
 import { MatchCard } from '@/components/cricket/match-card'
+import { AplLogo } from '@/components/cricket/apl-logo'
 import { TeamLogo, LiveBadge } from '@/components/cricket/ui-bits'
 import type { MatchSummary } from '@/lib/client'
 
@@ -49,6 +50,7 @@ export function HomePage({
         <img
           src="/npl-hero-banner.jpg"
           alt="Nexcore Premier League Cricket"
+          fetchPriority="high"
           className="absolute inset-0 h-full w-full object-cover object-right select-none pointer-events-none"
         />
         {/* Clean Left Readability Gradient */}
@@ -60,18 +62,21 @@ export function HomePage({
           className="pointer-events-none absolute -right-12 top-0 bottom-0 w-16 bg-[#7A1426]/85 -skew-x-12 hidden md:block"
         />
 
-        <div className="relative z-10 p-6 sm:p-10 max-w-2xl space-y-2.5">
-          <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-[#111827] tracking-tight leading-[1.12]">
-            Nexcore
-            <br />
-            Premier League
-          </h1>
-          <p className="text-base sm:text-xl font-medium text-gray-700">
-            Cricket Tournament 2026
-          </p>
-          <p className="text-xs sm:text-sm font-medium text-gray-500 pt-1">
-            Live Scores &bull; Match Updates &bull; Statistics
-          </p>
+        <div className="relative z-10 p-6 sm:p-10 max-w-3xl flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-7">
+          <AplLogo size="xl" className="shrink-0 self-start sm:self-center" alt="APL Season 9 Official Emblem" />
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-[#111827] tracking-tight leading-[1.12]">
+              Nexcore
+              <br />
+              Premier League
+            </h1>
+            <p className="text-base sm:text-xl font-medium text-gray-700">
+              Cricket Tournament 2026
+            </p>
+            <p className="text-xs sm:text-sm font-medium text-gray-500 pt-0.5">
+              Live Scores &bull; Match Updates &bull; Statistics
+            </p>
+          </div>
         </div>
       </section>
 

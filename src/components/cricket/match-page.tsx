@@ -16,6 +16,7 @@ import {
   Coins,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { AplLogo } from '@/components/cricket/apl-logo'
 import { BallDot, BallDotsRow, LiveBadge, StatusBadge, TeamLogo } from '@/components/cricket/ui-bits'
 import { ScorecardView } from '@/components/cricket/scorecard-view'
 import { useMatchChannel, fmtDate, api } from '@/lib/client'
@@ -113,12 +114,20 @@ export function MatchPage({ matchId, navigate }: { matchId: string; navigate: (t
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="min-w-0">
-              <div className="text-sm font-bold text-[#111827] truncate">Nexcore Premier League</div>
-              <div className="text-[11px] text-gray-500 font-medium truncate">
-                {m.teamA.shortName} vs {m.teamB.shortName} &bull; Live Match
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2.5 text-left cursor-pointer focus:outline-none min-w-0"
+              aria-label="Nexcore Premier League Home"
+            >
+              <AplLogo size="xs" />
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-[#111827] truncate">Nexcore Premier League</div>
+                <div className="text-[11px] text-gray-500 font-medium truncate">
+                  {m.teamA.shortName} vs {m.teamB.shortName} &bull; Live Match
+                </div>
               </div>
-            </div>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -461,7 +470,7 @@ export function MatchPage({ matchId, navigate }: { matchId: string; navigate: (t
         )}
 
         {/* ===================== TAB 2: SCORECARD ===================== */}
-        {activeTab === 'scorecard' && <ScorecardView payload={payload} />}
+        {activeTab === 'scorecard' && <ScorecardView payload={payload} navigate={navigate} />}
 
         {/* ===================== TAB 3: FULL COMMENTARY ===================== */}
         {activeTab === 'commentary' && (

@@ -58,6 +58,14 @@ export interface MatchSummary {
   totalOvers: number
   venue: string | null
   status: string
+  seasonId?: string | null
+  tournamentId?: string | null
+  matchDate?: string | null
+  scorecardStatus?: string
+  playerOfMatchId?: string | null
+  playingXIA?: string[]
+  playingXIB?: string[]
+  playerStatuses?: Array<{ playerId: string; status: string; notes?: string | null }>
   currentInnings: number
   tossWinnerId: string | null
   tossDecision: string | null

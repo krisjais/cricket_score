@@ -62,12 +62,13 @@ import { cn } from '@/lib/utils'
 const WICKET_LABELS: Array<[WicketType, string]> = [
   ['BOWLED', 'Bowled'],
   ['CAUGHT', 'Caught'],
-  ['CAUGHT_AND_BOWLED', 'Caught & bowled'],
-  ['LBW', 'LBW'],
-  ['RUN_OUT', 'Run out'],
-  ['STUMPED', 'Stumped'],
-  ['HIT_WICKET', 'Hit wicket'],
+  ['RUN_OUT', 'Run Out'],
+  ['STUMPED', 'Stump Out'],
+  ['CAUGHT_AND_BOWLED', 'Caught & Bowled'],
+  ['HIT_WICKET', 'Hit Wicket'],
 ]
+
+const WIDE_ALLOWED_WICKETS = new Set<WicketType>(['STUMPED', 'RUN_OUT', 'HIT_WICKET'])
 
 interface SquadPlayer {
   id: string
@@ -97,7 +98,7 @@ export function ScoringConsole({
 
   const [tossOpen, setTossOpen] = useState(false)
   const [startOpen, setStartOpen] = useState(false)
-  const [wicketOpen, setWicketOpen] = useState(false)
+  const [wicketDialog, setWicketDialog] = useState<'NORMAL' | 'WIDE' | null>(null)
   const [bowlerDialogOpen, setBowlerDialogOpen] = useState(false)
   const [extraDialog, setExtraDialog] = useState<ExtraType | null>(null)
   const [undoOpen, setUndoOpen] = useState(false)
@@ -464,7 +465,7 @@ export function ScoringConsole({
 
           {/* LIVE / PAUSED 2-COLUMN SCORING COCKPIT (Panel 4 Reference) */}
           {(m.status === 'LIVE' || m.status === 'PAUSED') && live && current && (
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-0">
               {/* Urgent Selection Banners */}
               {(live.needsNewBatsman || live.overComplete) && m.status === 'LIVE' && (
                 <Card className="rounded-2xl border-amber-300 bg-amber-50">
@@ -640,7 +641,7 @@ export function ScoringConsole({
                     <button
                       type="button"
                       disabled={scoringBlocked}
-                      onClick={() => setWicketOpen(true)}
+                      onClick={() => setWicketDialog('NORMAL')}
                       className="h-14 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-[#991B1B] font-bold text-sm shadow-2xs transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-45 disabled:cursor-not-allowed"
                     >
                       <span className="w-6 h-6 rounded-full bg-[#991B1B] text-white text-xs font-black inline-flex items-center justify-center">
@@ -802,19 +803,20 @@ export function ScoringConsole({
         </Dialog>
       )}
 
-      {wicketOpen && live && (
+      {wicketDialog && live && (
         <WicketDialog
           bowlingTeamId={live.bowlingTeamId}
           strikerId={live.strikerId}
           nonStrikerId={live.nonStrikerId}
           strikerName={striker?.name ?? 'striker'}
           nonStrikerName={nonStriker?.name ?? 'non-striker'}
+          initialDelivery={wicketDialog}
           busy={busy}
-          onClose={() => setWicketOpen(false)}
+          onClose={() => setWicketDialog(null)}
           onSubmit={async (input) => {
             const done = await record(input)
             if (done) {
-              setWicketOpen(false)
+              setWicketDialog(null)
               toast({ title: 'Wicket recorded' })
             }
           }}
@@ -824,11 +826,19 @@ export function ScoringConsole({
       {extraDialog && (
         <ExtrasDialog
           kind={extraDialog}
+          bowlingTeamId={live?.bowlingTeamId ?? null}
+          strikerId={live?.strikerId ?? null}
+          nonStrikerId={live?.nonStrikerId ?? null}
+          strikerName={striker?.name ?? 'striker'}
+          nonStrikerName={nonStriker?.name ?? 'non-striker'}
           busy={busy}
           onClose={() => setExtraDialog(null)}
           onSubmit={async (input) => {
             const done = await record(input)
-            if (done) setExtraDialog(null)
+            if (done) {
+              setExtraDialog(null)
+              if (input.wicketType) toast({ title: 'Wicket recorded' })
+            }
           }}
         />
       )}
@@ -951,12 +961,170 @@ function BowlerPrompt({
   )
 }
 
+function useBowlingFielders(bowlingTeamId: string | null) {
+  const [fielders, setFielders] = useState<SquadPlayer[]>([])
+  const [loadedTeamId, setLoadedTeamId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!bowlingTeamId) return
+    let alive = true
+    api<{ players: SquadPlayer[] }>(`/api/teams/${bowlingTeamId}`)
+      .then((t) => {
+        if (!alive) return
+        setFielders(t.players)
+        setLoadedTeamId(bowlingTeamId)
+      })
+      .catch(() => {
+        if (!alive) return
+        setFielders([])
+        setLoadedTeamId(bowlingTeamId)
+      })
+    return () => {
+      alive = false
+    }
+  }, [bowlingTeamId])
+
+  return {
+    fielders: bowlingTeamId && loadedTeamId === bowlingTeamId ? fielders : [],
+    loadingFielders: Boolean(bowlingTeamId) && loadedTeamId !== bowlingTeamId,
+  }
+}
+
+function RunOutBatterFieldset({
+  strikerId,
+  nonStrikerId,
+  strikerName,
+  nonStrikerName,
+  value,
+  onChange,
+  name,
+}: {
+  strikerId: string | null
+  nonStrikerId: string | null
+  strikerName: string
+  nonStrikerName: string
+  value: 'STRIKER' | 'NON_STRIKER'
+  onChange: (next: 'STRIKER' | 'NON_STRIKER') => void
+  name: string
+}) {
+  return (
+    <fieldset className="space-y-2">
+      <legend className="text-sm font-medium text-[#111827] mb-1.5">
+        Which batter is out?
+      </legend>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {(
+          [
+            ['STRIKER', `${strikerName} (Striker)`, Boolean(strikerId)],
+            ['NON_STRIKER', `${nonStrikerName} (Non-Striker)`, Boolean(nonStrikerId)],
+          ] as const
+        ).map(([opt, text, enabled]) => {
+          const selected = value === opt
+          return (
+            <label
+              key={opt}
+              className={cn(
+                'flex items-center gap-2.5 min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+                enabled ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                selected
+                  ? 'border-[#7A1426] bg-[#7A1426]/8 text-[#7A1426]'
+                  : 'border-gray-200 bg-white text-[#111827] hover:bg-gray-50'
+              )}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={opt}
+                disabled={!enabled}
+                checked={selected}
+                onChange={() => onChange(opt)}
+                className="h-4 w-4 accent-[#7A1426] shrink-0"
+              />
+              <span className="truncate">{text}</span>
+            </label>
+          )
+        })}
+      </div>
+    </fieldset>
+  )
+}
+
+function FielderAssistSelect({
+  wicketType,
+  fielders,
+  loadingFielders,
+  assistId,
+  onChange,
+  selectId,
+}: {
+  wicketType: WicketType
+  fielders: SquadPlayer[]
+  loadingFielders: boolean
+  assistId: string
+  onChange: (id: string) => void
+  selectId: string
+}) {
+  const orderedFielders = useMemo(() => {
+    if (wicketType !== 'STUMPED') return fielders
+    return [...fielders].sort((a, b) => {
+      const aWk = a.role === 'WICKETKEEPER' ? 0 : 1
+      const bWk = b.role === 'WICKETKEEPER' ? 0 : 1
+      return aWk - bWk
+    })
+  }, [fielders, wicketType])
+
+  const label =
+    wicketType === 'STUMPED'
+      ? 'Fielder / Wicket-keeper who effected Stump Out'
+      : wicketType === 'RUN_OUT'
+      ? 'Fielder who took Run Out'
+      : 'Fielder who took Catch'
+
+  const placeholder = loadingFielders
+    ? 'Loading bowling squad...'
+    : wicketType === 'STUMPED'
+    ? 'Select player for stump out'
+    : wicketType === 'RUN_OUT'
+    ? 'Select fielder for run out'
+    : 'Select fielder for catch'
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={selectId}>{label}</Label>
+      <Select
+        value={assistId || undefined}
+        onValueChange={onChange}
+        disabled={loadingFielders || orderedFielders.length === 0}
+      >
+        <SelectTrigger id={selectId} aria-label={label} className="min-h-11">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {orderedFielders.map((f) => (
+            <SelectItem key={f.id} value={f.id}>
+              {f.jerseyNumber ? `${f.jerseyNumber}. ` : ''}
+              {f.name}
+              {f.role === 'WICKETKEEPER' ? ' (WK)' : ''}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className="text-[11px] text-gray-500">
+        {wicketType === 'STUMPED'
+          ? 'Recorded on the scorecard; tournament Best Fielder counts catches & run outs.'
+          : 'Credited toward tournament Best Fielder (most catches & run outs).'}
+      </p>
+    </div>
+  )
+}
+
 function WicketDialog({
   bowlingTeamId,
   strikerId,
   nonStrikerId,
   strikerName,
   nonStrikerName,
+  initialDelivery = 'NORMAL',
   busy,
   onClose,
   onSubmit,
@@ -966,83 +1134,229 @@ function WicketDialog({
   nonStrikerId: string | null
   strikerName: string
   nonStrikerName: string
+  initialDelivery?: 'NORMAL' | 'WIDE'
   busy: boolean
   onClose: () => void
   onSubmit: (input: BallEventInput) => void
 }) {
-  const [wicketType, setWicketType] = useState<WicketType>('BOWLED')
+  const [deliveryType, setDeliveryType] = useState<'NORMAL' | 'WIDE'>(initialDelivery)
+  const [wideRuns, setWideRuns] = useState(1)
+  const [runsOffBat, setRunsOffBat] = useState(0)
+  const [wicketType, setWicketType] = useState<WicketType | null>(null)
   const [dismissed, setDismissed] = useState<'STRIKER' | 'NON_STRIKER'>('STRIKER')
   const [assistId, setAssistId] = useState('')
-  const [fielders, setFielders] = useState<SquadPlayer[]>([])
+  const { fielders, loadingFielders } = useBowlingFielders(bowlingTeamId)
 
-  const needsAssist = ['CAUGHT', 'RUN_OUT', 'STUMPED'].includes(wicketType)
+  const canScoreBatRuns =
+    deliveryType === 'NORMAL' && (wicketType === 'HIT_WICKET' || wicketType === 'RUN_OUT')
+  const needsAssist =
+    wicketType === 'CAUGHT' || wicketType === 'RUN_OUT' || wicketType === 'STUMPED'
 
-  useEffect(() => {
-    let alive = true
-    api<{ players: SquadPlayer[] }>(`/api/teams/${bowlingTeamId}`)
-      .then((t) => alive && setFielders(t.players))
-      .catch(() => alive && setFielders([]))
-    return () => {
-      alive = false
-    }
-  }, [bowlingTeamId])
+  const assistRequired = needsAssist && !loadingFielders && fielders.length > 0
+  const canSubmit =
+    !busy &&
+    wicketType !== null &&
+    (!needsAssist || !loadingFielders) &&
+    (!assistRequired || Boolean(assistId))
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md bg-white">
+      <DialogContent className="sm:max-w-md bg-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Record Wicket</DialogTitle>
-          <DialogDescription>Select dismissal details</DialogDescription>
+          <DialogDescription>
+            Choose delivery type, dismissal, and credit the fielder when applicable.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Dismissal type</Label>
-            <Select value={wicketType} onValueChange={(v) => { setWicketType(v as WicketType); setAssistId('') }}>
-              <SelectTrigger aria-label="Wicket type"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {WICKET_LABELS.map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {wicketType === 'RUN_OUT' && (
-            <div className="space-y-2">
-              <Label>Which batter is out?</Label>
-              <Select value={dismissed} onValueChange={(v) => setDismissed(v as 'STRIKER' | 'NON_STRIKER')}>
-                <SelectTrigger aria-label="Dismissed batter"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="STRIKER">{strikerName} (striker)</SelectItem>
-                  <SelectItem value="NON_STRIKER">{nonStrikerName} (non-striker)</SelectItem>
-                </SelectContent>
-              </Select>
+        <div className="space-y-4 min-w-0">
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-[#111827] mb-1.5">
+              Delivery type
+            </legend>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  ['NORMAL', 'Normal Ball', 'Legal delivery'],
+                  ['WIDE', 'Wide Ball', '+1 wide, re-bowled'],
+                ] as const
+              ).map(([value, title, sub]) => {
+                const selected = deliveryType === value
+                return (
+                  <label
+                    key={value}
+                    className={cn(
+                      'flex items-center gap-2.5 min-h-11 rounded-xl border px-3 py-2 text-sm font-medium cursor-pointer transition-colors',
+                      selected
+                        ? 'border-[#7A1426] bg-[#7A1426]/8 text-[#7A1426]'
+                        : 'border-gray-200 bg-white text-[#111827] hover:bg-gray-50'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="wicketDeliveryType"
+                      value={value}
+                      checked={selected}
+                      onChange={() => {
+                        setDeliveryType(value)
+                        if (value === 'WIDE') {
+                          setRunsOffBat(0)
+                          if (wicketType && !WIDE_ALLOWED_WICKETS.has(wicketType)) {
+                            setWicketType(null)
+                            setAssistId('')
+                          }
+                        }
+                      }}
+                      className="h-4 w-4 accent-[#7A1426] shrink-0"
+                    />
+                    <span className="min-w-0 leading-tight">
+                      <span className="block truncate font-semibold">{title}</span>
+                      <span className="block truncate text-[11px] font-normal text-gray-500">
+                        {sub}
+                      </span>
+                    </span>
+                  </label>
+                )
+              })}
             </div>
-          )}
-          {needsAssist && (
-            <div className="space-y-2">
-              <Label>
-                {wicketType === 'STUMPED'
-                  ? 'Wicket-keeper'
-                  : wicketType === 'RUN_OUT'
-                  ? 'Fielder who effected Run Out'
-                  : 'Fielder who took the Catch'}
-              </Label>
-              <Select value={assistId || undefined} onValueChange={setAssistId}>
-                <SelectTrigger aria-label="Fielder"><SelectValue placeholder="Select fielder (recommended)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Not recorded</SelectItem>
-                  {fielders.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {f.jerseyNumber ? `${f.jerseyNumber}. ` : ''}
-                      {f.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          </fieldset>
+
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-[#111827] mb-1.5">
+              How did the wicket fall?
+            </legend>
+            <div className="grid grid-cols-2 gap-2">
+              {WICKET_LABELS.map(([key, label]) => {
+                const disabled = deliveryType === 'WIDE' && !WIDE_ALLOWED_WICKETS.has(key)
+                const selected = wicketType === key
+                return (
+                  <label
+                    key={key}
+                    className={cn(
+                      'flex items-center gap-2.5 min-h-11 rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+                      disabled ? 'opacity-45 cursor-not-allowed bg-gray-50 text-gray-400 border-gray-200' : 'cursor-pointer',
+                      selected
+                        ? 'border-[#7A1426] bg-[#7A1426]/8 text-[#7A1426]'
+                        : !disabled && 'border-gray-200 bg-white text-[#111827] hover:bg-gray-50'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="wicketType"
+                      value={key}
+                      disabled={disabled}
+                      checked={selected}
+                      onChange={() => {
+                        setWicketType(key)
+                        setAssistId('')
+                        setRunsOffBat(0)
+                      }}
+                      className="h-4 w-4 accent-[#7A1426] shrink-0"
+                    />
+                    <span className="truncate">{label}</span>
+                  </label>
+                )
+              })}
+            </div>
+            {deliveryType === 'WIDE' && (
               <p className="text-[11px] text-gray-500">
-                Credited automatically toward Best Fielder awards.
+                On a wide ball, only Stump Out, Run Out, or Hit Wicket apply.
               </p>
-            </div>
+            )}
+          </fieldset>
+
+          {canScoreBatRuns && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-[#111827] mb-1.5">
+                Runs scored on this ball (optional)
+              </legend>
+              <div className="grid grid-cols-6 gap-2">
+                {[0, 1, 2, 3, 4, 6].map((runs) => {
+                  const active = runsOffBat === runs
+                  const isBoundary = runs === 4 || runs === 6
+                  return (
+                    <button
+                      key={runs}
+                      type="button"
+                      disabled={busy}
+                      aria-pressed={active}
+                      onClick={() => setRunsOffBat(runs)}
+                      className={cn(
+                        'min-h-11 rounded-xl border-2 text-sm font-extrabold transition-colors cursor-pointer',
+                        active
+                          ? 'border-[#7A1426] bg-[#7A1426]/10 text-[#7A1426]'
+                          : isBoundary
+                          ? 'border-amber-200 bg-amber-50/70 text-[#7A1426] hover:bg-amber-100/70'
+                          : 'border-gray-200 bg-white text-[#111827] hover:bg-gray-50'
+                      )}
+                    >
+                      {runs}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[11px] text-gray-500">
+                {runsOffBat > 0
+                  ? `${runsOffBat} run${runsOffBat === 1 ? '' : 's'} will count for the batter & team, and the batter will still be out.`
+                  : 'Tap 4 or 6 if the batter hit a boundary before getting out.'}
+              </p>
+            </fieldset>
+          )}
+
+          {deliveryType === 'WIDE' && wicketType === 'RUN_OUT' && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-[#111827] mb-1.5">
+                Total wide runs (including 1 penalty)
+              </legend>
+              <div className="grid grid-cols-4 gap-2">
+                {[1, 2, 3, 4].map((runs) => {
+                  const selected = wideRuns === runs
+                  return (
+                    <label
+                      key={runs}
+                      className={cn(
+                        'flex items-center justify-center gap-1.5 min-h-11 rounded-xl border px-2 py-2 text-sm font-bold cursor-pointer transition-colors',
+                        selected
+                          ? 'border-[#7A1426] bg-[#7A1426]/8 text-[#7A1426]'
+                          : 'border-gray-200 bg-white text-[#111827] hover:bg-gray-50'
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="wideRunOutRuns"
+                        value={runs}
+                        checked={selected}
+                        onChange={() => setWideRuns(runs)}
+                        className="h-3.5 w-3.5 accent-[#7A1426] shrink-0"
+                      />
+                      <span>{runs} wd</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </fieldset>
+          )}
+
+          {wicketType === 'RUN_OUT' && (
+            <RunOutBatterFieldset
+              strikerId={strikerId}
+              nonStrikerId={nonStrikerId}
+              strikerName={strikerName}
+              nonStrikerName={nonStrikerName}
+              value={dismissed}
+              onChange={setDismissed}
+              name="dismissedBatter"
+            />
+          )}
+
+          {needsAssist && wicketType && (
+            <FielderAssistSelect
+              wicketType={wicketType}
+              fielders={fielders}
+              loadingFielders={loadingFielders}
+              assistId={assistId}
+              onChange={setAssistId}
+              selectId="wicket-fielder-select"
+            />
           )}
         </div>
         <DialogFooter>
@@ -1050,22 +1364,28 @@ function WicketDialog({
           <Button
             variant="destructive"
             className="bg-[#7A1426] hover:bg-[#5E0E1D]"
-            disabled={busy}
-            onClick={() =>
+            disabled={!canSubmit}
+            onClick={() => {
+              if (!wicketType) return
               onSubmit({
-                runsOffBat: 0,
-                extraType: null,
-                extraRuns: 0,
+                runsOffBat: canScoreBatRuns ? runsOffBat : 0,
+                extraType: deliveryType === 'WIDE' ? 'WIDE' : null,
+                extraRuns:
+                  deliveryType === 'WIDE'
+                    ? wicketType === 'RUN_OUT'
+                      ? wideRuns
+                      : 1
+                    : 0,
                 wicketType,
                 dismissedId:
                   wicketType === 'RUN_OUT' && dismissed === 'NON_STRIKER'
                     ? nonStrikerId
                     : strikerId,
-                assistId: assistId && assistId !== 'none' ? assistId : null,
+                assistId: needsAssist && assistId ? assistId : null,
               })
-            }
+            }}
           >
-            Confirm Wicket
+            {canScoreBatRuns && runsOffBat > 0 ? `Record ${runsOffBat} + Wicket` : 'Confirm Wicket'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1075,16 +1395,31 @@ function WicketDialog({
 
 function ExtrasDialog({
   kind,
+  bowlingTeamId,
+  strikerId,
+  nonStrikerId,
+  strikerName,
+  nonStrikerName,
   busy,
   onClose,
   onSubmit,
 }: {
   kind: ExtraType
+  bowlingTeamId: string | null
+  strikerId: string | null
+  nonStrikerId: string | null
+  strikerName: string
+  nonStrikerName: string
   busy: boolean
   onClose: () => void
   onSubmit: (input: BallEventInput) => void
 }) {
   const [n, setN] = useState(kind === 'NO_BALL' ? '0' : '1')
+  const [wideWicket, setWideWicket] = useState<'STUMPED' | 'RUN_OUT' | null>(null)
+  const [dismissed, setDismissed] = useState<'STRIKER' | 'NON_STRIKER'>('STRIKER')
+  const [assistId, setAssistId] = useState('')
+  const { fielders, loadingFielders } = useBowlingFielders(kind === 'WIDE' ? bowlingTeamId : null)
+
   const config: Record<ExtraType, { title: string; desc: string; min: number; max: number; note: string }> = {
     WIDE: {
       title: 'Wide',
@@ -1118,14 +1453,19 @@ function ExtrasDialog({
   const c = config[kind]
   const value = Math.min(Math.max(Number(n) || c.min, c.min), c.max)
 
+  const needsAssist = kind === 'WIDE' && wideWicket !== null
+  const assistRequired = needsAssist && !loadingFielders && fielders.length > 0
+  const canSubmit =
+    !busy && (!needsAssist || !loadingFielders) && (!assistRequired || Boolean(assistId))
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-xs bg-white">
+      <DialogContent className="sm:max-w-sm bg-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{c.title}</DialogTitle>
           <DialogDescription>{c.desc}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-4 min-w-0">
           <div className="grid grid-cols-4 gap-2">
             {Array.from({ length: c.max - c.min + 1 }, (_, i) => c.min + i).map((v) => (
               <button
@@ -1142,22 +1482,105 @@ function ExtrasDialog({
               </button>
             ))}
           </div>
+
+          {kind === 'WIDE' && (
+            <fieldset className="space-y-2 pt-1 border-t border-gray-100">
+              <legend className="text-xs font-semibold text-gray-600 mb-1">
+                Wicket on this wide ball (optional)
+              </legend>
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    ['STUMPED', 'Stump Out'],
+                    ['RUN_OUT', 'Run Out'],
+                  ] as const
+                ).map(([type, label]) => {
+                  const active = wideWicket === type
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      disabled={busy}
+                      aria-pressed={active}
+                      onClick={() => {
+                        setWideWicket(active ? null : type)
+                        setAssistId('')
+                      }}
+                      className={cn(
+                        'min-h-11 rounded-lg border-2 px-3 py-2 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5',
+                        active
+                          ? 'border-[#7A1426] bg-[#7A1426]/10 text-[#7A1426]'
+                          : 'border-gray-200 bg-white text-[#111827] hover:border-rose-300 hover:bg-rose-50/70'
+                      )}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          'w-5 h-5 rounded-full text-[10px] font-black inline-flex items-center justify-center shrink-0',
+                          active ? 'bg-[#7A1426] text-white' : 'bg-rose-100 text-[#991B1B]'
+                        )}
+                      >
+                        W
+                      </span>
+                      <span>{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </fieldset>
+          )}
+
+          {kind === 'WIDE' && wideWicket === 'RUN_OUT' && (
+            <RunOutBatterFieldset
+              strikerId={strikerId}
+              nonStrikerId={nonStrikerId}
+              strikerName={strikerName}
+              nonStrikerName={nonStrikerName}
+              value={dismissed}
+              onChange={setDismissed}
+              name="wideDismissedBatter"
+            />
+          )}
+
+          {kind === 'WIDE' && wideWicket && (
+            <FielderAssistSelect
+              wicketType={wideWicket}
+              fielders={fielders}
+              loadingFielders={loadingFielders}
+              assistId={assistId}
+              onChange={setAssistId}
+              selectId="wide-wicket-fielder-select"
+            />
+          )}
+
           <p className="text-xs text-gray-500">{c.note}</p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
             className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white"
-            disabled={busy}
+            disabled={!canSubmit}
             onClick={() =>
               onSubmit(
                 kind === 'NO_BALL'
                   ? { runsOffBat: value, extraType: 'NO_BALL', extraRuns: 1 }
+                  : kind === 'WIDE' && wideWicket
+                  ? {
+                      runsOffBat: 0,
+                      extraType: 'WIDE',
+                      extraRuns: value,
+                      wicketType: wideWicket,
+                      dismissedId:
+                        wideWicket === 'RUN_OUT' && dismissed === 'NON_STRIKER'
+                          ? nonStrikerId
+                          : strikerId,
+                      assistId: assistId || null,
+                    }
                   : { runsOffBat: 0, extraType: kind, extraRuns: value }
               )
             }
           >
-            Record
+            {kind === 'WIDE' && wideWicket ? 'Record Wicket' : 'Record'}
           </Button>
         </DialogFooter>
       </DialogContent>

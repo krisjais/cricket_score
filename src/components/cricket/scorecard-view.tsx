@@ -12,7 +12,13 @@ function teamOf(payload: MatchStatePayload, id: string): TeamLite {
   return payload.match.teamA.id === id ? payload.match.teamA : payload.match.teamB
 }
 
-export function ScorecardView({ payload }: { payload: MatchStatePayload }) {
+export function ScorecardView({
+  payload,
+  navigate,
+}: {
+  payload: MatchStatePayload
+  navigate?: (to: string) => void
+}) {
   const innings = Array.isArray(payload?.innings) ? payload.innings : []
   if (innings.length === 0) {
     return (
@@ -36,14 +42,31 @@ export function ScorecardView({ payload }: { payload: MatchStatePayload }) {
       </TabsList>
       {innings.map((inn) => (
         <TabsContent key={inn.number} value={String(inn.number)}>
-          <InningsScorecard innings={inn} payload={payload} />
+          <InningsScorecard innings={inn} payload={payload} navigate={navigate} />
         </TabsContent>
       ))}
     </Tabs>
   )
 }
 
-function InningsScorecard({ innings, payload }: { innings: InningsStats; payload: MatchStatePayload }) {
+function InningsScorecard({
+  innings,
+  payload,
+  navigate,
+}: {
+  innings: InningsStats
+  payload: MatchStatePayload
+  navigate?: (to: string) => void
+}) {
+  const openPlayer = (idOrCode: string) => {
+    const dest = `/players/${encodeURIComponent(idOrCode)}`
+    if (navigate) {
+      navigate(dest)
+    } else if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', `/#${dest}`)
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    }
+  }
   const batTeam = teamOf(payload, innings.battingTeamId)
   const bowlTeam = teamOf(payload, innings.bowlingTeamId)
   const batted = innings.batting.filter((b) => b.batted || b.out)
@@ -103,7 +126,13 @@ function InningsScorecard({ innings, payload }: { innings: InningsStats; payload
                     )}
                   >
                     <TableCell className="pl-6 font-bold text-sm text-[#111827] whitespace-nowrap">
-                      <span>{b.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => openPlayer(b.playerCode || b.id)}
+                        className="hover:text-[#7A1426] hover:underline cursor-pointer text-left"
+                      >
+                        {b.name}
+                      </button>
                       {b.isOnStrike && (
                         <span className="ml-1.5 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#7A1426] text-white">
                           *
@@ -225,7 +254,15 @@ function InningsScorecard({ innings, payload }: { innings: InningsStats; payload
                 )}
                 {innings.bowling.map((b) => (
                   <TableRow key={b.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <TableCell className="pl-6 font-bold text-sm text-[#111827]">{b.name}</TableCell>
+                    <TableCell className="pl-6 font-bold text-sm text-[#111827]">
+                      <button
+                        type="button"
+                        onClick={() => openPlayer(b.playerCode || b.id)}
+                        className="hover:text-[#7A1426] hover:underline cursor-pointer text-left"
+                      >
+                        {b.name}
+                      </button>
+                    </TableCell>
                     <TableCell className="text-right tabular-nums text-xs text-gray-600 font-semibold">{b.overs}</TableCell>
                     <TableCell className="text-right tabular-nums text-xs text-gray-600">{b.maidens}</TableCell>
                     <TableCell className="text-right tabular-nums text-xs text-gray-600 font-semibold">{b.runsConceded}</TableCell>

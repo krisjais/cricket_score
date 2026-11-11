@@ -7,9 +7,9 @@ import {
   Radio,
   CalendarDays,
   CalendarClock,
-  MapPin,
   Shield,
   Users,
+  UserCheck,
   UserCog,
   Trophy,
   BarChart3,
@@ -31,9 +31,9 @@ export type AdminTab =
   | 'scoring'
   | 'matches'
   | 'schedule'
-  | 'turfs'
   | 'teams'
   | 'players'
+  | 'career'
   | 'officials'
   | 'results'
   | 'awards'
@@ -69,9 +69,9 @@ export function AdminSidebar({
     { key: 'scoring' as AdminTab, label: 'Scorer Panel', icon: Radio, badge: liveCount > 0 ? `${liveCount}` : undefined },
     { key: 'matches' as AdminTab, label: 'Matches', icon: CalendarDays },
     { key: 'schedule' as AdminTab, label: 'Schedule', icon: CalendarClock },
-    { key: 'turfs' as AdminTab, label: 'Turfs', icon: MapPin },
     { key: 'teams' as AdminTab, label: 'Teams', icon: Shield },
     { key: 'players' as AdminTab, label: 'Players', icon: Users },
+    { key: 'career' as AdminTab, label: 'Career & Seasons', icon: UserCheck },
     { key: 'officials' as AdminTab, label: 'Officials', icon: UserCog },
     { key: 'results' as AdminTab, label: 'Results', icon: Trophy },
     { key: 'awards' as AdminTab, label: 'Statistics & Awards', icon: BarChart3 },

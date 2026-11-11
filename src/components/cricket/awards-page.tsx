@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils'
 
 export interface AwardPlayerStat {
   playerId: string
+  playerCode?: string | null
   name: string
   role: string
   gender: 'MALE' | 'FEMALE'
@@ -51,6 +52,7 @@ export interface AwardPlayerStat {
   catches: number
   runOuts: number
   stumpings: number
+  catchRunOuts?: number
   fieldingDismissals: number
   mvpPoints: number
 }
@@ -528,17 +530,25 @@ function DivisionShowcase({
 
             <AwardSpotlightCard
               title="Best Fielder"
-              subtitle="Catches, Run Outs & Stumpings"
+              subtitle="Most Catches & Run Outs"
               badgeLabel="Safe Hands"
               player={awards.bestFielder}
               accent="teal"
               icon={<CricketStumpsIcon size={15} broken />}
-              statValue={awards.bestFielder ? String(awards.bestFielder.fieldingDismissals) : '—'}
+              statValue={
+                awards.bestFielder
+                  ? String(
+                      awards.bestFielder.catchRunOuts ??
+                        awards.bestFielder.catches + awards.bestFielder.runOuts
+                    )
+                  : '—'
+              }
               statUnit={
                 awards.bestFielder
-                  ? awards.bestFielder.fieldingDismissals === 1
-                    ? 'Dismissal'
-                    : 'Dismissals'
+                  ? (awards.bestFielder.catchRunOuts ??
+                      awards.bestFielder.catches + awards.bestFielder.runOuts) === 1
+                    ? 'Catch / Run Out'
+                    : 'Catches & Run Outs'
                   : ''
               }
               miniStats={
@@ -550,7 +560,7 @@ function DivisionShowcase({
                     ]
                   : []
               }
-              emptyText="Record fielder catches & run-outs on wickets"
+              emptyText="Record catches & run-outs on wickets"
               navigate={navigate}
               isAdmin={isAdmin}
             />
@@ -629,7 +639,7 @@ function DivisionShowcase({
                           <th className="px-3 py-3 text-right">Catches</th>
                           <th className="px-3 py-3 text-right">Run Outs</th>
                           <th className="px-3 py-3 text-right">Stumped</th>
-                          <th className="pr-5 py-3 text-right">Total Outs</th>
+                          <th className="pr-5 py-3 text-right">Catch + RO</th>
                         </>
                       )}
                       {tab === 'MVP' && (
@@ -672,7 +682,17 @@ function DivisionShowcase({
                             <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl} size="sm" />
                             <div>
                               <div className="font-bold text-sm text-[#111827] leading-tight">
-                                {p.name}
+                                {!isAdmin ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => navigate(`/players/${encodeURIComponent(p.playerCode || p.playerId)}`)}
+                                    className="hover:text-[#7A1426] hover:underline cursor-pointer text-left font-bold"
+                                  >
+                                    {p.name}
+                                  </button>
+                                ) : (
+                                  p.name
+                                )}
                               </div>
                               <div className="text-[10px] font-semibold text-gray-400">
                                 {ROLE_LABEL[p.role] ?? p.role}
@@ -753,7 +773,7 @@ function DivisionShowcase({
                               {p.stumpings}
                             </td>
                             <td className="pr-5 py-3 text-right font-extrabold text-sm text-[#7A1426] tabular-nums">
-                              {p.fieldingDismissals}
+                              {p.catchRunOuts ?? p.catches + p.runOuts}
                             </td>
                           </>
                         )}
@@ -854,7 +874,17 @@ function AwardSpotlightCard({
               />
               <div className="min-w-0 flex-1">
                 <div className="font-extrabold text-base text-[#111827] truncate leading-snug">
-                  {player.name}
+                  {!isAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/players/${encodeURIComponent(player.playerCode || player.playerId)}`)}
+                      className="hover:text-[#7A1426] hover:underline cursor-pointer text-left truncate max-w-full"
+                    >
+                      {player.name}
+                    </button>
+                  ) : (
+                    player.name
+                  )}
                 </div>
                 {player.team ? (
                   <button

@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { NplLogo } from '@/components/cricket/apl-logo'
-import { Lock, User, ArrowRight, ShieldCheck, Key } from 'lucide-react'
+import { Lock, User, ArrowRight, ShieldCheck, Key, Eye, EyeOff } from 'lucide-react'
 import { api, type AdminSession } from '@/lib/client'
 import { useToast } from '@/hooks/use-toast'
 
 export function LoginForm({ session }: { session: AdminSession }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
+  const passwordToggleWarningId = useId()
   const { toast } = useToast()
 
   const submit = async (e: React.FormEvent) => {
@@ -90,18 +92,39 @@ export function LoginForm({ session }: { session: AdminSession }) {
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Lock className="w-4 h-4" />
+                  <Lock className="w-4 h-4" aria-hidden="true" />
                 </span>
                 <input
                   id="password"
-                  type="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-[#111827] placeholder:text-gray-400 focus:outline-none focus:border-[#7A1426] focus:ring-1 focus:ring-[#7A1426] transition-all"
+                  className="w-full pl-10 pr-11 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-[#111827] placeholder:text-gray-400 focus:outline-none focus:border-[#7A1426] focus:ring-1 focus:ring-[#7A1426] forced-colors:focus-visible:outline-2 transition-all [&::-ms-reveal]:hidden"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  aria-pressed={showPassword}
+                  aria-label="Show password"
+                  aria-describedby={passwordToggleWarningId}
+                  className="absolute inset-y-0 right-0 flex items-center justify-center min-w-11 px-3.5 rounded-r-xl bg-transparent text-gray-500 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-[#7A1426] focus-visible:-outline-offset-2 transition-colors cursor-pointer"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="w-4 h-4" aria-hidden="true" />
+                  )}
+                </button>
+                <span id={passwordToggleWarningId} className="sr-only">
+                  Warning: this will display your password on the screen.
+                </span>
               </div>
             </div>
 

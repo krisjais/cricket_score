@@ -9,13 +9,13 @@ import { AdminLogView } from '@/components/cricket/admin/admin-log-view'
 import { AdminResetView } from '@/components/cricket/admin/admin-reset-view'
 import {
   ScheduleAdminView,
-  TurfsAdminView,
   OfficialsAdminView,
   ResultsAdminView,
 } from '@/components/cricket/admin/admin-section-views'
 import { MatchesAdmin } from '@/components/cricket/admin/matches-admin'
 import { TeamsAdmin } from '@/components/cricket/admin/teams-admin'
 import { PlayersAdmin } from '@/components/cricket/admin/players-admin'
+import { PlayerCareerAdminPanel } from '@/components/cricket/admin/player-career-admin'
 import { ScoringConsole } from '@/components/cricket/admin/scoring-console'
 import { PointsTablePage } from '@/components/cricket/points-table-page'
 
@@ -179,10 +179,6 @@ export function AdminPage({
           />
         )}
 
-        {tab === 'turfs' && (
-          <TurfsAdminView matches={matches} onScoreMatch={openMatchForScoring} />
-        )}
-
         {tab === 'teams' && (
           <div className="p-4 sm:p-6 lg:p-8 min-h-full pb-8">
             <TeamsAdmin defaultTab="teams" />
@@ -191,7 +187,13 @@ export function AdminPage({
 
         {tab === 'players' && (
           <div className="p-4 sm:p-6 lg:p-8 min-h-full pb-8">
-            <PlayersAdmin />
+            <PlayersAdmin navigate={navigate} />
+          </div>
+        )}
+
+        {tab === 'career' && (
+          <div className="p-4 sm:p-6 lg:p-8 min-h-full pb-8">
+            <PlayerCareerAdminPanel />
           </div>
         )}
 
