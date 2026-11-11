@@ -13,14 +13,13 @@ import {
   Lock,
   LogIn,
   Mail,
-  Upload,
   UserCheck,
-  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/lib/client'
 import { AplLogo } from '@/components/cricket/apl-logo'
 import { Button } from '@/components/ui/button'
+import { PlayerAvatarField } from './player-avatar-field'
 
 const AUTH_INPUT_CLASS =
   'validated-field w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3.5 py-2.5 text-sm text-[#111827] placeholder:text-gray-400 transition-all duration-200 hover:border-gray-300 focus:border-[#7A1426] focus:bg-white focus:ring-4 focus:ring-[#7A1426]/10 focus-visible:outline-2 focus-visible:outline-[#7A1426] focus:outline-none'
@@ -253,7 +252,7 @@ function AuthSplitLayout({
                 Nexcore Premier League
               </p>
               <p className="mt-4 max-w-[270px] text-xs sm:text-[13px] leading-relaxed text-slate-300/80">
-                Sign in or register once for your permanent Player ID, verified season squads, and lifetime career statistics.
+                Sign in or register once for verified season squads, personalized match tracking, and lifetime career statistics.
               </p>
             </motion.div>
 
@@ -316,7 +315,7 @@ function AuthSplitLayout({
                 <p className="text-xs sm:text-[13px] text-gray-500 leading-relaxed">{subtitle}</p>
               </div>
 
-              {/* Segmented Sign In / Create Player ID pill switcher */}
+              {/* Segmented Sign In / Create Account pill switcher */}
               {showTabs && (
                 <div
                   role="tablist"
@@ -326,7 +325,7 @@ function AuthSplitLayout({
                   {(
                     [
                       { key: 'SIGN_IN', label: 'Sign In' },
-                      { key: 'REGISTER', label: 'Create Player ID' },
+                      { key: 'REGISTER', label: 'Create Account' },
                     ] as const
                   ).map((tab) => {
                     const isActive = activeTab === tab.key
@@ -889,61 +888,6 @@ export function PlayerLoginPage({
   )
 }
 
-async function readAvatarAsDataUrl(file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) {
-    throw new Error('Please choose a valid image file (PNG, JPG, WebP, or GIF).')
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    throw new Error('Profile photo must be smaller than 5 MB.')
-  }
-
-  // Keep small GIFs intact; downscale large raster photos smoothly to keep payload compact
-  if (file.type !== 'image/gif' && typeof document !== 'undefined') {
-    const objectUrl = URL.createObjectURL(file)
-    try {
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const el = new Image()
-        el.onload = () => resolve(el)
-        el.onerror = () => reject(new Error('Could not decode selected image.'))
-        el.src = objectUrl
-      })
-      const maxDim = 400
-      const scale = Math.min(1, maxDim / Math.max(img.width || maxDim, img.height || maxDim))
-      const targetW = Math.max(1, Math.round((img.width || maxDim) * scale))
-      const targetH = Math.max(1, Math.round((img.height || maxDim) * scale))
-      const canvas = document.createElement('canvas')
-      canvas.width = targetW
-      canvas.height = targetH
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        ctx.drawImage(img, 0, 0, targetW, targetH)
-        const mime = file.type === 'image/png' ? 'image/webp' : 'image/jpeg'
-        const encoded = canvas.toDataURL(mime, 0.85)
-        if (encoded.startsWith('data:image/')) {
-          return encoded
-        }
-      }
-    } catch {
-      // Fall through to FileReader below if canvas decode fails
-    } finally {
-      URL.revokeObjectURL(objectUrl)
-    }
-  }
-
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string' && reader.result.startsWith('data:image/')) {
-        resolve(reader.result)
-      } else {
-        reject(new Error('Could not read the selected image file.'))
-      }
-    }
-    reader.onerror = () => reject(new Error('Could not read the selected image file.'))
-    reader.readAsDataURL(file)
-  })
-}
-
 export function PlayerRegisterPage({
   navigate,
   onAuthenticated,
@@ -961,8 +905,6 @@ export function PlayerRegisterPage({
   const [battingStyle, setBattingStyle] = useState('')
   const [bowlingStyle, setBowlingStyle] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
-  const [uploadedAvatarName, setUploadedAvatarName] = useState<string | null>(null)
-  const [processingAvatar, setProcessingAvatar] = useState(false)
 
   const [otpCode, setOtpCode] = useState('')
   const [otpSentInfo, setOtpSentInfo] = useState<OtpSendResult | null>(null)
@@ -971,36 +913,6 @@ export function PlayerRegisterPage({
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const otpInputRef = useRef<HTMLInputElement>(null)
-  const avatarFileInputRef = useRef<HTMLInputElement>(null)
-  const isUploadedAvatar = avatarUrl.startsWith('data:image/')
-
-  async function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setErrorMsg(null)
-    setProcessingAvatar(true)
-    try {
-      const dataUrl = await readAvatarAsDataUrl(file)
-      setAvatarUrl(dataUrl)
-      setUploadedAvatarName(file.name)
-      toast.success('Profile photo attached')
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load profile photo'
-      setErrorMsg(msg)
-      toast.error(msg)
-      e.target.value = ''
-    } finally {
-      setProcessingAvatar(false)
-    }
-  }
-
-  function clearUploadedAvatar() {
-    setAvatarUrl('')
-    setUploadedAvatarName(null)
-    if (avatarFileInputRef.current) {
-      avatarFileInputRef.current.value = ''
-    }
-  }
 
   useEffect(() => {
     if (step === 'VERIFY_OTP') {
@@ -1081,7 +993,7 @@ export function PlayerRegisterPage({
 
     setSubmitting(true)
     try {
-      const result = await api<{ player: { playerCode: string } }>('/api/player-auth/register', {
+      await api('/api/player-auth/register', {
         method: 'POST',
         json: {
           name: name.trim(),
@@ -1100,7 +1012,7 @@ export function PlayerRegisterPage({
         },
       })
       await onAuthenticated()
-      toast.success(`Registered! Your permanent Player ID is ${result.player.playerCode}`)
+      toast.success('Registration complete! Welcome to Nexcore Premier League.')
       navigate('/player/dashboard')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Registration failed'
@@ -1121,10 +1033,10 @@ export function PlayerRegisterPage({
       onTabChange={(tab) => {
         if (tab === 'SIGN_IN') navigate('/player/login')
       }}
-      title={step === 'DETAILS' ? 'Create Player ID' : 'Verify Your Email'}
+      title={step === 'DETAILS' ? 'Create Player Account' : 'Verify Your Email'}
       subtitle={
         step === 'DETAILS'
-          ? 'Register once for lifetime career stats (e.g. PLR-2026-000125)'
+          ? 'Register once with your email and mobile number for lifetime career stats'
           : `Enter the 6-digit email OTP to complete registration for ${name.trim() || 'your profile'}`
       }
       navigate={navigate}
@@ -1316,83 +1228,15 @@ export function PlayerRegisterPage({
                   </select>
                 </div>
 
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label htmlFor="reg-avatar" className="block text-xs font-bold text-[#111827]">
-                    Profile Photo (optional)
-                  </label>
-                  <input
-                    ref={avatarFileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    onChange={handleAvatarFileChange}
-                    className="hidden"
-                    aria-label="Upload profile photo"
+                <div className="sm:col-span-2">
+                  <PlayerAvatarField
+                    id="reg-avatar"
+                    value={avatarUrl}
+                    onChange={setAvatarUrl}
+                    onError={setErrorMsg}
+                    inputClassName={AUTH_INPUT_CLASS}
+                    uploadButtonHeightClass="h-[42px]"
                   />
-                  {isUploadedAvatar ? (
-                    <div className="flex items-center justify-between gap-3 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <img
-                          src={avatarUrl}
-                          alt="Uploaded profile preview"
-                          className="w-9 h-9 rounded-lg object-cover border border-[#E5E7EB] bg-white shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-[#111827] truncate">
-                            {uploadedAvatarName || 'Profile photo selected'}
-                          </p>
-                          <p className="text-[11px] text-emerald-700 font-medium">Ready to upload</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={processingAvatar}
-                          onClick={() => avatarFileInputRef.current?.click()}
-                          className="h-9 rounded-lg border-[#7A1426]/30 bg-white px-2.5 text-xs font-bold text-[#7A1426] hover:bg-[#7A1426]/5 cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                          Change
-                        </Button>
-                        <button
-                          type="button"
-                          onClick={clearUploadedAvatar}
-                          aria-label="Remove uploaded profile photo"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E7EB] bg-white text-gray-500 hover:text-red-700 hover:border-red-200 hover:bg-red-50 transition-colors cursor-pointer"
-                        >
-                          <X className="w-4 h-4" aria-hidden="true" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <input
-                        id="reg-avatar"
-                        type="url"
-                        value={avatarUrl}
-                        onChange={(e) => {
-                          setAvatarUrl(e.target.value)
-                          setUploadedAvatarName(null)
-                        }}
-                        placeholder="https://... or upload photo"
-                        className={`${AUTH_INPUT_CLASS} flex-1 min-w-0`}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={processingAvatar}
-                        onClick={() => avatarFileInputRef.current?.click()}
-                        className="h-[42px] shrink-0 rounded-xl border-[#7A1426]/30 bg-white px-3.5 text-xs font-bold text-[#7A1426] hover:bg-[#7A1426]/5 cursor-pointer"
-                      >
-                        {processingAvatar ? (
-                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" aria-hidden="true" />
-                        ) : (
-                          <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-                        )}
-                        {processingAvatar ? 'Loading...' : 'Upload'}
-                      </Button>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -1530,7 +1374,7 @@ export function PlayerRegisterPage({
                 ) : (
                   <CheckCircle2 className="w-4 h-4 mr-1.5" aria-hidden="true" />
                 )}
-                {submitting ? 'Verifying & Creating Player ID...' : 'Verify OTP & Generate Player ID'}
+                {submitting ? 'Verifying & Creating Account...' : 'Verify OTP & Create Account'}
               </Button>
               <Button
                 type="button"

@@ -792,7 +792,7 @@ function VerifyCorrectMatchDialog({
                 <SelectItem value="__NONE__">No Player of the Match</SelectItem>
                 {players.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name} ({p.teamShort}){p.playerCode ? ` • ${p.playerCode}` : ''}
+                    {p.name} ({p.teamShort})
                   </SelectItem>
                 ))}
               </SelectContent>

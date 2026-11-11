@@ -219,16 +219,11 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
                           <div className="flex flex-wrap items-center gap-2">
                             <button
                               type="button"
-                              onClick={() => navigate(`/players/${encodeURIComponent(p.playerCode || p.id)}`)}
+                              onClick={() => navigate(`/players/${encodeURIComponent(p.id)}`)}
                               className="hover:text-[#7A1426] hover:underline cursor-pointer text-left font-bold"
                             >
                               {p.name}
                             </button>
-                            {p.playerCode && (
-                              <span className="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200 text-gray-600">
-                                {p.playerCode}
-                              </span>
-                            )}
                             {team.captain === p.name && (
                               <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#7A1426]/20 border border-[#7A1426]/40 text-[#916922]">
                                 Captain

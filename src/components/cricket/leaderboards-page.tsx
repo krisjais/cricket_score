@@ -303,7 +303,7 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
                     </tr>
                   ) : (
                     data.entries.map((entry) => {
-                      const slug = entry.playerCode || entry.playerId
+                      const slug = entry.playerId
                       return (
                         <tr
                           key={entry.playerId}
@@ -318,9 +318,6 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
                               <span className="font-bold text-[#111827] hover:underline">{entry.name}</span>
                               {entry.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
                             </div>
-                            {entry.playerCode && (
-                              <div className="text-[10px] font-mono text-gray-500">{entry.playerCode}</div>
-                            )}
                           </td>
                           <td className="py-3 px-3 font-semibold text-gray-600">
                             {entry.team?.shortName ?? '—'}

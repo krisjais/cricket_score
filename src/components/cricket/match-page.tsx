@@ -25,7 +25,17 @@ import { cn } from '@/lib/utils'
 
 type AudienceTab = 'live' | 'scorecard' | 'commentary' | 'statistics' | 'info'
 
-export function MatchPage({ matchId, navigate }: { matchId: string; navigate: (to: string) => void }) {
+export function MatchPage({
+  matchId,
+  navigate,
+  backTo = '/',
+  brandTo = '/',
+}: {
+  matchId: string
+  navigate: (to: string) => void
+  backTo?: string
+  brandTo?: string
+}) {
   const { toast } = useToast()
   const { state: payload, setLiveState, connected } = useMatchChannel(matchId, null)
   const [activeTab, setActiveTab] = useState<AudienceTab>('live')
@@ -59,11 +69,11 @@ export function MatchPage({ matchId, navigate }: { matchId: string; navigate: (t
           <p className="text-base font-bold text-[#111827]">Match not found or loading...</p>
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => navigate(backTo)}
             className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span>Back to Home</span>
+            <span>{backTo === '/matches' ? 'Back to Matches' : 'Back to Home'}</span>
           </button>
         </div>
       </div>
@@ -108,17 +118,17 @@ export function MatchPage({ matchId, navigate }: { matchId: string; navigate: (t
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => navigate(backTo)}
               className="p-2 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors cursor-pointer"
-              aria-label="Back to Home"
+              aria-label={backTo === '/matches' ? 'Back to Matches' : 'Back to Home'}
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => navigate(brandTo)}
               className="flex items-center gap-2.5 text-left cursor-pointer focus:outline-none min-w-0"
-              aria-label="Nexcore Premier League Home"
+              aria-label={brandTo === '/player/dashboard' ? 'Nexcore Premier League Player Hub' : 'Nexcore Premier League Home'}
             >
               <AplLogo size="xs" />
               <div className="min-w-0">

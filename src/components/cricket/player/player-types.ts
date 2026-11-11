@@ -107,6 +107,7 @@ export interface PlayerMatchHistoryRow {
     fours: number
     sixes: number
     notOut: boolean
+    strikeRate?: number
     retiredHurt?: boolean
     retiredOut?: boolean
     absent?: boolean
@@ -126,10 +127,131 @@ export interface PlayerMatchHistoryRow {
     runOuts: number
     stumpings: number
   }
-  team: { id: string; name: string; shortName: string; color: string } | null
-  opponent: { id: string; name: string; shortName: string; color: string } | null
+  team: { id: string; name: string; shortName: string; color: string; logoUrl?: string | null } | null
+  opponent: { id: string; name: string; shortName: string; color: string; logoUrl?: string | null } | null
   season: { id: string; name: string; year: number } | null
   tournament: { id: string; name: string; shortName: string } | null
+}
+
+export interface TeamSummaryDto {
+  id: string
+  name: string
+  shortName: string
+  color: string
+  logoUrl?: string | null
+}
+
+export interface PersonalBestMatchRefDto {
+  matchId: string
+  opponentName: string | null
+  opponentShortName: string | null
+  matchDate: string
+}
+
+export interface PersonalBestsDto {
+  highestScore: (PersonalBestMatchRefDto & {
+    runs: number
+    balls: number
+    notOut: boolean
+    strikeRate: number
+  }) | null
+  bestBowling: (PersonalBestMatchRefDto & {
+    wickets: number
+    runsConceded: number
+    overs: string
+    economy: number
+    display: string
+  }) | null
+  mostSixesInMatch: (PersonalBestMatchRefDto & {
+    sixes: number
+    runs: number
+    balls: number
+  }) | null
+  mostFoursInMatch: (PersonalBestMatchRefDto & {
+    fours: number
+    runs: number
+    balls: number
+  }) | null
+  bestStrikeRate: (PersonalBestMatchRefDto & {
+    strikeRate: number
+    runs: number
+    balls: number
+    notOut: boolean
+  }) | null
+  bestStrikeRateQualified: boolean
+  bestStrikeRateCriteria: string
+  mostWicketsInMatch: (PersonalBestMatchRefDto & {
+    wickets: number
+    runsConceded: number
+    overs: string
+  }) | null
+}
+
+export type AchievementCategory = 'BATTING' | 'BOWLING' | 'CAREER' | 'MATCH' | 'TOURNAMENT'
+
+export interface PlayerAchievementDto {
+  id: string
+  key: string
+  title: string
+  subtitle: string
+  category: AchievementCategory
+  achievedAt: string | null
+  count?: number
+}
+
+export interface PerformanceSeriesPoint {
+  matchIndex: number
+  matchKey?: string
+  matchId: string
+  label: string
+  opponentName?: string
+  opponentShortName?: string
+  date: string
+  runs: number
+  balls: number
+  batted?: boolean
+  notOut?: boolean
+  wickets: number
+  runsConceded: number
+  bowled?: boolean
+  overs?: string
+  economy?: number
+  result?: 'WON' | 'LOST' | 'TIED' | 'NO_RESULT'
+  cumulativeAverage: number
+  cumulativeStrikeRate: number
+}
+
+export interface SeasonPerformancePoint {
+  seasonId: string
+  seasonName: string
+  label: string
+  year: number
+  matches: number
+  inningsBatted: number
+  runs: number
+  balls: number
+  inningsBowled: number
+  wickets: number
+  legalBalls: number
+  overs: string
+  runsConceded: number
+  battingAverage: number | null
+  strikeRate: number
+  economy: number
+  teams: string[]
+}
+
+export interface UpcomingPlayerMatchDto {
+  id: string
+  matchId: string
+  format: string
+  status: string
+  venue: string | null
+  matchDate: string | null
+  tournament: { id: string; name: string; shortName: string }
+  season: { id: string; name: string; year: number } | null
+  playerTeam: TeamSummaryDto | null
+  opponent: TeamSummaryDto | null
 }
 
 export interface PlayerPrivacy {
@@ -174,18 +296,11 @@ export interface PlayerDashboardData {
   memberships: TeamMembershipDto[]
   career: PlayerCareerStatDto | null
   matchHistory: PlayerMatchHistoryRow[]
-  performanceSeries: Array<{
-    matchIndex: number
-    matchId: string
-    label: string
-    date: string
-    runs: number
-    balls: number
-    wickets: number
-    runsConceded: number
-    cumulativeAverage: number
-    cumulativeStrikeRate: number
-  }>
+  performanceSeries: PerformanceSeriesPoint[]
+  seasonPerformance?: SeasonPerformancePoint[]
+  personalBests?: PersonalBestsDto | null
+  achievements?: PlayerAchievementDto[]
+  upcomingMatches?: UpcomingPlayerMatchDto[]
   awards: Array<{
     id: string
     title: string
@@ -259,5 +374,14 @@ export function fmtDate(iso?: string | null): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return '—'
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+export function fmtDateTime(iso?: string | null): string {
+  if (!iso) return 'Schedule TBA'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return 'Schedule TBA'
+  const datePart = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  const timePart = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })
+  return `${datePart} · ${timePart}`
 }
 

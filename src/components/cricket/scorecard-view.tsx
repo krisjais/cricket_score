@@ -128,7 +128,7 @@ function InningsScorecard({
                     <TableCell className="pl-6 font-bold text-sm text-[#111827] whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => openPlayer(b.playerCode || b.id)}
+                        onClick={() => openPlayer(b.id)}
                         className="hover:text-[#7A1426] hover:underline cursor-pointer text-left"
                       >
                         {b.name}
@@ -257,7 +257,7 @@ function InningsScorecard({
                     <TableCell className="pl-6 font-bold text-sm text-[#111827]">
                       <button
                         type="button"
-                        onClick={() => openPlayer(b.playerCode || b.id)}
+                        onClick={() => openPlayer(b.id)}
                         className="hover:text-[#7A1426] hover:underline cursor-pointer text-left"
                       >
                         {b.name}

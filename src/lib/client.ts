@@ -200,6 +200,14 @@ export function useHashRoute(): [HashRoute, (to: string) => void] {
 // Admin session
 // ---------------------------------------------------------------------------
 
+const AUTH_SYNC_EVENT = 'npl:auth-sync'
+
+function notifyAuthSync(origin: 'admin' | 'player') {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(AUTH_SYNC_EVENT, { detail: origin }))
+  }
+}
+
 export interface AdminSession {
   isAdmin: boolean
   username: string | null
@@ -215,13 +223,25 @@ export function useAdminSession(): AdminSession {
   })
   const [loading, setLoading] = useState(true)
   const mounted = useRef(true)
+  const wasAdminRef = useRef<boolean | null>(null)
 
   const refresh = useCallback(async () => {
     try {
       const me = await api<{ isAdmin: boolean; username: string | null }>('/api/auth/me')
-      if (mounted.current) setSession({ isAdmin: me.isAdmin, username: me.username })
+      if (mounted.current) {
+        const nextAdmin = Boolean(me.isAdmin)
+        const prevAdmin = wasAdminRef.current
+        wasAdminRef.current = nextAdmin
+        setSession({ isAdmin: nextAdmin, username: me.username })
+        if (prevAdmin !== null && prevAdmin !== nextAdmin && nextAdmin) {
+          notifyAuthSync('admin')
+        }
+      }
     } catch {
-      if (mounted.current) setSession({ isAdmin: false, username: null })
+      if (mounted.current) {
+        wasAdminRef.current = false
+        setSession({ isAdmin: false, username: null })
+      }
     } finally {
       if (mounted.current) setLoading(false)
     }
@@ -232,8 +252,15 @@ export function useAdminSession(): AdminSession {
     queueMicrotask(() => {
       if (mounted.current) void refresh()
     })
+    const onAuthSync = (e: Event) => {
+      if ((e as CustomEvent<string>).detail === 'player' && mounted.current) {
+        void refresh()
+      }
+    }
+    window.addEventListener(AUTH_SYNC_EVENT, onAuthSync)
     return () => {
       mounted.current = false
+      window.removeEventListener(AUTH_SYNC_EVENT, onAuthSync)
     }
   }, [refresh])
 
@@ -292,6 +319,7 @@ export function usePlayerSession(): PlayerSession {
   })
   const [loading, setLoading] = useState(true)
   const mounted = useRef(true)
+  const wasAuthedRef = useRef<boolean | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -311,15 +339,22 @@ export function usePlayerSession(): PlayerSession {
         }
       }
       if (mounted.current) {
+        const nextAuthed = Boolean(me.isAuthenticated)
+        const prevAuthed = wasAuthedRef.current
+        wasAuthedRef.current = nextAuthed
         setState({
-          isAuthenticated: Boolean(me.isAuthenticated),
+          isAuthenticated: nextAuthed,
           user: me.user,
           player: me.player,
           currentMembership: me.currentMembership ?? null,
         })
+        if (prevAuthed !== null && prevAuthed !== nextAuthed && nextAuthed) {
+          notifyAuthSync('player')
+        }
       }
     } catch {
       if (mounted.current) {
+        wasAuthedRef.current = false
         setState({ isAuthenticated: false, user: null, player: null, currentMembership: null })
       }
     } finally {
@@ -332,8 +367,15 @@ export function usePlayerSession(): PlayerSession {
     queueMicrotask(() => {
       if (mounted.current) void refresh()
     })
+    const onAuthSync = (e: Event) => {
+      if ((e as CustomEvent<string>).detail === 'admin' && mounted.current) {
+        void refresh()
+      }
+    }
+    window.addEventListener(AUTH_SYNC_EVENT, onAuthSync)
     return () => {
       mounted.current = false
+      window.removeEventListener(AUTH_SYNC_EVENT, onAuthSync)
     }
   }, [refresh])
 

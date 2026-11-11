@@ -150,7 +150,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
       // Search filter
       if (search.trim()) {
         const q = search.toLowerCase()
-        const text = `${p.name} ${p.playerCode ?? ''} ${p.jerseyNumber ?? ''} ${p.team?.name ?? ''} ${p.team?.shortName ?? ''}`.toLowerCase()
+        const text = `${p.name} ${p.jerseyNumber ?? ''} ${p.team?.name ?? ''} ${p.team?.shortName ?? ''}`.toLowerCase()
         if (!text.includes(q)) return false
       }
 
@@ -353,18 +353,13 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
                                 </span>
                               )}
                             </div>
-                            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                              {p.playerCode && (
-                                <span className="font-mono text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.2 rounded">
-                                  {p.playerCode}
-                                </span>
-                              )}
-                              {p.isClaimed === false && (
+                            {p.isClaimed === false && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                 <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
                                   Unclaimed
                                 </span>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -436,7 +431,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
                           {navigate && (
                             <button
                               type="button"
-                              onClick={() => navigate(`/players/${encodeURIComponent(p.playerCode || p.id)}`)}
+                              onClick={() => navigate(`/players/${encodeURIComponent(p.id)}`)}
                               className="p-1.5 rounded-lg border border-[#E5E7EB] hover:bg-[#F3F4F6] text-gray-700 transition-colors cursor-pointer"
                               title="View Public Career Profile"
                             >

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Award, Lock, Share2 } from 'lucide-react'
+import { ArrowLeft, Award, BarChart3, CalendarDays, Home, Lock, Settings, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api } from '@/lib/client'
 import { AplLogo } from '@/components/cricket/apl-logo'
@@ -13,19 +13,26 @@ import {
   PlayerOverviewHero,
   SeasonAndTeamHistorySection,
 } from './player-career-widgets'
+import { PlayerTabs, getPlayerPanelId, getPlayerTabId, type PlayerTabItem } from './player-tabs'
 import { PublicPlayerProfileData, fmtDate } from './player-types'
+
+type PublicSection = 'stats' | 'seasons' | 'matches'
 
 export function PublicPlayerProfilePage({
   playerIdOrCode,
+  isOwnProfile = false,
+  hasPlayerSession = false,
   navigate,
 }: {
   playerIdOrCode: string
+  isOwnProfile?: boolean
+  hasPlayerSession?: boolean
   navigate: (to: string) => void
 }) {
   const [profile, setProfile] = useState<PublicPlayerProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [section, setSection] = useState<'stats' | 'seasons' | 'matches'>('stats')
+  const [section, setSection] = useState<PublicSection>('stats')
 
   useEffect(() => {
     let alive = true
@@ -63,10 +70,28 @@ export function PublicPlayerProfilePage({
           <AplLogo size="lg" />
         </div>
         <h1 className="text-lg font-extrabold text-[#111827]">Player Profile Not Found</h1>
-        <p className="text-xs text-gray-500 mt-1 mb-4">{errorMsg ?? 'No matching player record exists.'}</p>
-        <Button onClick={() => navigate('/leaderboards')} variant="outline" className="rounded-xl text-xs font-bold">
-          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Browse Leaderboards
-        </Button>
+        <p className="text-xs text-gray-500 mt-1 mb-5">{errorMsg ?? 'No matching player record exists.'}</p>
+        <div className="flex flex-wrap justify-center gap-2.5">
+          {hasPlayerSession ? (
+            <>
+              <Button onClick={() => navigate('/matches')} variant="outline" className="rounded-xl text-xs font-bold cursor-pointer">
+                <CalendarDays className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Tournament Matches
+              </Button>
+              <Button onClick={() => navigate('/player/dashboard')} className="rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold cursor-pointer">
+                My Career Hub
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => navigate('/leaderboards')} variant="outline" className="rounded-xl text-xs font-bold cursor-pointer">
+                <BarChart3 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Browse Leaderboards
+              </Button>
+              <Button onClick={() => navigate('/')} className="rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold cursor-pointer">
+                <Home className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Back to Home
+              </Button>
+            </>
+          )}
+        </div>
       </Card>
     )
   }
@@ -77,42 +102,124 @@ export function PublicPlayerProfilePage({
         <div className="flex justify-center mb-3">
           <AplLogo size="md" />
         </div>
-        <Lock className="mx-auto w-7 h-7 text-[#7A1426] mb-3" />
+        <Lock className="mx-auto w-7 h-7 text-[#7A1426] mb-3" aria-hidden="true" />
         <h1 className="text-lg font-extrabold text-[#111827]">{profile.player.name}</h1>
-        {profile.player.playerCode && (
-          <div className="mt-1 inline-block rounded-full bg-[#F3F4F6] px-3 py-0.5 font-mono text-xs font-bold text-[#7A1426]">
-            {profile.player.playerCode}
-          </div>
-        )}
-        <p className="text-xs text-gray-500 mt-3">
+        <p className="text-xs text-gray-500 mt-3 mb-5">
           This player has set their public profile visibility to private.
         </p>
+        <div className="flex flex-wrap justify-center gap-2.5">
+          {isOwnProfile && (
+            <Button
+              onClick={() => navigate('/player/dashboard?tab=profile')}
+              className="rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold cursor-pointer"
+            >
+              <Settings className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Update Privacy Settings
+            </Button>
+          )}
+          <Button onClick={() => navigate('/leaderboards')} variant="outline" className="rounded-xl text-xs font-bold cursor-pointer">
+            <ArrowLeft className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Leaderboards
+          </Button>
+        </div>
       </Card>
     )
   }
 
-  const slug = profile.player.playerCode || profile.player.id
+  const slug = profile.player.id
+  const recentCount = profile.recentMatches?.length ?? 0
+  const tabs: ReadonlyArray<PlayerTabItem<PublicSection>> = [
+    { key: 'stats', label: 'Career Statistics' },
+    { key: 'seasons', label: 'Season & Team History' },
+    {
+      key: 'matches',
+      label: 'Recent Performances',
+      badge: recentCount > 0 ? recentCount : undefined,
+    },
+  ]
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          {hasPlayerSession ? (
+            <button
+              type="button"
+              onClick={() => navigate('/matches')}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 font-semibold text-[#111827] hover:bg-[#F9FAFB] transition-colors cursor-pointer shadow-2xs"
+            >
+              <CalendarDays className="w-3.5 h-3.5 text-[#7A1426]" aria-hidden="true" />
+              Tournament Matches
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate('/leaderboards')}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 font-semibold text-[#111827] hover:bg-[#F9FAFB] transition-colors cursor-pointer shadow-2xs"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-[#7A1426]" aria-hidden="true" />
+                Leaderboards
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 font-semibold text-gray-600 hover:text-[#111827] hover:bg-[#F9FAFB] transition-colors cursor-pointer"
+              >
+                <Home className="w-3.5 h-3.5 text-gray-500" aria-hidden="true" />
+                Home
+              </button>
+            </>
+          )}
+        </div>
+        {isOwnProfile ? (
+          <button
+            type="button"
+            onClick={() => navigate('/player/dashboard')}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] px-3 py-1.5 font-bold text-white transition-colors cursor-pointer"
+          >
+            <Settings className="w-3.5 h-3.5" aria-hidden="true" />
+            Open My Career Hub
+          </button>
+        ) : hasPlayerSession ? (
+          <button
+            type="button"
+            onClick={() => navigate('/player/dashboard')}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 font-semibold text-[#7A1426] hover:bg-[#7A1426]/5 transition-colors cursor-pointer"
+          >
+            My Career Hub
+          </button>
+        ) : null}
+      </div>
+
       <PlayerOverviewHero
         player={profile.player}
         career={profile.career}
         currentMembership={profile.currentMembership}
         rightSlot={
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              const url = `${window.location.origin}/players/${slug}`
-              void navigator.clipboard?.writeText(url)
-              toast.success('Profile link copied')
-            }}
-            className="rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold cursor-pointer"
-          >
-            <Share2 className="w-3.5 h-3.5 mr-1.5" /> Share Profile
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {isOwnProfile && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => navigate('/player/dashboard?tab=profile')}
+                className="rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold cursor-pointer"
+              >
+                <Settings className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Edit My Profile
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                const url = `${window.location.origin}/#/players/${slug}`
+                void navigator.clipboard?.writeText(url)
+                toast.success('Profile link copied')
+              }}
+              className="rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold cursor-pointer"
+            >
+              <Share2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Share Profile
+            </Button>
+          </div>
         }
       />
 
@@ -136,33 +243,40 @@ export function PublicPlayerProfilePage({
         </Card>
       )}
 
-      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-white border border-[#E5E7EB] p-1.5 shadow-2xs">
-        {(
-          [
-            ['stats', 'Career Statistics'],
-            ['seasons', 'Season & Team History'],
-            ['matches', `Recent Performances (${profile.recentMatches?.length ?? 0})`],
-          ] as const
-        ).map(([k, label]) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setSection(k)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              section === k ? 'bg-[#7A1426] text-white' : 'text-gray-600 hover:bg-[#F3F4F6]'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <PlayerTabs
+        idPrefix="pub"
+        ariaLabel="Player career sections"
+        tabs={tabs}
+        activeKey={section}
+        onSelect={setSection}
+      />
 
-      {section === 'stats' && <CareerStatsGrid career={profile.career} />}
+      {section === 'stats' && (
+        <div
+          role="tabpanel"
+          id={getPlayerPanelId('pub', 'stats')}
+          aria-labelledby={getPlayerTabId('pub', 'stats')}
+        >
+          <CareerStatsGrid career={profile.career} />
+        </div>
+      )}
       {section === 'seasons' && (
-        <SeasonAndTeamHistorySection career={profile.career} memberships={profile.memberships ?? []} />
+        <div
+          role="tabpanel"
+          id={getPlayerPanelId('pub', 'seasons')}
+          aria-labelledby={getPlayerTabId('pub', 'seasons')}
+        >
+          <SeasonAndTeamHistorySection career={profile.career} memberships={profile.memberships ?? []} />
+        </div>
       )}
       {section === 'matches' && (
-        <MatchHistorySection matches={profile.recentMatches ?? []} navigate={navigate} />
+        <div
+          role="tabpanel"
+          id={getPlayerPanelId('pub', 'matches')}
+          aria-labelledby={getPlayerTabId('pub', 'matches')}
+        >
+          <MatchHistorySection matches={profile.recentMatches ?? []} navigate={navigate} />
+        </div>
       )}
     </div>
   )

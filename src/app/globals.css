@@ -163,3 +163,238 @@
     animation: auth-shimmer-line 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s 1 forwards;
   }
 }
+
+/* ==================== APL Season 9 Stadium Splash Screen ==================== */
+@keyframes splash-orbit-cw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes splash-orbit-ccw {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes splash-crest-impact {
+  0% { opacity: 0; transform: scale(0.68) translate3d(0, 22px, 0); }
+  62% { opacity: 1; transform: scale(1.06) translate3d(0, -3px, 0); }
+  100% { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+}
+
+@keyframes splash-shockwave {
+  0% { opacity: 0.72; transform: scale(0.55); }
+  100% { opacity: 0; transform: scale(1.95); }
+}
+
+@keyframes splash-beam-sweep {
+  0% { opacity: 0.16; transform: rotate(-16deg) scaleY(0.96); }
+  50% { opacity: 0.34; transform: rotate(10deg) scaleY(1.04); }
+  100% { opacity: 0.16; transform: rotate(-16deg) scaleY(0.96); }
+}
+
+@keyframes splash-sheen {
+  0% { opacity: 0; transform: translate3d(-140%, 0, 0) skewX(-22deg); }
+  25% { opacity: 0.85; }
+  70% { opacity: 0.85; }
+  100% { opacity: 0; transform: translate3d(240%, 0, 0) skewX(-22deg); }
+}
+
+@keyframes splash-ember-rise {
+  0% { opacity: 0; transform: translate3d(0, 24px, 0) scale(0.5); }
+  25% { opacity: 0.9; }
+  80% { opacity: 0.55; }
+  100% { opacity: 0; transform: translate3d(var(--ember-dx, 14px), -96px, 0) scale(1.1); }
+}
+
+@keyframes splash-text-reveal {
+  0% { opacity: 0; transform: translate3d(0, 14px, 0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes splash-progress-fill {
+  0% { transform: scaleX(0.04); }
+  100% { transform: scaleX(1); }
+}
+
+.portal-splash-root {
+  opacity: 1;
+  transition: opacity 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@starting-style {
+  .portal-splash-root {
+    opacity: 0;
+  }
+}
+
+.portal-splash-gate-left,
+.portal-splash-gate-right {
+  translate: 0 0;
+  transition: translate 0.54s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.portal-splash-core {
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+    scale 0.44s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.portal-splash-root[data-closing="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.portal-splash-root[data-closing="true"] .portal-splash-gate-left {
+  translate: -108% 0;
+}
+
+.portal-splash-root[data-closing="true"] .portal-splash-gate-right {
+  translate: 108% 0;
+}
+
+.portal-splash-root[data-closing="true"] .portal-splash-core {
+  opacity: 0;
+  scale: 1.07;
+}
+
+.splash-progress-bar {
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .splash-orbit-cw {
+    animation: splash-orbit-cw 20s linear infinite;
+  }
+  .splash-orbit-slow {
+    animation: splash-orbit-cw 32s linear infinite;
+  }
+  .splash-orbit-ccw {
+    animation: splash-orbit-ccw 10s linear infinite;
+  }
+  .splash-crest-impact {
+    animation: splash-crest-impact 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .splash-shockwave-1 {
+    animation: splash-shockwave 2.1s cubic-bezier(0.16, 1, 0.3, 1) 0.12s infinite;
+  }
+  .splash-shockwave-2 {
+    animation: splash-shockwave 2.1s cubic-bezier(0.16, 1, 0.3, 1) 1.15s infinite;
+  }
+  .splash-beam {
+    animation: splash-beam-sweep 4.8s ease-in-out infinite;
+  }
+  .splash-sheen {
+    animation: splash-sheen 1.45s cubic-bezier(0.22, 1, 0.36, 1) 0.52s 1 both;
+  }
+  .splash-ember {
+    animation: splash-ember-rise var(--ember-dur, 2.2s) ease-out var(--ember-delay, 0s) infinite;
+  }
+  .splash-text-reveal {
+    animation: splash-text-reveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0.18s) both;
+  }
+  .splash-progress-bar {
+    transform: scaleX(0.04);
+    animation: splash-progress-fill 2.25s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-splash-root {
+    transition-duration: 0.15s;
+  }
+  .portal-splash-gate-left,
+  .portal-splash-gate-right,
+  .portal-splash-core,
+  .portal-splash-root[data-closing="true"] .portal-splash-gate-left,
+  .portal-splash-root[data-closing="true"] .portal-splash-gate-right,
+  .portal-splash-root[data-closing="true"] .portal-splash-core {
+    translate: none;
+    scale: none;
+    transition-duration: 0.15s;
+  }
+}
+
+/* ==================== Player Account Popover & Tabs ==================== */
+[popover].player-account-popover:is(:popover-open, .\:popover-open) {
+  display: block;
+}
+
+@supports (position-area: block-end) {
+  [popover].player-account-popover {
+    inset: auto;
+    margin: 0;
+    position-area: block-end span-inline-start;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  }
+}
+
+@supports not (position-area: block-end) {
+  [popover].player-account-popover {
+    position: fixed;
+    inset: auto;
+    margin: 0;
+  }
+
+  @media (max-width: 639px) {
+    [popover].player-account-popover {
+      inset: auto 0 0 0 !important;
+      top: auto !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: auto;
+      max-width: none;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [popover].player-account-popover {
+    opacity: 0;
+    translate: 0 -0.25rem;
+    transition: opacity 0.14s ease-out, translate 0.14s ease-out, display 0.14s allow-discrete, overlay 0.14s allow-discrete;
+    transition-behavior: allow-discrete;
+  }
+
+  [popover].player-account-popover:popover-open {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@starting-style {
+  [popover].player-account-popover:popover-open {
+    opacity: 0;
+    translate: 0 -0.25rem;
+  }
+}
+
+.player-tablist {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: inline proximity;
+  scroll-padding-inline: 1.5rem;
+}
+
+.player-tablist::-webkit-scrollbar {
+  display: none;
+}
+
+.player-tablist [role="tab"] {
+  position: relative;
+  flex: none;
+  scroll-snap-align: start;
+}
+
+.player-tablist [role="tab"][aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0.5rem 0 0.5rem;
+  border-block-end: 3px solid #7A1426;
+  border-radius: 999px;
+}

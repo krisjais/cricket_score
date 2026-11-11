@@ -416,7 +416,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by player name or permanent PLR-YYYY-NNNNNN ID..."
+                placeholder="Search by player name..."
                 className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] pl-9 pr-3 py-2 text-xs"
               />
             </div>
@@ -430,8 +430,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
               <table className="w-full min-w-[760px] text-left text-xs">
                 <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                   <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
-                    <th className="py-3 pl-5 pr-3">Player ID</th>
-                    <th className="py-3 px-3">Player &amp; Account</th>
+                    <th className="py-3 pl-5 pr-3">Player &amp; Account</th>
                     <th className="py-3 px-3">Current Team</th>
                     <th className="py-3 px-3">Career</th>
                     <th className="py-3 px-3">Status</th>
@@ -441,10 +440,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                 <tbody className="divide-y divide-gray-100">
                   {searchRows.map((p) => (
                     <tr key={p.id} className="hover:bg-[#F9FAFB]">
-                      <td className="py-3 pl-5 pr-3 font-mono font-bold text-[#7A1426]">
-                        {p.playerCode ?? '—'}
-                      </td>
-                      <td className="py-3 px-3">
+                      <td className="py-3 pl-5 pr-3">
                         <div className="font-bold text-[#111827] flex items-center gap-1.5">
                           {p.name}
                           {p.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />}
@@ -513,7 +509,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div>
                   <CardTitle className="text-base font-extrabold text-[#111827]">
-                    {inspectedCareer.player.name} ({inspectedCareer.player.playerCode})
+                    {inspectedCareer.player.name}
                   </CardTitle>
                   <CardDescription className="text-xs">
                     {inspectedCareer.career?.matches ?? 0} Matches • {inspectedCareer.career?.runs ?? 0} Runs • {inspectedCareer.career?.wickets ?? 0} Wickets
@@ -563,7 +559,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
             <CardHeader>
               <CardTitle className="text-sm font-extrabold text-[#111827]">Assign Player to Season Team</CardTitle>
               <CardDescription className="text-xs">
-                Preserves completed season history while assigning teams per season without changing permanent PLR IDs.
+                Preserves completed season history while assigning teams per season without overwriting past seasons.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -579,7 +575,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                     <option value="">Select registered/unclaimed player...</option>
                     {searchRows.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} ({p.playerCode ?? p.id.slice(0, 8)})
+                        {p.name} · {formatCricketLabel(p.role)}
                       </option>
                     ))}
                   </select>
@@ -774,8 +770,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                       </span>
                     </div>
                     <div className="text-[11px] text-gray-600">
-                      Claimant ID: {c.claimantPlayer?.playerCode ?? '—'} • Target: {c.targetPlayer?.playerCode ?? '—'} (
-                      {c.targetPlayer?.matches ?? 0}M, {c.targetPlayer?.runs ?? 0}R)
+                      Target stats: {c.targetPlayer?.matches ?? 0}M, {c.targetPlayer?.runs ?? 0}R, {c.targetPlayer?.wickets ?? 0}W
                     </div>
                     {c.evidenceNotes && <div className="text-[11px] italic text-gray-600">&ldquo;{c.evidenceNotes}&rdquo;</div>}
                     {c.status === 'PENDING' && (
@@ -814,7 +809,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                 Merge Duplicate Player Profiles
               </CardTitle>
               <CardDescription className="text-xs">
-                Reassigns all ball-by-ball events, innings, awards, and non-conflicting season memberships from the duplicate record into the primary permanent Player ID inside a transaction.
+                Reassigns all ball-by-ball events, innings, awards, and non-conflicting season memberships from the duplicate record into the surviving target profile inside a transaction.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -830,13 +825,13 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                     <option value="">Select duplicate record...</option>
                     {searchRows.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} ({p.playerCode}) · {p.matches}M
+                        {p.name} ({p.team?.shortName ?? 'Free Agent'}) · {p.matches}M
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold block mb-1">Surviving Target Player (retains permanent PLR ID)</label>
+                  <label className="font-bold block mb-1">Surviving Target Player</label>
                   <select
                     required
                     value={mergeTargetId}
@@ -848,7 +843,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                       .filter((p) => p.id !== mergeSourceId)
                       .map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name} ({p.playerCode}) · {p.matches}M
+                          {p.name} ({p.team?.shortName ?? 'Free Agent'}) · {p.matches}M
                         </option>
                       ))}
                   </select>

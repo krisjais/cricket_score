@@ -685,7 +685,7 @@ function DivisionShowcase({
                                 {!isAdmin ? (
                                   <button
                                     type="button"
-                                    onClick={() => navigate(`/players/${encodeURIComponent(p.playerCode || p.playerId)}`)}
+                                    onClick={() => navigate(`/players/${encodeURIComponent(p.playerId)}`)}
                                     className="hover:text-[#7A1426] hover:underline cursor-pointer text-left font-bold"
                                   >
                                     {p.name}
@@ -877,7 +877,7 @@ function AwardSpotlightCard({
                   {!isAdmin ? (
                     <button
                       type="button"
-                      onClick={() => navigate(`/players/${encodeURIComponent(player.playerCode || player.playerId)}`)}
+                      onClick={() => navigate(`/players/${encodeURIComponent(player.playerId)}`)}
                       className="hover:text-[#7A1426] hover:underline cursor-pointer text-left truncate max-w-full"
                     >
                       {player.name}
