@@ -174,6 +174,8 @@ const SERVER_ROUTE: HashRoute = { segments: [], query: new URLSearchParams() }
 function getServerHashSnapshot(): HashRoute {
   return SERVER_ROUTE
 }
+const ROUTE_CHANGE_EVENT = 'npl:routechange'
+
 function subscribeHash(onChange: () => void): () => void {
   const listener = () => {
     window.scrollTo({ top: 0 })
@@ -181,22 +183,41 @@ function subscribeHash(onChange: () => void): () => void {
   }
   window.addEventListener('hashchange', listener)
   window.addEventListener('popstate', listener)
+  window.addEventListener(ROUTE_CHANGE_EVENT, listener)
   return () => {
     window.removeEventListener('hashchange', listener)
     window.removeEventListener('popstate', listener)
+    window.removeEventListener(ROUTE_CHANGE_EVENT, listener)
   }
 }
 
 export function useHashRoute(): [HashRoute, (to: string) => void] {
   const route = useSyncExternalStore(subscribeHash, getHashSnapshot, getServerHashSnapshot)
+
+  // Upgrade any legacy `#/...` URL to a clean path URL on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash.startsWith('#/')) {
+      const clean = `/${window.location.hash.replace(/^#\/?/, '')}`
+      if (typeof window.history?.replaceState === 'function') {
+        window.history.replaceState(null, '', clean)
+        window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT))
+      }
+    }
+  }, [])
+
   const navigate = useCallback((to: string) => {
     const clean = to.startsWith('/') ? to : `/${to}`
-    if (window.location.pathname !== '/' && typeof window.history?.replaceState === 'function') {
-      window.history.replaceState(null, '', `/#${clean}`)
-      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    if (typeof window.history?.pushState === 'function') {
+      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
+      if (current !== clean) {
+        window.history.pushState(null, '', clean)
+        window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT))
+      } else {
+        window.scrollTo({ top: 0 })
+      }
       return
     }
-    window.location.hash = clean
+    window.location.assign(clean)
   }, [])
   return [route, navigate]
 }

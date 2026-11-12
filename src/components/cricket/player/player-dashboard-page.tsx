@@ -15,6 +15,7 @@ import {
 import {
   CheckCircle2,
   ChevronDown,
+  Globe,
   Mail,
   Phone,
   RotateCcw,
@@ -28,6 +29,7 @@ import { AplLogo } from '@/components/cricket/apl-logo'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PlayerAvatarField } from './player-avatar-field'
+import { ShareProfileDialog } from './share-profile-dialog'
 import {
   CareerStatsGrid,
   MatchHistorySection,
@@ -84,6 +86,7 @@ export function PlayerDashboardPage({
   const [dob, setDob] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const applyDashboardData = useCallback((res: PlayerDashboardData) => {
     setData(res)
@@ -256,15 +259,26 @@ export function PlayerDashboardPage({
         currentMembership={data.currentMembership}
         compact={tab !== 'overview' || (data.career?.matches ?? 0) === 0}
         rightSlot={
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={() => navigate(`/players/${publicSlug}`)}
-            className="rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold cursor-pointer"
-          >
-            <Share2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Public Profile
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => navigate(`/players/${publicSlug}`)}
+              className="rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold cursor-pointer"
+            >
+              <Globe className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Public Profile
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setShareOpen(true)}
+              className="rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white border border-white/15 text-xs font-bold cursor-pointer"
+            >
+              <Share2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Share Profile
+            </Button>
+          </div>
         }
       />
 
@@ -680,6 +694,13 @@ export function PlayerDashboardPage({
           </Card>
         </div>
       )}
+
+      <ShareProfileDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        playerName={data.player.name}
+        profileSlug={publicSlug}
+      />
     </div>
   )
 }

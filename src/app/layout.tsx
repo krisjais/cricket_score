@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Nexcore Premier League — Live Cricket Scoring",
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body className="antialiased bg-background text-foreground" suppressHydrationWarning>
         {children}
         <Toaster />
+        <SonnerToaster theme="light" position="top-right" richColors />
       </body>
     </html>
   );

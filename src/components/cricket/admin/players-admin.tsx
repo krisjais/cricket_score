@@ -150,7 +150,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
       // Search filter
       if (search.trim()) {
         const q = search.toLowerCase()
-        const text = `${p.name} ${p.jerseyNumber ?? ''} ${p.team?.name ?? ''} ${p.team?.shortName ?? ''}`.toLowerCase()
+        const text = `${p.name} ${p.team?.name ?? ''} ${p.team?.shortName ?? ''}`.toLowerCase()
         if (!text.includes(q)) return false
       }
 
@@ -175,7 +175,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
             Players & Squad Assignment
           </h1>
           <p className="text-xs sm:text-sm text-[#6b7280] mt-1">
-            Create players, import auction CSVs, assign squads, and manage roles and jersey numbers.
+            Create players, import auction CSVs, assign squads, and manage player roles.
           </p>
         </div>
 
@@ -221,7 +221,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search players by name, jersey, or team..."
+            placeholder="Search players by name or team..."
             className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl pl-9 pr-3.5 py-2 text-xs font-medium text-[#111827] placeholder:text-[#9ca3af] focus:outline-none focus:border-[#7A1426]"
           />
         </div>
@@ -311,8 +311,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
             <table className="w-full text-left text-xs">
               <thead className="bg-[#F3F4F6] border-b border-[#E5E7EB]">
                 <tr className="font-bold text-[#7A1426] uppercase tracking-wider">
-                  <th className="pl-6 py-3.5 w-16">Jersey #</th>
-                  <th className="px-4 py-3.5">Player Name</th>
+                  <th className="pl-6 pr-4 py-3.5">Player Name</th>
                   <th className="px-4 py-3.5">Division</th>
                   <th className="px-4 py-3.5">Playing Role</th>
                   <th className="px-4 py-3.5">Assigned Franchise / Team</th>
@@ -325,10 +324,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
                   const isFemale = p.gender === 'FEMALE'
                   return (
                     <tr key={p.id} className="hover:bg-[#F4F5F7] transition-colors">
-                      <td className="pl-6 py-3.5 font-bold tabular-nums text-[#6b7280]">
-                        {p.jerseyNumber != null ? `#${p.jerseyNumber}` : '—'}
-                      </td>
-                      <td className="px-4 py-3.5 font-bold text-sm text-[#111827]">
+                      <td className="pl-6 pr-4 py-3.5 font-bold text-sm text-[#111827]">
                         <div className="flex items-center gap-2.5">
                           {p.avatarUrl ? (
                             <img
@@ -611,7 +607,6 @@ function PlayerFormDialog({
   const [name, setName] = useState(player?.name ?? '')
   const [role, setRole] = useState(player?.role ?? 'ALL_ROUNDER')
   const [gender, setGender] = useState<'MALE' | 'FEMALE'>(player?.gender === 'FEMALE' ? 'FEMALE' : 'MALE')
-  const [jersey, setJersey] = useState(player?.jerseyNumber !== null && player?.jerseyNumber !== undefined ? String(player.jerseyNumber) : '')
   const [teamId, setTeamId] = useState(player?.teamId ?? 'none')
   const [avatarUrl, setAvatarUrl] = useState(player?.avatarUrl ?? '')
 
@@ -694,21 +689,6 @@ function PlayerFormDialog({
             </p>
           </div>
 
-          {/* Jersey Number */}
-          <div className="space-y-2">
-            <Label htmlFor="player-jersey" className="text-xs font-bold text-[#111827]">Jersey Number (optional)</Label>
-            <Input
-              id="player-jersey"
-              type="number"
-              min={0}
-              max={999}
-              value={jersey}
-              onChange={(e) => setJersey(e.target.value)}
-              placeholder="e.g. 18"
-              className="rounded-xl border-[#E5E7EB] text-xs font-bold tabular-nums focus-visible:ring-[#7A1426]"
-            />
-          </div>
-
           {/* Photo URL */}
           <div className="space-y-2">
             <Label htmlFor="player-photo" className="text-xs font-bold text-[#111827]">Photo URL (optional)</Label>
@@ -730,12 +710,11 @@ function PlayerFormDialog({
             className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98"
             disabled={!name.trim()}
             onClick={() => {
-              const jNum = jersey.trim() ? parseInt(jersey, 10) : null
               onSubmit({
                 name: name.trim(),
                 role,
                 gender,
-                jerseyNumber: Number.isNaN(jNum) ? null : jNum,
+                jerseyNumber: null,
                 teamId: teamId === 'none' ? null : teamId,
                 avatarUrl: avatarUrl.trim() || null,
               })

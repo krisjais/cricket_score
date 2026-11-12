@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Award, BarChart3, CalendarDays, Home, Lock, Settings, Share2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { api } from '@/lib/client'
 import { AplLogo } from '@/components/cricket/apl-logo'
 import { Button } from '@/components/ui/button'
+import { ShareProfileDialog } from './share-profile-dialog'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   CareerStatsGrid,
@@ -33,6 +33,7 @@ export function PublicPlayerProfilePage({
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [section, setSection] = useState<PublicSection>('stats')
+  const [shareOpen, setShareOpen] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -210,11 +211,7 @@ export function PublicPlayerProfilePage({
               type="button"
               size="sm"
               variant="secondary"
-              onClick={() => {
-                const url = `${window.location.origin}/#/players/${slug}`
-                void navigator.clipboard?.writeText(url)
-                toast.success('Profile link copied')
-              }}
+              onClick={() => setShareOpen(true)}
               className="rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Share Profile
@@ -278,6 +275,13 @@ export function PublicPlayerProfilePage({
           <MatchHistorySection matches={profile.recentMatches ?? []} navigate={navigate} />
         </div>
       )}
+
+      <ShareProfileDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        playerName={profile.player.name}
+        profileSlug={slug}
+      />
     </div>
   )
 }

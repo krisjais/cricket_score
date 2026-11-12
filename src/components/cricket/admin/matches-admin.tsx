@@ -670,7 +670,7 @@ export function StartInningsDialog({
                 <SelectContent>
                   {squads.batting.filter((p: { id: string }) => p.id !== nonStrikerId).map((p: { id: string; name: string; jerseyNumber: number | null }) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.jerseyNumber ? `${p.jerseyNumber}. ` : ''}{p.name}
+                      {p.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -683,7 +683,7 @@ export function StartInningsDialog({
                 <SelectContent>
                   {squads.batting.filter((p: { id: string }) => p.id !== strikerId).map((p: { id: string; name: string; jerseyNumber: number | null }) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.jerseyNumber ? `${p.jerseyNumber}. ` : ''}{p.name}
+                      {p.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -696,7 +696,7 @@ export function StartInningsDialog({
                 <SelectContent>
                   {squads.bowling.map((p: { id: string; name: string; jerseyNumber: number | null }) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.jerseyNumber ? `${p.jerseyNumber}. ` : ''}{p.name}
+                      {p.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

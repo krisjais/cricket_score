@@ -97,9 +97,7 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
     return <div className="h-64 animate-pulse rounded-3xl bg-[#E5E7EB]/60" />
   }
 
-  const players = [...team.players].sort(
-    (a, b) => (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999) || a.name.localeCompare(a.name)
-  )
+  const players = [...team.players].sort((a, b) => a.name.localeCompare(b.name))
   const hasAnyStat = Object.values(team.stats).some((s) => s.matches > 0)
 
   return (
@@ -190,8 +188,7 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
             <Table>
               <TableHeader className="bg-[#F3F4F6]">
                 <TableRow className="border-b border-[#E5E7EB]">
-                  <TableHead className="pl-6 text-[#7A1426] font-bold text-[11px] uppercase tracking-wider w-16">Jersey #</TableHead>
-                  <TableHead className="text-[#7A1426] font-bold text-[11px] uppercase tracking-wider">Player Name</TableHead>
+                  <TableHead className="pl-6 text-[#7A1426] font-bold text-[11px] uppercase tracking-wider">Player Name</TableHead>
                   <TableHead className="text-[#7A1426] font-bold text-[11px] uppercase tracking-wider text-right">Role</TableHead>
                   {hasAnyStat && (
                     <TableHead className="text-[#7A1426] font-bold text-[11px] uppercase tracking-wider text-right pr-6">
@@ -203,7 +200,7 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
               <TableBody>
                 {players.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={hasAnyStat ? 4 : 3} className="py-10 text-center text-xs text-gray-500">
+                    <TableCell colSpan={hasAnyStat ? 3 : 2} className="py-10 text-center text-xs text-gray-500">
                       No squad memberships recorded for this selection yet.
                     </TableCell>
                   </TableRow>
@@ -212,10 +209,7 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
                     const s = team.stats[p.id]
                     return (
                       <TableRow key={p.id} className="border-b border-[#E5E7EB] hover:bg-[#F4F5F7] transition-colors">
-                        <TableCell className="pl-6 font-bold tabular-nums text-xs text-[#6b7280]">
-                          {p.jerseyNumber != null ? `#${p.jerseyNumber}` : '—'}
-                        </TableCell>
-                        <TableCell className="font-bold text-sm text-[#111827]">
+                        <TableCell className="pl-6 font-bold text-sm text-[#111827]">
                           <div className="flex flex-wrap items-center gap-2">
                             <button
                               type="button"

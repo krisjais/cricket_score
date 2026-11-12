@@ -918,7 +918,6 @@ function BatsmanPrompt({
         <SelectContent>
           {yetToBat.map((p) => (
             <SelectItem key={p.id} value={p.id}>
-              {p.jerseyNumber ? `${p.jerseyNumber}. ` : ''}
               {p.name}
             </SelectItem>
           ))}
@@ -1102,7 +1101,6 @@ function FielderAssistSelect({
         <SelectContent>
           {orderedFielders.map((f) => (
             <SelectItem key={f.id} value={f.id}>
-              {f.jerseyNumber ? `${f.jerseyNumber}. ` : ''}
               {f.name}
               {f.role === 'WICKETKEEPER' ? ' (WK)' : ''}
             </SelectItem>

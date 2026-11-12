@@ -13,13 +13,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -60,6 +53,13 @@ interface PlayerRow {
   role: string
   jerseyNumber: number | null
 }
+interface PlayerSuggestion {
+  id: string
+  name: string
+  role: string
+  teamId?: string | null
+  team?: { id: string; name: string; shortName: string } | null
+}
 interface TeamRow {
   id: string
   name: string
@@ -73,6 +73,7 @@ interface TeamRow {
 export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'players' } = {}) {
   const { toast } = useToast()
   const [teams, setTeams] = useState<TeamRow[] | null>(null)
+  const [allPlayers, setAllPlayers] = useState<PlayerSuggestion[]>([])
   const [teamDialog, setTeamDialog] = useState<{ open: boolean; team?: TeamRow }>({ open: false })
   const [playerDialog, setPlayerDialog] = useState<{ open: boolean; teamId: string; player?: PlayerRow }>({
     open: false,
@@ -85,7 +86,14 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
   const [busy, setBusy] = useState(false)
   const [resetBusy, setResetBusy] = useState(false)
 
-  const load = () => api<TeamRow[]>('/api/teams').then(setTeams).catch(() => setTeams([]))
+  const load = async () => {
+    const [teamsRes, playersRes] = await Promise.allSettled([
+      api<TeamRow[]>('/api/teams'),
+      api<PlayerSuggestion[]>('/api/players'),
+    ])
+    setTeams(teamsRes.status === 'fulfilled' ? teamsRes.value : [])
+    if (playersRes.status === 'fulfilled') setAllPlayers(playersRes.value)
+  }
   useEffect(() => {
     void load()
   }, [])
@@ -362,14 +370,14 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
               ) : (
                 squadTeam.players
                   .slice()
-                  .sort((a, b) => (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999) || a.name.localeCompare(b.name))
-                  .map((p) => (
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((p, idx) => (
                     <div
                       key={p.id}
                       className="flex items-center gap-2.5 rounded-xl bg-white border border-[#E5E7EB]/70 px-3 py-2 text-xs hover:border-[#7A1426]/40 transition-colors"
                     >
-                      <span className="w-8 text-center font-mono font-bold text-[#6b7280] bg-[#F3F4F6] py-0.5 rounded-md tabular-nums">
-                        {p.jerseyNumber ? `#${p.jerseyNumber}` : '—'}
+                      <span className="w-7 text-center font-mono font-bold text-[#6b7280] bg-[#F3F4F6] py-0.5 rounded-md tabular-nums">
+                        {idx + 1}
                       </span>
                       <span className="min-w-0 flex-1 truncate font-bold text-[#111827] text-sm">
                         {p.name}
@@ -448,13 +456,39 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
       {/* ---------------- Create/Edit Player Dialog ---------------- */}
       {playerDialog.open && (
         <PlayerFormDialog
+          teamId={playerDialog.teamId}
           teamName={teams?.find((t) => t.id === playerDialog.teamId)?.name ?? ''}
           player={playerDialog.player}
+          allPlayers={allPlayers}
           onClose={() => setPlayerDialog({ open: false, teamId: '' })}
-          onSubmit={async (data) => {
+          onSubmit={async ({ name, existingPlayerId }) => {
             const done = playerDialog.player
-              ? await act(() => api(`/api/players/${playerDialog.player!.id}`, { method: 'PATCH', json: data }), 'Player updated')
-              : await act(() => api('/api/players', { method: 'POST', json: { ...data, teamId: playerDialog.teamId } }), 'Player added')
+              ? await act(
+                  () => api(`/api/players/${playerDialog.player!.id}`, { method: 'PATCH', json: { name } }),
+                  'Player updated',
+                )
+              : existingPlayerId
+                ? await act(
+                    () =>
+                      api(`/api/players/${existingPlayerId}`, {
+                        method: 'PATCH',
+                        json: { teamId: playerDialog.teamId },
+                      }),
+                    'Player added to team',
+                  )
+                : await act(
+                    () =>
+                      api('/api/players', {
+                        method: 'POST',
+                        json: {
+                          name,
+                          role: 'ALL_ROUNDER',
+                          jerseyNumber: null,
+                          teamId: playerDialog.teamId,
+                        },
+                      }),
+                    'Player added',
+                  )
             if (done) setPlayerDialog({ open: false, teamId: '' })
           }}
         />
@@ -695,21 +729,39 @@ function TeamFormDialog({
 }
 
 function PlayerFormDialog({
+  teamId,
   teamName,
   player,
+  allPlayers,
   onClose,
   onSubmit,
 }: {
+  teamId: string
   teamName: string
   player?: PlayerRow
+  allPlayers: PlayerSuggestion[]
   onClose: () => void
-  onSubmit: (data: { name: string; role: string; jerseyNumber: number | null }) => void
+  onSubmit: (data: { name: string; existingPlayerId?: string }) => void
 }) {
   const [name, setName] = useState(player?.name ?? '')
-  const [role, setRole] = useState(player?.role ?? 'ALL_ROUNDER')
-  const [jersey, setJersey] = useState(
-    player?.jerseyNumber !== null && player?.jerseyNumber !== undefined ? String(player.jerseyNumber) : ''
-  )
+  const [selectedExistingId, setSelectedExistingId] = useState<string | null>(null)
+  const [showSuggestions, setShowSuggestions] = useState(!player)
+
+  const normalized = name.trim().toLowerCase()
+  const suggestions = !player
+    ? allPlayers
+        .filter((p) => (!normalized ? true : p.name.toLowerCase().includes(normalized)))
+        .sort((a, b) => {
+          const score = (p: PlayerSuggestion) =>
+            p.teamId === teamId ? 2 : p.teamId ? 1 : 0
+          return score(a) - score(b) || a.name.localeCompare(b.name)
+        })
+        .slice(0, 8)
+    : []
+
+  const selectedPlayer = selectedExistingId
+    ? allPlayers.find((p) => p.id === selectedExistingId) ?? null
+    : null
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -720,43 +772,86 @@ function PlayerFormDialog({
           </DialogTitle>
           <DialogDescription className="text-xs text-[#6b7280]">{teamName}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="space-y-2">
             <Label htmlFor="player-name" className="text-xs font-bold">Player name</Label>
             <Input
               id="player-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Full name"
+              onFocus={() => !player && setShowSuggestions(true)}
+              onChange={(e) => {
+                const next = e.target.value
+                setName(next)
+                setShowSuggestions(true)
+                if (selectedPlayer && selectedPlayer.name.toLowerCase() !== next.trim().toLowerCase()) {
+                  setSelectedExistingId(null)
+                }
+              }}
+              placeholder={player ? 'Full name' : 'Type player name or pick suggestion'}
+              autoComplete="off"
               className="rounded-xl border-[#E5E7EB]"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold">Role</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger aria-label="Role" className="rounded-xl border-[#E5E7EB]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ROLE_LABEL).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+          {selectedPlayer && (
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-[11px] font-semibold text-emerald-900">
+              <span className="truncate">
+                Existing player selected{selectedPlayer.team ? ` (moving from ${selectedPlayer.team.shortName})` : ' (Free Agent)'}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedExistingId(null)
+                  setName('')
+                  setShowSuggestions(true)
+                }}
+                className="shrink-0 font-bold text-emerald-700 hover:text-emerald-900 cursor-pointer"
+              >
+                Clear
+              </button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="player-jersey" className="text-xs font-bold">Jersey #</Label>
-              <Input
-                id="player-jersey"
-                type="number"
-                min={0}
-                max={999}
-                value={jersey}
-                onChange={(e) => setJersey(e.target.value)}
-                placeholder="e.g. 7"
-                className="rounded-xl border-[#E5E7EB]"
-              />
+          )}
+
+          {!player && showSuggestions && suggestions.length > 0 && !selectedExistingId && (
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-[#6b7280]">
+                Player suggestions
+              </div>
+              <div className="max-h-48 overflow-y-auto rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] divide-y divide-[#E5E7EB]/70">
+                {suggestions.map((s) => {
+                  const inCurrentTeam = s.teamId === teamId
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      disabled={inCurrentTeam}
+                      onClick={() => {
+                        setName(s.name)
+                        setSelectedExistingId(s.id)
+                        setShowSuggestions(false)
+                      }}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-white disabled:opacity-55 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <span className="font-bold text-[#111827] truncate">{s.name}</span>
+                      {inCurrentTeam ? (
+                        <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-200 text-gray-600">
+                          Already in squad
+                        </span>
+                      ) : s.team ? (
+                        <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800">
+                          {s.team.shortName} · Transfer
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700">
+                          Free Agent
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
         <DialogFooter className="gap-2 pt-2">
           <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold" onClick={onClose}>Cancel</Button>
@@ -766,12 +861,11 @@ function PlayerFormDialog({
             onClick={() =>
               onSubmit({
                 name: name.trim(),
-                role,
-                jerseyNumber: jersey === '' ? null : Number(jersey),
+                existingPlayerId: selectedExistingId ?? undefined,
               })
             }
           >
-            {player ? 'Save changes' : 'Add player'}
+            {player ? 'Save changes' : selectedExistingId ? 'Assign player' : 'Add player'}
           </Button>
         </DialogFooter>
       </DialogContent>
