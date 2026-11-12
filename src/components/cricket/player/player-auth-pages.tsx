@@ -91,7 +91,7 @@ function PasswordInputField({
           required={required}
           minLength={minLength}
           aria-describedby={describedBy}
-          aria-invalid={ariaInvalid ? 'true' : 'false'}
+          aria-invalid={ariaInvalid ? 'true' : undefined}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
@@ -246,13 +246,15 @@ function AuthSplitLayout({
                 Welcome To
               </p>
               <h2 className="mt-2 font-serif text-4xl xl:text-[42px] font-bold tracking-tight text-white leading-[1.1]">
-                Player Portal
+                {activeTab === 'SIGN_IN' ? 'Account Portal' : 'Player Portal'}
               </h2>
               <p className="mt-2 font-serif text-xl xl:text-2xl font-semibold text-[#F5C451]">
                 Nexcore Premier League
               </p>
               <p className="mt-4 max-w-[270px] text-xs sm:text-[13px] leading-relaxed text-slate-300/80">
-                Sign in or register once for verified season squads, personalized match tracking, and lifetime career statistics.
+                {activeTab === 'SIGN_IN'
+                  ? 'One portal for Players and League Admins — manage live scoring, squads, and lifetime career statistics.'
+                  : 'Register once for verified season squads, personalized match tracking, and lifetime career statistics.'}
               </p>
             </motion.div>
 
@@ -278,7 +280,7 @@ function AuthSplitLayout({
                   Nexcore Premier League
                 </p>
                 <p className="font-serif text-lg font-bold text-white leading-tight">
-                  Player Portal
+                  {activeTab === 'SIGN_IN' ? 'Account Portal' : 'Player Portal'}
                 </p>
               </div>
             </div>
@@ -427,13 +429,19 @@ interface OtpSendResult {
   devOtp?: string
 }
 
+type UnifiedLoginResponse =
+  | { role: 'ADMIN'; username: string }
+  | { role: 'PLAYER'; user: unknown; player: unknown; accessToken: string }
+
 export function PlayerLoginPage({
   navigate,
   onAuthenticated,
+  onAdminAuthenticated,
   initialMode = 'SIGN_IN',
 }: {
   navigate: (to: string) => void
   onAuthenticated: () => Promise<void>
+  onAdminAuthenticated?: () => Promise<void>
   initialMode?: 'SIGN_IN' | 'FORGOT_PASSWORD'
 }) {
   const [mode, setMode] = useState<'SIGN_IN' | 'FORGOT_PASSWORD'>(initialMode)
@@ -451,6 +459,10 @@ export function PlayerLoginPage({
   const [resettingPassword, setResettingPassword] = useState(false)
   const [resetErrorMsg, setResetErrorMsg] = useState<string | null>(null)
 
+  const signInErrorId = useId()
+  const identifierHintId = useId()
+  const identifierRef = useRef<HTMLInputElement>(null)
+  const errorAlertRef = useRef<HTMLDivElement>(null)
   const resetEmailRef = useRef<HTMLInputElement>(null)
   const resetOtpRef = useRef<HTMLInputElement>(null)
 
@@ -486,12 +498,24 @@ export function PlayerLoginPage({
     e.preventDefault()
     setErrorMsg(null)
     setResetSuccessMsg(null)
+    const cleanIdentifier = identifier.trim()
+    if (!cleanIdentifier || !password) {
+      setErrorMsg('Enter your email, mobile number, or admin username along with your password.')
+      identifierRef.current?.focus()
+      return
+    }
     setSubmitting(true)
     try {
-      await api('/api/player-auth/login', {
+      const res = await api<UnifiedLoginResponse>('/api/auth/unified-login', {
         method: 'POST',
-        json: { identifier: identifier.trim(), password },
+        json: { identifier: cleanIdentifier, password },
       })
+      if (res.role === 'ADMIN') {
+        await onAdminAuthenticated?.()
+        toast.success(`Signed in as Admin (${res.username})`)
+        navigate('/admin')
+        return
+      }
       await onAuthenticated()
       toast.success('Signed in to your player profile')
       navigate('/player/dashboard')
@@ -499,6 +523,7 @@ export function PlayerLoginPage({
       const msg = err instanceof Error ? err.message : 'Sign in failed'
       setErrorMsg(msg)
       toast.error(msg)
+      requestAnimationFrame(() => errorAlertRef.current?.focus())
     } finally {
       setSubmitting(false)
     }
@@ -589,7 +614,7 @@ export function PlayerLoginPage({
       title={mode === 'SIGN_IN' ? 'Sign In' : 'Reset Password'}
       subtitle={
         mode === 'SIGN_IN'
-          ? 'Access your Nexcore Player account'
+          ? 'Sign in with your Player or Admin account'
           : resetOtpInfo
             ? 'Enter the 6-digit OTP from your email inbox'
             : 'Receive a password reset OTP in your email inbox'
@@ -619,8 +644,11 @@ export function PlayerLoginPage({
 
             {errorMsg && (
               <div
+                id={signInErrorId}
+                ref={errorAlertRef}
                 role="alert"
-                className="auth-reveal rounded-xl border border-red-300 bg-red-50/90 px-3.5 py-2.5 text-xs font-semibold text-red-800"
+                tabIndex={-1}
+                className="auth-reveal rounded-xl border border-red-300 bg-red-50/90 px-3.5 py-2.5 text-xs font-semibold text-red-800 focus:outline-none focus:ring-2 focus:ring-red-400"
               >
                 {errorMsg}
               </div>
@@ -628,7 +656,7 @@ export function PlayerLoginPage({
 
             <div className="space-y-1.5">
               <label htmlFor="player-login-identifier" className="block text-xs font-bold text-[#111827]">
-                Email or Mobile Number
+                Email, Mobile, or Admin Username
               </label>
               <div className="relative group">
                 <span
@@ -638,9 +666,11 @@ export function PlayerLoginPage({
                   <UserCheck className="w-4 h-4" />
                 </span>
                 <input
+                  ref={identifierRef}
                   id="player-login-identifier"
                   name="username"
                   type="text"
+                  inputMode="text"
                   autoComplete="username"
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -648,9 +678,13 @@ export function PlayerLoginPage({
                   enterKeyHint="next"
                   required
                   value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  aria-invalid={errorMsg ? 'true' : 'false'}
-                  placeholder="player@example.com or +919876543210"
+                  onChange={(e) => {
+                    setIdentifier(e.target.value)
+                    if (errorMsg) setErrorMsg(null)
+                  }}
+                  aria-invalid={errorMsg ? 'true' : undefined}
+                  aria-describedby={errorMsg ? `${signInErrorId} ${identifierHintId}` : identifierHintId}
+                  placeholder="player@example.com, +919876543210, or admin"
                   className={`${AUTH_INPUT_CLASS} pl-10 pr-3.5`}
                 />
               </div>
@@ -665,16 +699,22 @@ export function PlayerLoginPage({
                 enterKeyHint="done"
                 leadingIcon
                 value={password}
-                onChange={setPassword}
+                onChange={(next) => {
+                  setPassword(next)
+                  if (errorMsg) setErrorMsg(null)
+                }}
+                ariaDescribedBy={errorMsg ? signInErrorId : undefined}
                 ariaInvalid={Boolean(errorMsg)}
                 placeholder="Enter your password"
               />
               <div className="flex items-center justify-between gap-2 pt-0.5">
-                <span className="text-[11px] text-gray-500">Career &amp; season portal</span>
+                <span id={identifierHintId} className="text-[11px] text-gray-500">
+                  Players: email or mobile &bull; Admins: username
+                </span>
                 <button
                   type="button"
                   onClick={openForgotPassword}
-                  className="text-xs font-semibold text-[#7A1426] hover:text-[#5E0E1D] hover:underline cursor-pointer py-0.5 transition-colors"
+                  className="text-xs font-semibold text-[#7A1426] hover:text-[#5E0E1D] hover:underline cursor-pointer py-0.5 transition-colors shrink-0"
                 >
                   Forgot password?
                 </button>
@@ -696,8 +736,6 @@ export function PlayerLoginPage({
               )}
               {submitting ? 'Signing in...' : 'Sign In'}
             </Button>
-
-            {spamNoticeBanner}
           </motion.form>
         ) : (
           <motion.div
@@ -860,7 +898,7 @@ export function PlayerLoginPage({
                     variant="outline"
                     disabled={sendingResetOtp}
                     onClick={sendResetOtpRequest}
-                    className="h-11 rounded-xl border-[#E5E7EB] bg-[#F9FAFB] text-xs font-bold text-[#111827] hover:border-[#7A1426] hover:text-[#7A1426] cursor-pointer transition-colors"
+                    className="h-11 rounded-xl border-[#E5E7EB] bg-[#F9FAFB] text-xs font-bold text-[#111827] hover:bg-[#7A1426]/8 hover:border-[#7A1426] hover:text-[#7A1426] cursor-pointer transition-colors"
                   >
                     {sendingResetOtp ? 'Sending...' : 'Resend OTP'}
                   </Button>
@@ -1031,7 +1069,7 @@ export function PlayerRegisterPage({
       wide
       showTabs={step === 'DETAILS'}
       onTabChange={(tab) => {
-        if (tab === 'SIGN_IN') navigate('/player/login')
+        if (tab === 'SIGN_IN') navigate('/login')
       }}
       title={step === 'DETAILS' ? 'Create Player Account' : 'Verify Your Email'}
       subtitle={
@@ -1381,7 +1419,7 @@ export function PlayerRegisterPage({
                 variant="outline"
                 onClick={sendEmailRegistrationOtp}
                 disabled={sendingOtp || !email.trim()}
-                className="h-11 rounded-xl border-[#E5E7EB] bg-[#F9FAFB] text-xs font-bold text-[#111827] hover:border-[#7A1426] hover:text-[#7A1426] cursor-pointer transition-colors"
+                className="h-11 rounded-xl border-[#E5E7EB] bg-[#F9FAFB] text-xs font-bold text-[#111827] hover:bg-[#7A1426]/8 hover:border-[#7A1426] hover:text-[#7A1426] cursor-pointer transition-colors"
               >
                 {sendingOtp ? (
                   <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" aria-hidden="true" />

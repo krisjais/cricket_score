@@ -203,7 +203,7 @@ export function PlayerDashboardPage({
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Button
-            onClick={() => navigate('/player/login')}
+            onClick={() => navigate('/login')}
             className="rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold cursor-pointer"
           >
             Sign In

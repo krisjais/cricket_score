@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Trophy, CalendarDays, Users, Shield, Home, Award, BarChart3, User, Sparkles } from 'lucide-react'
+import { Trophy, CalendarDays, Users, Shield, Home, Award, BarChart3, User, Sparkles, LogIn } from 'lucide-react'
 import { useAdminSession, useHashRoute, useMatchesFeed, usePlayerSession } from '@/lib/client'
 import { NplLogo } from '@/components/cricket/apl-logo'
 import { PortalSplashScreen } from '@/components/cricket/portal-splash'
@@ -34,8 +34,9 @@ export function AppShell() {
   const isMatchDetailRoute = seg[0] === 'match' && Boolean(seg[1])
   const isPlayerAuthRoute =
     !isPlayerSignedIn &&
-    seg[0] === 'player' &&
-    (seg[1] === 'login' || seg[1] === 'forgot-password' || seg[1] === 'register')
+    (seg[0] === 'login' ||
+      (seg[0] === 'player' &&
+        (seg[1] === 'login' || seg[1] === 'forgot-password' || seg[1] === 'register')))
 
   const publicNavItems = [
     { key: 'home', label: 'Home', footerLabel: 'Home (Live Matches)', icon: Home, to: '/' },
@@ -93,8 +94,15 @@ export function AppShell() {
     if (seg[0] === 'team' && seg[1]) return <TeamDetailPage teamId={seg[1]} navigate={navigate} />
     if (seg[0] === 'points-table') return <PointsTablePage navigate={navigate} />
     if (seg[0] === 'leaderboards') return <LeaderboardsPage navigate={navigate} />
-    if (seg[0] === 'player' && seg[1] === 'login') {
-      return <PlayerLoginPage key="login" navigate={navigate} onAuthenticated={playerSession.refresh} />
+    if (seg[0] === 'login' || (seg[0] === 'player' && seg[1] === 'login')) {
+      return (
+        <PlayerLoginPage
+          key="login"
+          navigate={navigate}
+          onAuthenticated={playerSession.refresh}
+          onAdminAuthenticated={session.refresh}
+        />
+      )
     }
     if (seg[0] === 'player' && seg[1] === 'forgot-password') {
       return <PlayerLoginPage key="forgot-password" initialMode="FORGOT_PASSWORD" navigate={navigate} onAuthenticated={playerSession.refresh} />
@@ -136,9 +144,9 @@ export function AppShell() {
   } else if (isPlayerAuthRoute) {
     view = (
       <div className="min-h-screen bg-[#F4F5F7] text-[#111827]">
-        {seg[1] === 'register' ? (
+        {seg[0] === 'player' && seg[1] === 'register' ? (
           <PlayerRegisterPage navigate={navigate} onAuthenticated={playerSession.refresh} />
-        ) : seg[1] === 'forgot-password' ? (
+        ) : seg[0] === 'player' && seg[1] === 'forgot-password' ? (
           <PlayerLoginPage
             key="forgot-password"
             initialMode="FORGOT_PASSWORD"
@@ -146,7 +154,12 @@ export function AppShell() {
             onAuthenticated={playerSession.refresh}
           />
         ) : (
-          <PlayerLoginPage key="login" navigate={navigate} onAuthenticated={playerSession.refresh} />
+          <PlayerLoginPage
+            key="login"
+            navigate={navigate}
+            onAuthenticated={playerSession.refresh}
+            onAdminAuthenticated={session.refresh}
+          />
         )}
       </div>
     )
@@ -237,32 +250,24 @@ export function AppShell() {
                 activeKey={activeKey}
                 navigate={navigate}
               />
+            ) : session.isAdmin ? (
+              <button
+                type="button"
+                onClick={() => navigate('/admin')}
+                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold px-3.5 sm:px-4 py-2 rounded-full transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
+              >
+                <Shield className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Admin Console</span>
+              </button>
             ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => navigate('/player/login')}
-                  className={cn(
-                    'hidden sm:inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-full border transition-colors cursor-pointer',
-                    activeKey === 'player'
-                      ? 'bg-[#121826] text-white border-[#121826]'
-                      : 'bg-white border-gray-200 text-[#111827] hover:bg-gray-50'
-                  )}
-                  title="Player Login & Career Portal"
-                >
-                  <User className="w-3.5 h-3.5 text-[#7A1426]" />
-                  <span>Player Login</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/admin')}
-                  className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold px-3.5 sm:px-4 py-2 rounded-full transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>{session.isAdmin ? 'Admin Console' : 'Admin Login'}</span>
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold px-3.5 sm:px-4 py-2 rounded-full transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
+              >
+                <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Login</span>
+              </button>
             )}
           </div>
         </div>
@@ -312,19 +317,6 @@ export function AppShell() {
                 >
                   <Award className="w-3.5 h-3.5 shrink-0" />
                   <span>Awards</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate('/player/login')}
-                  className={cn(
-                    'sm:hidden flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap',
-                    activeKey === 'player'
-                      ? 'bg-[#121826] text-white font-bold shadow-2xs'
-                      : 'text-gray-600 hover:bg-gray-200/70 hover:text-[#111827]'
-                  )}
-                >
-                  <User className="w-3.5 h-3.5 shrink-0" />
-                  <span>Player Portal</span>
                 </button>
               </>
             )}
@@ -385,10 +377,10 @@ export function AppShell() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate('/player/login')}
+                  onClick={() => navigate(session.isAdmin ? '/admin' : '/login')}
                   className="hover:text-[#7A1426] transition-colors cursor-pointer"
                 >
-                  Player Portal
+                  {session.isAdmin ? 'Admin Console' : 'Login'}
                 </button>
               </>
             )}

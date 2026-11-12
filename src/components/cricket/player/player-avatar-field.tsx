@@ -3,7 +3,6 @@
 import { useId, useRef, useState } from 'react'
 import { Loader2, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 
 export async function readAvatarAsDataUrl(file: File): Promise<string> {
   if (!file.type.startsWith('image/')) {
@@ -62,6 +61,9 @@ export async function readAvatarAsDataUrl(file: File): Promise<string> {
 
 const DEFAULT_INPUT_CLASS =
   'validated-field w-full min-h-11 rounded-lg border border-[#D1D5DB] bg-white px-3.5 py-2 text-base sm:text-sm text-[#111827] placeholder:text-gray-400 shadow-2xs transition-colors focus:border-[#7A1426] focus:ring-2 focus:ring-[#7A1426]/15 focus-visible:outline-2 focus-visible:outline-[#7A1426] focus:outline-none'
+
+const AVATAR_UPLOAD_BTN_CLASS =
+  'inline-flex items-center justify-center rounded-lg border border-[#7A1426]/55 bg-white text-xs font-bold text-[#7A1426] shadow-2xs transition-colors hover:bg-[#7A1426]/10 hover:text-[#5E0E1D] hover:border-[#7A1426] focus-visible:outline-2 focus-visible:outline-[#7A1426] focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer shrink-0'
 
 export function PlayerAvatarField({
   id,
@@ -159,16 +161,15 @@ export function PlayerAvatarField({
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <Button
+            <button
               type="button"
-              variant="outline"
               disabled={processing}
               onClick={() => fileInputRef.current?.click()}
-              className="min-h-9 rounded-lg border-[#7A1426]/30 bg-white px-2.5 text-xs font-bold text-[#7A1426] hover:bg-[#7A1426]/5 cursor-pointer"
+              className={`${AVATAR_UPLOAD_BTN_CLASS} min-h-9 px-2.5`}
             >
-              <Upload className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+              <Upload className="w-3.5 h-3.5 mr-1 shrink-0" aria-hidden="true" />
               Change
-            </Button>
+            </button>
             <button
               type="button"
               onClick={clearPhoto}
@@ -192,20 +193,19 @@ export function PlayerAvatarField({
               </div>
             )}
             <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 disabled={processing}
                 onClick={() => fileInputRef.current?.click()}
-                className="min-h-10 rounded-lg border-[#7A1426]/30 bg-white px-3 text-xs font-bold text-[#7A1426] hover:bg-[#7A1426]/5 cursor-pointer"
+                className={`${AVATAR_UPLOAD_BTN_CLASS} min-h-10 px-3`}
               >
                 {processing ? (
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" aria-hidden="true" />
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin shrink-0" aria-hidden="true" />
                 ) : (
-                  <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                  <Upload className="w-3.5 h-3.5 mr-1.5 shrink-0" aria-hidden="true" />
                 )}
                 {processing ? 'Loading...' : hasPreview ? 'Upload New Photo' : 'Upload Photo'}
-              </Button>
+              </button>
               {hasPreview && (
                 <button
                   type="button"
@@ -269,20 +269,19 @@ export function PlayerAvatarField({
             className={`${inputClassName} flex-1 min-w-[180px]`}
           />
 
-          <Button
+          <button
             type="button"
-            variant="outline"
             disabled={processing}
             onClick={() => fileInputRef.current?.click()}
-            className={`${uploadButtonHeightClass} shrink-0 rounded-lg border-[#7A1426]/30 bg-white px-3.5 text-xs font-bold text-[#7A1426] hover:bg-[#7A1426]/5 cursor-pointer`}
+            className={`${AVATAR_UPLOAD_BTN_CLASS} ${uploadButtonHeightClass} px-3.5`}
           >
             {processing ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" aria-hidden="true" />
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin shrink-0" aria-hidden="true" />
             ) : (
-              <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              <Upload className="w-3.5 h-3.5 mr-1.5 shrink-0" aria-hidden="true" />
             )}
             {processing ? 'Loading...' : 'Upload'}
-          </Button>
+          </button>
         </div>
       )}
     </div>

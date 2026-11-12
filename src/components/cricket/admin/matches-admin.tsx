@@ -231,7 +231,7 @@ export function MatchesAdmin({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100"
+                    className="border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
                     onClick={() => setVerifyMatch(m)}
                   >
                     <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Verify &amp; Sync

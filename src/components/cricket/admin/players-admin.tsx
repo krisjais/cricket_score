@@ -723,7 +723,7 @@ function PlayerFormDialog({
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]" onClick={onClose}>
+          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold text-[#111827] hover:bg-[#F3F4F6] hover:text-[#111827]" onClick={onClose}>
             Cancel
           </Button>
           <Button
@@ -796,7 +796,7 @@ function AssignTeamDialog({
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]" onClick={onClose}>
+          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold text-[#111827] hover:bg-[#F3F4F6] hover:text-[#111827]" onClick={onClose}>
             Cancel
           </Button>
           <Button
@@ -1076,7 +1076,7 @@ function ImportCsvDialog({
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]" onClick={onClose}>
+          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold text-[#111827] hover:bg-[#F3F4F6] hover:text-[#111827]" onClick={onClose}>
             Cancel
           </Button>
           <Button

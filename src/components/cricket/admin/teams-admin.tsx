@@ -404,7 +404,7 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6] text-[#7A1426]"
+                className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6] text-[#7A1426] hover:text-[#5E0E1D]"
                 onClick={() => setTeamDialog({ open: true, team: squadTeam })}
               >
                 <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit Team Info
@@ -670,7 +670,7 @@ function TeamFormDialog({
         </div>
 
         <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold hover:bg-[#F3F4F6]" onClick={onClose}>
+          <Button variant="outline" className="rounded-xl border-[#E5E7EB] text-xs font-bold text-[#111827] hover:bg-[#F3F4F6] hover:text-[#111827]" onClick={onClose}>
             Cancel
           </Button>
           <Button
