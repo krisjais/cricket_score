@@ -63,8 +63,8 @@ function InningsScorecard({
     if (navigate) {
       navigate(dest)
     } else if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', `/#${dest}`)
-      window.dispatchEvent(new HashChangeEvent('hashchange'))
+      window.history.pushState(null, '', dest)
+      window.dispatchEvent(new Event('npl:routechange'))
     }
   }
   const batTeam = teamOf(payload, innings.battingTeamId)

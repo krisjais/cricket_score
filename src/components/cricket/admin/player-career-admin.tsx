@@ -35,12 +35,6 @@ interface SearchPlayerRow {
   wickets: number
 }
 
-interface TeamOption {
-  id: string
-  name: string
-  shortName: string
-}
-
 interface ClaimRow {
   id: string
   targetPlayerId: string
@@ -78,7 +72,6 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
 
   const [query, setQuery] = useState('')
   const [searchRows, setSearchRows] = useState<SearchPlayerRow[]>([])
-  const [teams, setTeams] = useState<TeamOption[]>([])
   const [seasons, setSeasons] = useState<SeasonDto[]>([])
   const [tournaments, setTournaments] = useState<TournamentDto[]>([])
   const [claims, setClaims] = useState<ClaimRow[]>([])
@@ -98,13 +91,6 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
   const [tournSeasonId, setTournSeasonId] = useState('')
   const [tournFormat, setTournFormat] = useState('T20')
 
-  // Season membership assignment state
-  const [assignPlayerId, setAssignPlayerId] = useState('')
-  const [assignSeasonId, setAssignSeasonId] = useState('')
-  const [assignTeamId, setAssignTeamId] = useState('')
-  const [assignDesignation, setAssignDesignation] = useState<'PLAYER' | 'CAPTAIN' | 'VICE_CAPTAIN' | 'WICKETKEEPER'>('PLAYER')
-  const [replaceExisting, setReplaceExisting] = useState(false)
-
   // Duplicate merge state
   const [mergeSourceId, setMergeSourceId] = useState('')
   const [mergeTargetId, setMergeTargetId] = useState('')
@@ -116,19 +102,15 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
   }, [query])
 
   const loadReferenceData = useCallback(async () => {
-    const [tm, s, tr] = await Promise.all([
-      api<TeamOption[]>('/api/teams').catch(() => []),
+    const [s, tr] = await Promise.all([
       api<SeasonDto[]>('/api/seasons').catch(() => []),
       api<TournamentDto[]>('/api/tournaments').catch(() => []),
     ])
-    setTeams(tm)
     setSeasons(s)
     setTournaments(tr)
     if (s[0]) {
       setTournSeasonId((prev) => prev || s[0].id)
-      setAssignSeasonId((prev) => prev || s[0].id)
     }
-    if (tm[0]) setAssignTeamId((prev) => prev || tm[0].id)
   }, [])
 
   const loadClaimsAndAudit = useCallback(async () => {
@@ -146,19 +128,15 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
       .then((res) => alive && setSearchRows(res))
       .catch(() => {})
     Promise.all([
-      api<TeamOption[]>('/api/teams').catch(() => []),
       api<SeasonDto[]>('/api/seasons').catch(() => []),
       api<TournamentDto[]>('/api/tournaments').catch(() => []),
-    ]).then(([tm, s, tr]) => {
+    ]).then(([s, tr]) => {
       if (!alive) return
-      setTeams(tm)
       setSeasons(s)
       setTournaments(tr)
       if (s[0]) {
         setTournSeasonId((prev) => prev || s[0].id)
-        setAssignSeasonId((prev) => prev || s[0].id)
       }
-      if (tm[0]) setAssignTeamId((prev) => prev || tm[0].id)
     })
     Promise.all([
       api<ClaimRow[]>('/api/admin/claims?status=ALL').catch(() => []),
@@ -214,31 +192,6 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
       setInspectedCareer(res)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to inspect career')
-    }
-  }
-
-  async function handleAssignMembership(e: React.FormEvent) {
-    e.preventDefault()
-    if (!assignPlayerId || !assignSeasonId || !assignTeamId) return
-    setBusy(true)
-    try {
-      await api('/api/memberships', {
-        method: 'POST',
-        json: {
-          playerId: assignPlayerId,
-          seasonId: assignSeasonId,
-          teamId: assignTeamId,
-          designation: assignDesignation,
-          replaceExisting,
-        },
-      })
-      toast.success('Season team membership assigned')
-      await Promise.all([loadDirectory(), loadClaimsAndAudit()])
-      await onPlayersChanged?.()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Membership assignment failed')
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -370,7 +323,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
           {(
             [
               ['directory', 'ID Registry & Verification', Users],
-              ['seasons', 'Seasons, Teams & Rosters', CalendarRange],
+              ['seasons', 'Seasons & Tournaments', CalendarRange],
               ['claims', `Claims (${pendingClaimsCount} Pending) & Merge`, UserCheck],
               ['audit', 'Stats Audit Logs', History],
             ] as const
@@ -554,93 +507,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
       )}
 
       {subTab === 'seasons' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <Card className="rounded-3xl border border-[#E5E7EB] bg-white">
-            <CardHeader>
-              <CardTitle className="text-sm font-extrabold text-[#111827]">Assign Player to Season Team</CardTitle>
-              <CardDescription className="text-xs">
-                Preserves completed season history while assigning teams per season without overwriting past seasons.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAssignMembership} className="space-y-3 text-xs">
-                <div>
-                  <label className="font-bold block mb-1">Player</label>
-                  <select
-                    required
-                    value={assignPlayerId}
-                    onChange={(e) => setAssignPlayerId(e.target.value)}
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
-                  >
-                    <option value="">Select registered/unclaimed player...</option>
-                    {searchRows.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} · {formatCricketLabel(p.role)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-bold block mb-1">Season</label>
-                    <select
-                      required
-                      value={assignSeasonId}
-                      onChange={(e) => setAssignSeasonId(e.target.value)}
-                      className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
-                    >
-                      {seasons.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.status})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="font-bold block mb-1">Team</label>
-                    <select
-                      required
-                      value={assignTeamId}
-                      onChange={(e) => setAssignTeamId(e.target.value)}
-                      className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
-                    >
-                      {teams.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="font-bold block mb-1">Role / Designation</label>
-                  <select
-                    value={assignDesignation}
-                    onChange={(e) => setAssignDesignation(e.target.value as typeof assignDesignation)}
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
-                  >
-                    <option value="PLAYER">Squad Player</option>
-                    <option value="CAPTAIN">Captain</option>
-                    <option value="VICE_CAPTAIN">Vice-Captain</option>
-                    <option value="WICKETKEEPER">Wicketkeeper</option>
-                  </select>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={replaceExisting}
-                    onChange={(e) => setReplaceExisting(e.target.checked)}
-                    className="rounded h-4 w-4"
-                  />
-                  <span className="font-semibold text-gray-700">Allow mid-season transfer in ACTIVE/UPCOMING season</span>
-                </label>
-                <Button type="submit" disabled={busy || !assignPlayerId} className="rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold cursor-pointer">
-                  Assign Season Membership
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
+        <div className="max-w-2xl">
           <Card className="rounded-3xl border border-[#E5E7EB] bg-white">
             <CardHeader>
               <CardTitle className="text-sm font-extrabold text-[#111827]">Manage Seasons &amp; Tournaments</CardTitle>

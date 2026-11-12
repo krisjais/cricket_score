@@ -57,6 +57,7 @@ interface PlayerSuggestion {
   id: string
   name: string
   role: string
+  avatarUrl?: string | null
   teamId?: string | null
   team?: { id: string; name: string; shortName: string } | null
 }
@@ -830,9 +831,22 @@ function PlayerFormDialog({
                         setSelectedExistingId(s.id)
                         setShowSuggestions(false)
                       }}
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-white disabled:opacity-55 disabled:cursor-not-allowed cursor-pointer"
+                      className="w-full flex items-center justify-between gap-2.5 px-3 py-2 text-left text-xs transition-colors hover:bg-white disabled:opacity-55 disabled:cursor-not-allowed cursor-pointer"
                     >
-                      <span className="font-bold text-[#111827] truncate">{s.name}</span>
+                      <span className="flex items-center gap-2.5 min-w-0">
+                        {s.avatarUrl ? (
+                          <img
+                            src={s.avatarUrl}
+                            alt={s.name}
+                            className="w-7 h-7 rounded-full object-cover border border-[#E5E7EB] shrink-0"
+                          />
+                        ) : (
+                          <span className="w-7 h-7 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] flex items-center justify-center text-[10px] font-bold text-[#7A1426] shrink-0">
+                            {s.name.trim().slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="font-bold text-[#111827] truncate">{s.name}</span>
+                      </span>
                       {inCurrentTeam ? (
                         <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md bg-gray-200 text-gray-600">
                           Already in squad

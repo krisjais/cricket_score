@@ -11,6 +11,7 @@ import {
   Users,
   CalendarCheck2,
   Flame,
+  Zap,
 } from 'lucide-react'
 import { api, getSocket } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
@@ -63,10 +64,14 @@ interface DivisionAwards {
   bestBatsman: AwardPlayerStat | null
   bestBowler: AwardPlayerStat | null
   bestFielder: AwardPlayerStat | null
+  mostSixes?: AwardPlayerStat | null
+  mostFours?: AwardPlayerStat | null
   topMvp: AwardPlayerStat[]
   topBatsmen: AwardPlayerStat[]
   topBowlers: AwardPlayerStat[]
   topFielders: AwardPlayerStat[]
+  topSixes?: AwardPlayerStat[]
+  topFours?: AwardPlayerStat[]
 }
 
 interface AwardsPayload {
@@ -82,8 +87,8 @@ interface AwardsPayload {
   women: DivisionAwards
 }
 
-type LeaderboardTab = 'BATSMEN' | 'BOWLERS' | 'FIELDERS' | 'MVP'
-type CardAccent = 'maroon' | 'gold' | 'slate' | 'teal'
+type LeaderboardTab = 'BATSMEN' | 'BOWLERS' | 'FIELDERS' | 'MVP' | 'SIXES' | 'FOURS'
+type CardAccent = 'maroon' | 'gold' | 'slate' | 'teal' | 'indigo' | 'emerald'
 
 interface MiniStat {
   label: string
@@ -132,6 +137,22 @@ const ACCENT_THEMES: Record<
     statText: 'text-teal-700',
     avatarRing: 'ring-2 ring-teal-600/20',
     highlightBg: 'bg-teal-50/40',
+  },
+  indigo: {
+    topBar: 'from-[#3730A3] via-[#4F46E5] to-[#6366F1]',
+    iconBg: 'bg-indigo-600 text-white',
+    badgeText: 'text-indigo-800',
+    statText: 'text-indigo-700',
+    avatarRing: 'ring-2 ring-indigo-500/25',
+    highlightBg: 'bg-indigo-50/40',
+  },
+  emerald: {
+    topBar: 'from-[#047857] via-[#059669] to-[#10B981]',
+    iconBg: 'bg-emerald-600 text-white',
+    badgeText: 'text-emerald-800',
+    statText: 'text-emerald-700',
+    avatarRing: 'ring-2 ring-emerald-500/25',
+    highlightBg: 'bg-emerald-50/40',
   },
 }
 
@@ -390,6 +411,10 @@ function DivisionShowcase({
       ? awards.topBowlers
       : tab === 'FIELDERS'
       ? awards.topFielders
+      : tab === 'SIXES'
+      ? (awards.topSixes ?? [])
+      : tab === 'FOURS'
+      ? (awards.topFours ?? [])
       : awards.topMvp
 
   return (
@@ -428,13 +453,16 @@ function DivisionShowcase({
               </h3>
               <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                 No {isWomen ? 'female' : 'male'} players are registered yet. As soon as players are added under
-                this division and matches begin, leaders for all 4 honor categories populate automatically.
+                this division and matches begin, leaders for all {isWomen ? 4 : 6} honor categories populate automatically.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 w-full md:w-auto shrink-0">
-            {[mvpTitle, 'Best Batsman', 'Best Bowler', 'Best Fielder'].map((label) => (
+            {(isWomen
+              ? [mvpTitle, 'Best Batsman', 'Best Bowler', 'Best Fielder']
+              : [mvpTitle, 'Best Batsman', 'Best Bowler', 'Best Fielder', 'Most 6s', 'Most 4s']
+            ).map((label) => (
               <div
                 key={label}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200/80 text-[11px] font-semibold text-gray-600"
@@ -447,8 +475,13 @@ function DivisionShowcase({
         </div>
       ) : (
         <>
-          {/* 4 Luxury Spotlight Award Trophy Cards */}
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+          {/* Spotlight Award Trophy Cards (6 in Men's incl. Most 6s & Most 4s; 4 in Women's) */}
+          <div
+            className={cn(
+              'grid gap-4 grid-cols-1 sm:grid-cols-2',
+              isWomen ? 'xl:grid-cols-4' : 'lg:grid-cols-3'
+            )}
+          >
             <AwardSpotlightCard
               title={mvpTitle}
               subtitle="All-Round MVP Impact"
@@ -564,6 +597,60 @@ function DivisionShowcase({
               navigate={navigate}
               isAdmin={isAdmin}
             />
+
+            {!isWomen && (
+              <>
+                <AwardSpotlightCard
+                  title="Most 6s"
+                  subtitle="6 Runs in One Ball"
+                  badgeLabel="Maximum 6s"
+                  player={awards.mostSixes ?? null}
+                  accent="indigo"
+                  icon={<Flame className="w-4 h-4" />}
+                  statValue={awards.mostSixes ? String(awards.mostSixes.sixes) : '—'}
+                  statUnit={
+                    awards.mostSixes ? (awards.mostSixes.sixes === 1 ? 'Six' : 'Sixes') : ''
+                  }
+                  miniStats={
+                    awards.mostSixes
+                      ? [
+                          { label: 'Runs', value: awards.mostSixes.runs },
+                          { label: '4s', value: awards.mostSixes.fours },
+                          { label: 'SR', value: awards.mostSixes.strikeRate.toFixed(1) },
+                        ]
+                      : []
+                  }
+                  emptyText="Hit 6 in a single ball to lead Most 6s"
+                  navigate={navigate}
+                  isAdmin={isAdmin}
+                />
+
+                <AwardSpotlightCard
+                  title="Most 4s"
+                  subtitle="4 Runs in One Ball"
+                  badgeLabel="Boundary King"
+                  player={awards.mostFours ?? null}
+                  accent="emerald"
+                  icon={<Zap className="w-4 h-4" />}
+                  statValue={awards.mostFours ? String(awards.mostFours.fours) : '—'}
+                  statUnit={
+                    awards.mostFours ? (awards.mostFours.fours === 1 ? 'Four' : 'Fours') : ''
+                  }
+                  miniStats={
+                    awards.mostFours
+                      ? [
+                          { label: 'Runs', value: awards.mostFours.runs },
+                          { label: '6s', value: awards.mostFours.sixes },
+                          { label: 'SR', value: awards.mostFours.strikeRate.toFixed(1) },
+                        ]
+                      : []
+                  }
+                  emptyText="Hit 4 in a single ball to lead Most 4s"
+                  navigate={navigate}
+                  isAdmin={isAdmin}
+                />
+              </>
+            )}
           </div>
 
           {/* Interactive Division Leaderboard Table */}
@@ -581,12 +668,21 @@ function DivisionShowcase({
 
               <div className="flex flex-wrap gap-1 bg-[#F4F5F7] border border-gray-200 p-1 rounded-xl">
                 {(
-                  [
-                    ['BATSMEN', 'Top Batsmen'],
-                    ['BOWLERS', 'Top Bowlers'],
-                    ['FIELDERS', 'Best Fielders'],
-                    ['MVP', 'MVP Race'],
-                  ] as const
+                  (isWomen
+                    ? [
+                        ['BATSMEN', 'Top Batsmen'],
+                        ['BOWLERS', 'Top Bowlers'],
+                        ['FIELDERS', 'Best Fielders'],
+                        ['MVP', 'MVP Race'],
+                      ]
+                    : [
+                        ['BATSMEN', 'Top Batsmen'],
+                        ['BOWLERS', 'Top Bowlers'],
+                        ['FIELDERS', 'Best Fielders'],
+                        ['SIXES', 'Most 6s'],
+                        ['FOURS', 'Most 4s'],
+                        ['MVP', 'MVP Race'],
+                      ]) as readonly [LeaderboardTab, string][]
                 ).map(([key, label]) => (
                   <button
                     key={key}
@@ -648,6 +744,24 @@ function DivisionShowcase({
                           <th className="px-3 py-3 text-right">Wkts</th>
                           <th className="px-3 py-3 text-right">Fielding</th>
                           <th className="pr-5 py-3 text-right">MVP Pts</th>
+                        </>
+                      )}
+                      {tab === 'SIXES' && (
+                        <>
+                          <th className="px-3 py-3 text-right">6s</th>
+                          <th className="px-3 py-3 text-right">Runs</th>
+                          <th className="px-3 py-3 text-right">Balls</th>
+                          <th className="px-3 py-3 text-right">4s</th>
+                          <th className="pr-5 py-3 text-right">SR</th>
+                        </>
+                      )}
+                      {tab === 'FOURS' && (
+                        <>
+                          <th className="px-3 py-3 text-right">4s</th>
+                          <th className="px-3 py-3 text-right">Runs</th>
+                          <th className="px-3 py-3 text-right">Balls</th>
+                          <th className="px-3 py-3 text-right">6s</th>
+                          <th className="pr-5 py-3 text-right">SR</th>
                         </>
                       )}
                     </tr>
@@ -791,6 +905,46 @@ function DivisionShowcase({
                             </td>
                             <td className="pr-5 py-3 text-right font-extrabold text-sm text-[#7A1426] tabular-nums">
                               {p.mvpPoints}
+                            </td>
+                          </>
+                        )}
+
+                        {tab === 'SIXES' && (
+                          <>
+                            <td className="px-3 py-3 text-right font-extrabold text-sm text-[#7A1426] tabular-nums">
+                              {p.sixes}
+                            </td>
+                            <td className="px-3 py-3 text-right tabular-nums text-[#111827]">
+                              {p.runs}
+                            </td>
+                            <td className="px-3 py-3 text-right tabular-nums text-gray-600">
+                              {p.ballsFaced}
+                            </td>
+                            <td className="px-3 py-3 text-right tabular-nums text-gray-600">
+                              {p.fours}
+                            </td>
+                            <td className="pr-5 py-3 text-right font-bold tabular-nums text-[#111827]">
+                              {p.strikeRate.toFixed(1)}
+                            </td>
+                          </>
+                        )}
+
+                        {tab === 'FOURS' && (
+                          <>
+                            <td className="px-3 py-3 text-right font-extrabold text-sm text-[#7A1426] tabular-nums">
+                              {p.fours}
+                            </td>
+                            <td className="px-3 py-3 text-right tabular-nums text-[#111827]">
+                              {p.runs}
+                            </td>
+                            <td className="px-3 py-3 text-right tabular-nums text-gray-600">
+                              {p.ballsFaced}
+                            </td>
+                            <td className="px-3 py-3 text-right tabular-nums text-gray-600">
+                              {p.sixes}
+                            </td>
+                            <td className="pr-5 py-3 text-right font-bold tabular-nums text-[#111827]">
+                              {p.strikeRate.toFixed(1)}
                             </td>
                           </>
                         )}
