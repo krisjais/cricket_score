@@ -7,6 +7,7 @@ import {
   Check,
   GitMerge,
   History,
+  Loader2,
   RefreshCcw,
   Search,
   ShieldAlert,
@@ -15,9 +16,16 @@ import {
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { api } from '@/lib/client'
+import { ApiError, api } from '@/lib/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { SeasonDto, TournamentDto, fmtDate, formatCricketLabel } from '../player/player-types'
 
 interface SearchPlayerRow {
@@ -78,8 +86,9 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([])
   const [busy, setBusy] = useState(false)
 
-  // Career inspector drawer state
+  // Career inspector modal state
   const [inspectedCareer, setInspectedCareer] = useState<any | null>(null)
+  const [inspectLoadingId, setInspectLoadingId] = useState<string | null>(null)
 
   // Season / Tournament creation state
   const [seasonName, setSeasonName] = useState('')
@@ -187,11 +196,14 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
   }
 
   async function inspectCareer(playerId: string) {
+    setInspectLoadingId(playerId)
     try {
       const res = await api(`/api/players/${playerId}/career`)
       setInspectedCareer(res)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to inspect career')
+    } finally {
+      setInspectLoadingId(null)
     }
   }
 
@@ -306,9 +318,18 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
         json: { playerId: playerId ?? null, reason: 'Triggered from Admin Career Management' },
       })
       toast.success(`Recalculated ${res.playersRecalculated} player(s) across ${res.verifiedMatchesCount} verified matches`)
-      await Promise.all([loadDirectory(), loadClaimsAndAudit()])
+      await Promise.all([
+        loadDirectory(),
+        loadClaimsAndAudit(),
+        playerId && inspectedCareer?.player?.id === playerId ? inspectCareer(playerId) : Promise.resolve(),
+      ])
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Recalculation failed')
+      if (err instanceof ApiError && err.status === 401) {
+        setInspectedCareer(null)
+        toast.error('Admin session expired or replaced by a player login. Please sign in as Admin again.')
+      } else {
+        toast.error(err instanceof Error ? err.message : 'Recalculation failed')
+      }
     } finally {
       setBusy(false)
     }
@@ -423,10 +444,15 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                             type="button"
                             size="sm"
                             variant="outline"
+                            disabled={inspectLoadingId === p.id}
                             onClick={() => inspectCareer(p.id)}
                             className="h-7 rounded-lg text-[11px] font-bold cursor-pointer"
                           >
-                            Career
+                            {inspectLoadingId === p.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              'Career'
+                            )}
                           </Button>
                           <Button
                             type="button"
@@ -457,52 +483,149 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
             </div>
           </Card>
 
-          {inspectedCareer && (
-            <Card className="rounded-3xl border border-[#7A1426]/30 bg-white shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div>
-                  <CardTitle className="text-base font-extrabold text-[#111827]">
-                    {inspectedCareer.player.name}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {inspectedCareer.career?.matches ?? 0} Matches • {inspectedCareer.career?.runs ?? 0} Runs • {inspectedCareer.career?.wickets ?? 0} Wickets
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleRecalculate(inspectedCareer.player.id)}
-                    className="rounded-xl text-xs font-bold cursor-pointer"
-                  >
-                    Recalculate Player
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setInspectedCareer(null)}
-                    className="rounded-xl"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3 text-xs">
-                <div>
-                  <div className="font-bold text-[#7A1426] mb-1">Season Team Memberships:</div>
-                  <div className="flex flex-wrap gap-2">
-                    {(inspectedCareer.memberships ?? []).map((m: any) => (
-                      <span key={m.id} className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1 font-semibold">
-                        {m.season?.name ?? 'Season'} → {m.team?.name ?? 'Team'} ({m.designation})
-                      </span>
-                    ))}
+          <Dialog
+            open={Boolean(inspectedCareer)}
+            onOpenChange={(open) => !open && setInspectedCareer(null)}
+          >
+            <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
+              {inspectedCareer && (
+                <>
+                  <DialogHeader className="pr-8">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {inspectedCareer.player.avatarUrl ? (
+                          <img
+                            src={inspectedCareer.player.avatarUrl}
+                            alt={inspectedCareer.player.name}
+                            className="w-11 h-11 rounded-2xl object-cover border border-[#E5E7EB] shrink-0"
+                          />
+                        ) : (
+                          <div className="w-11 h-11 rounded-2xl bg-[#7A1426] text-white text-sm font-black flex items-center justify-center shrink-0">
+                            {String(inspectedCareer.player.name || 'PL').slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <DialogTitle className="text-lg font-extrabold text-[#111827] flex items-center gap-1.5">
+                            <span className="truncate">{inspectedCareer.player.name}</span>
+                            {inspectedCareer.player.isVerified && (
+                              <BadgeCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                            )}
+                          </DialogTitle>
+                          <DialogDescription className="text-xs text-gray-500">
+                            {formatCricketLabel(inspectedCareer.player.role)} •{' '}
+                            {inspectedCareer.player.gender === 'FEMALE' ? "Women's Division" : "Men's Division"} •{' '}
+                            {inspectedCareer.player.isClaimed ? 'Account Claimed' : 'Unclaimed Profile'}
+                          </DialogDescription>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => handleRecalculate(inspectedCareer.player.id)}
+                        className="rounded-xl text-xs font-bold border-[#7A1426]/30 text-[#7A1426] cursor-pointer"
+                      >
+                        <RefreshCcw className="w-3.5 h-3.5 mr-1.5" />
+                        Recalculate Player
+                      </Button>
+                    </div>
+                  </DialogHeader>
+
+                  <div className="space-y-5 pt-2 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {[
+                        ['Matches', inspectedCareer.career?.matches ?? 0],
+                        ['Runs', inspectedCareer.career?.runs ?? 0],
+                        ['Wickets', inspectedCareer.career?.wickets ?? 0],
+                        ['Catches / RO', (inspectedCareer.career?.catches ?? 0) + (inspectedCareer.career?.runOuts ?? 0)],
+                        ['4s / 6s', `${inspectedCareer.career?.fours ?? 0} / ${inspectedCareer.career?.sixes ?? 0}`],
+                        ['Strike Rate', Number(inspectedCareer.career?.strikeRate ?? 0).toFixed(1)],
+                        ['Economy', Number(inspectedCareer.career?.economy ?? 0).toFixed(2)],
+                        ['High Score', inspectedCareer.career?.highestScore ?? 0],
+                      ].map(([label, val]) => (
+                        <div
+                          key={String(label)}
+                          className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2.5"
+                        >
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                            {label}
+                          </div>
+                          <div className="text-base font-extrabold text-[#111827] tabular-nums mt-0.5">
+                            {val}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div>
+                      <div className="font-bold text-[#7A1426] mb-1.5">Season Team Memberships</div>
+                      {(inspectedCareer.memberships ?? []).length === 0 ? (
+                        <div className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-gray-500">
+                          No season memberships recorded yet.
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {(inspectedCareer.memberships ?? []).map((m: any) => (
+                            <span
+                              key={m.id}
+                              className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 font-semibold text-[#111827]"
+                            >
+                              {m.season?.name ?? 'Season'} → {m.team?.name ?? 'Team'} ({m.designation})
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="font-bold text-[#7A1426] mb-1.5">Verified Match History</div>
+                      {(inspectedCareer.matchHistory ?? []).length === 0 ? (
+                        <div className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-gray-500">
+                          No finalized/verified match records yet.
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-[#E5E7EB] overflow-hidden">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB] text-[10px] font-bold uppercase text-gray-500">
+                              <tr>
+                                <th className="py-2 px-3">Match</th>
+                                <th className="py-2 px-3 text-right">Bat</th>
+                                <th className="py-2 px-3 text-right">Bowl</th>
+                                <th className="py-2 px-3 text-right">Field</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {(inspectedCareer.matchHistory ?? []).slice(0, 10).map((mh: any) => (
+                                <tr key={mh.id}>
+                                  <td className="py-2 px-3 font-semibold text-[#111827]">
+                                    {mh.team?.shortName ?? 'Team'} vs {mh.opponent?.shortName ?? 'Opp'}
+                                    <span className="ml-1.5 text-[10px] text-gray-500 font-normal">
+                                      {mh.matchDate ? fmtDate(mh.matchDate) : ''}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-3 text-right tabular-nums">
+                                    {mh.runsScored ?? 0} ({mh.ballsFaced ?? 0})
+                                  </td>
+                                  <td className="py-2 px-3 text-right tabular-nums">
+                                    {mh.wickets ?? 0}/{mh.runsConceded ?? 0}
+                                  </td>
+                                  <td className="py-2 px-3 text-right tabular-nums">
+                                    {(mh.catches ?? 0) + (mh.runOuts ?? 0) + (mh.stumpings ?? 0)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                </>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 

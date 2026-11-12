@@ -1,8 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { type AdminSession, type MatchSummary } from '@/lib/client'
-import { LoginForm } from '@/components/cricket/admin/login-form'
 import { AdminSidebar, type AdminTab, type ScorerSubView } from '@/components/cricket/admin/admin-sidebar'
 import { AdminDashboardView } from '@/components/cricket/admin/admin-dashboard-view'
 import { AdminLogView } from '@/components/cricket/admin/admin-log-view'
@@ -53,16 +52,18 @@ export function AdminPage({
   const effectiveId =
     selectedId && actionable.some((m) => m.id === selectedId) ? selectedId : actionable[0]?.id ?? null
 
-  if (session.loading) {
+  useEffect(() => {
+    if (!session.loading && !session.isAdmin) {
+      navigate('/login')
+    }
+  }, [session.loading, session.isAdmin, navigate])
+
+  if (session.loading || !session.isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#7A1426] border-t-transparent" />
       </div>
     )
-  }
-
-  if (!session.isAdmin) {
-    return <LoginForm session={session} />
   }
 
   const liveCount = matches.filter((m) => m.status === 'LIVE').length

@@ -25,6 +25,8 @@ const SOCKET_URL = (
   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000')
 ).replace(/\/+$/, '')
 
+const ADMIN_UNAUTH_EVENT = 'npl:admin-unauth'
+
 export async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
   const { json, ...rest } = init ?? {}
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`
@@ -37,6 +39,13 @@ export async function api<T>(path: string, init?: RequestInit & { json?: unknown
   })
   const data = (await res.json().catch(() => null)) as { ok?: boolean; data?: T; error?: string } | null
   if (!res.ok || !data?.ok) {
+    if (
+      res.status === 401 &&
+      typeof window !== 'undefined' &&
+      (data?.error === 'Admin authentication required' || path.startsWith('/api/admin'))
+    ) {
+      window.dispatchEvent(new Event(ADMIN_UNAUTH_EVENT))
+    }
     throw new ApiError(data?.error ?? `Request failed (${res.status})`, res.status)
   }
   return data.data as T
@@ -283,10 +292,23 @@ export function useAdminSession(): AdminSession {
         void refresh()
       }
     }
+    const onAdminUnauth = () => {
+      if (mounted.current) {
+        wasAdminRef.current = false
+        setSession({ isAdmin: false, username: null })
+      }
+    }
+    const onFocus = () => {
+      if (mounted.current) void refresh()
+    }
     window.addEventListener(AUTH_SYNC_EVENT, onAuthSync)
+    window.addEventListener(ADMIN_UNAUTH_EVENT, onAdminUnauth)
+    window.addEventListener('focus', onFocus)
     return () => {
       mounted.current = false
       window.removeEventListener(AUTH_SYNC_EVENT, onAuthSync)
+      window.removeEventListener(ADMIN_UNAUTH_EVENT, onAdminUnauth)
+      window.removeEventListener('focus', onFocus)
     }
   }, [refresh])
 
@@ -356,7 +378,8 @@ export function usePlayerSession(): PlayerSession {
         currentMembership: PlayerSession['currentMembership']
       }
       let me = await api<PlayerMePayload>('/api/player-auth/me')
-      if (!me.isAuthenticated) {
+      const onAdminPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+      if (!me.isAuthenticated && !onAdminPage) {
         try {
           await api('/api/player-auth/refresh', { method: 'POST' })
           me = await api<PlayerMePayload>('/api/player-auth/me')
