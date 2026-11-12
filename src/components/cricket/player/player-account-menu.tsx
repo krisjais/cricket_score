@@ -124,10 +124,10 @@ export function PlayerAccountMenu({
         aria-label={`Player account menu for ${player.name}`}
         style={triggerStyle}
         className={cn(
-          'inline-flex items-center gap-2 rounded-full border pl-1.5 pr-2.5 py-1 text-xs font-bold transition-colors cursor-pointer shadow-2xs',
+          'inline-flex items-center gap-1.5 sm:gap-2 rounded-full border pl-1 pr-2 sm:pl-1.5 sm:pr-2.5 py-1 text-xs font-bold transition-all cursor-pointer shadow-2xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]',
           activeKey === 'player' || open
-            ? 'border-[#7A1426]/40 bg-[#7A1426]/5 text-[#7A1426]'
-            : 'border-gray-200 bg-white text-[#111827] hover:bg-gray-50'
+            ? 'border-[#7A1426]/30 bg-[#7A1426]/[0.06] text-[#7A1426] hover:bg-[#7A1426]/10'
+            : 'border-gray-200 bg-gray-50/80 text-[#111827] hover:bg-white hover:border-gray-300'
         )}
       >
         {player.avatarUrl ? (
@@ -135,19 +135,23 @@ export function PlayerAccountMenu({
             src={player.avatarUrl}
             alt=""
             aria-hidden="true"
-            className="w-6 h-6 rounded-full object-cover border border-gray-200 shrink-0"
+            className="w-6 h-6 rounded-full object-cover border border-gray-200 ring-2 ring-white shrink-0"
           />
         ) : (
           <span
             aria-hidden="true"
-            className="w-6 h-6 rounded-full bg-[#7A1426] text-white text-[10px] font-black flex items-center justify-center shrink-0"
+            className="w-6 h-6 rounded-full bg-gradient-to-br from-[#7A1426] to-[#5E0E1D] text-white text-[10px] font-black tracking-tight flex items-center justify-center ring-2 ring-white shadow-2xs shrink-0"
           >
             {initials}
           </span>
         )}
-        <span className="max-w-[96px] sm:max-w-[130px] truncate">{firstName}</span>
+        <span className="max-w-[84px] sm:max-w-[130px] truncate">{firstName}</span>
         <ChevronDown
-          className={cn('w-3.5 h-3.5 text-gray-500 transition-transform', open && 'rotate-180')}
+          className={cn(
+            'w-3.5 h-3.5 shrink-0 transition-transform duration-200',
+            activeKey === 'player' || open ? 'text-[#7A1426]/80' : 'text-gray-500',
+            open && 'rotate-180'
+          )}
           aria-hidden="true"
         />
       </button>

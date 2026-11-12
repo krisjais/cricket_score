@@ -19,7 +19,7 @@ interface LogoProps {
 
 const SIZE_MAP: Record<LogoSize, string> = {
   xs: 'h-8',
-  sm: 'h-10',
+  sm: 'h-9 sm:h-10',
   md: 'h-12',
   lg: 'h-20',
   xl: 'h-24',
@@ -41,7 +41,7 @@ export function NplLogo({
   const resolvedAlt = alt ?? (showText ? '' : `${title} — APL Season 9 Logo`)
 
   return (
-    <div className={cn('inline-flex items-center gap-2.5', className)}>
+    <div className={cn('inline-flex max-w-full min-w-0 items-center gap-2 sm:gap-2.5', className)}>
       <picture className="inline-flex shrink-0 items-center justify-center">
         <source srcSet="/apl-logo-s9.avif" type="image/avif" />
         <source srcSet="/apl-logo-s9.webp" type="image/webp" />
@@ -65,10 +65,10 @@ export function NplLogo({
       </picture>
 
       {showText && (
-        <div className="flex flex-col text-left leading-tight">
+        <div className="flex min-w-0 flex-col text-left leading-tight">
           <span
             className={cn(
-              'font-bold tracking-tight text-sm',
+              'truncate font-bold tracking-tight text-[13px] sm:text-sm',
               variant === 'dark' ? 'text-white' : 'text-[#111827]'
             )}
           >
@@ -76,7 +76,7 @@ export function NplLogo({
           </span>
           <span
             className={cn(
-              'text-[11px] font-medium leading-none mt-0.5',
+              'mt-0.5 truncate text-[10.5px] sm:text-[11px] font-medium leading-none',
               variant === 'dark' ? 'text-gray-400' : 'text-gray-500'
             )}
           >

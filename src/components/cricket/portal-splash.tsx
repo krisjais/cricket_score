@@ -197,18 +197,18 @@ export function PortalSplashScreen({
       />
 
       {/* Top Navigation / Skip Arena Button */}
-      <div className="relative z-20 shrink-0 flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-6">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-300">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          <span>Season 9 Live Portal</span>
+      <div className="relative z-20 shrink-0 flex items-center justify-between gap-2.5 px-3.5 sm:px-8 pt-4 sm:pt-6">
+        <div className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-white/[0.05] px-2.5 sm:px-3 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.12em] sm:tracking-[0.2em] text-slate-300 whitespace-nowrap min-w-0">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
+          <span className="truncate">Season 9 Live Portal</span>
         </div>
         <button
           type="button"
           onClick={() => void startDismiss()}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#F5C451]/35 bg-[#141928]/80 backdrop-blur-md px-4 py-1.5 text-xs font-bold tracking-wide text-white hover:bg-[#7A1426] hover:border-[#F5C451] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5C451] transition-colors cursor-pointer"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#F5C451]/35 bg-[#141928]/85 backdrop-blur-md px-3 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold tracking-wide text-white hover:bg-[#7A1426] hover:border-[#F5C451] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5C451] transition-colors cursor-pointer whitespace-nowrap"
         >
           <span>Enter Arena</span>
-          <ArrowRight className="w-3.5 h-3.5 text-[#F5C451]" aria-hidden="true" />
+          <ArrowRight className="w-3.5 h-3.5 shrink-0 text-[#F5C451]" aria-hidden="true" />
         </button>
       </div>
 
@@ -367,10 +367,10 @@ export function PortalSplashScreen({
 
         {/* Staggered Broadcast Lockup */}
         <div
-          className="splash-text-reveal mt-1 inline-flex items-center gap-1.5 rounded-full border border-[#F5C451]/45 bg-[#7A1426]/80 px-4 py-1 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[0.26em] text-[#FDE68A] shadow-md"
+          className="splash-text-reveal mt-1 inline-flex items-center gap-1.5 rounded-full border border-[#F5C451]/45 bg-[#7A1426]/80 px-3 sm:px-4 py-1 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[0.16em] sm:tracking-[0.24em] text-[#FDE68A] shadow-md whitespace-nowrap"
           style={{ ['--reveal-delay' as string]: '0.12s' }}
         >
-          <Sparkles className="w-3 h-3 text-[#F5C451]" aria-hidden="true" />
+          <Sparkles className="w-3 h-3 shrink-0 text-[#F5C451]" aria-hidden="true" />
           <span>Season 9 Championship Edition</span>
         </div>
 

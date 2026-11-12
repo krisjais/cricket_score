@@ -969,7 +969,12 @@ export function PlayerRegisterPage({
     try {
       const res = await api<OtpSendResult>('/api/player-auth/otp/send', {
         method: 'POST',
-        json: { channel: 'EMAIL', target, purpose: 'REGISTER' },
+        json: {
+          channel: 'EMAIL',
+          target,
+          mobile: mobile.trim(),
+          purpose: 'REGISTER',
+        },
       })
       setOtpSentInfo(res)
       toast.success(`Verification OTP sent to ${res.maskedTarget}. Check your inbox or spam folder.`)
@@ -1161,7 +1166,11 @@ export function PlayerRegisterPage({
                     autoComplete="tel"
                     required
                     value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
+                    onChange={(e) => {
+                      setMobile(e.target.value)
+                      setOtpSentInfo(null)
+                      setOtpCode('')
+                    }}
                     aria-invalid="false"
                     placeholder="+91 9876543210"
                     className={AUTH_INPUT_CLASS}

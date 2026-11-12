@@ -399,53 +399,119 @@ export function BreakdownTable({
   rows: CareerBreakdownRow[]
   nameAccessor: (row: CareerBreakdownRow) => string
 }) {
+  if (rows.length === 0) {
+    return (
+      <div
+        role="region"
+        aria-label={caption}
+        className="rounded-2xl border border-[#E5E7EB] bg-white px-5 py-8 text-center text-xs text-gray-500"
+      >
+        No verified match records yet.
+      </div>
+    )
+  }
+
   return (
-    <div className="table-wrapper rounded-2xl border border-[#E5E7EB] bg-white" tabIndex={0} role="region" aria-label={caption}>
-      <table className="w-full min-w-[680px] text-left text-xs">
-        <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
-          <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
-            <th className="py-3 pl-4 pr-3">{firstColumnLabel}</th>
-            <th className="py-3 px-2.5 text-right">Mat</th>
-            <th className="py-3 px-2.5 text-right">Runs</th>
-            <th className="py-3 px-2.5 text-right">HS</th>
-            <th className="py-3 px-2.5 text-right">Avg</th>
-            <th className="py-3 px-2.5 text-right">SR</th>
-            <th className="py-3 px-2.5 text-right">Wkts</th>
-            <th className="py-3 px-2.5 text-right">Overs</th>
-            <th className="py-3 px-2.5 text-right">Econ</th>
-            <th className="py-3 pl-2.5 pr-4 text-right">POM</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={10} className="py-8 text-center text-gray-400">
-                No verified match records yet.
-              </td>
+    <div className="rounded-2xl border border-[#E5E7EB] bg-white overflow-hidden" role="region" aria-label={caption}>
+      {/* Mobile Card Breakdown (zero horizontal scrolling) */}
+      <div className="md:hidden divide-y divide-gray-100">
+        {rows.map((r) => (
+          <div key={r.key} className="p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  {firstColumnLabel}
+                </div>
+                <div className="text-xs font-extrabold text-[#111827] truncate">{nameAccessor(r)}</div>
+              </div>
+              <span className="shrink-0 rounded-full bg-[#7A1426]/10 px-2.5 py-0.5 text-[11px] font-bold tabular-nums text-[#7A1426]">
+                {r.matches} Mat
+              </span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-1.5 rounded-xl bg-[#F9FAFB] border border-gray-100 px-2.5 py-2 text-center">
+              <div>
+                <div className="text-[9px] font-bold uppercase text-gray-400">Runs</div>
+                <div className="text-xs font-bold tabular-nums text-[#7A1426]">{r.runs}</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-bold uppercase text-gray-400">HS</div>
+                <div className="text-xs font-semibold tabular-nums text-[#111827]">
+                  {r.highestScore}
+                  {r.highestScoreNotOut && r.highestScore > 0 ? '*' : ''}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] font-bold uppercase text-gray-400">Avg</div>
+                <div className="text-xs font-semibold tabular-nums text-gray-700">
+                  {r.battingAverage !== null ? r.battingAverage.toFixed(1) : '—'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[9px] font-bold uppercase text-gray-400">SR</div>
+                <div className="text-xs font-semibold tabular-nums text-gray-700">{r.strikeRate.toFixed(1)}</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-bold uppercase text-gray-400">Wkts</div>
+                <div className="text-xs font-bold tabular-nums text-[#111827]">{r.wickets}</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-bold uppercase text-gray-400">Overs</div>
+                <div className="text-xs font-semibold tabular-nums text-gray-600">{r.overs}</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-bold uppercase text-gray-400">Econ</div>
+                <div className="text-xs font-semibold tabular-nums text-gray-700">{r.economy.toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="text-[9px] font-bold uppercase text-gray-400">POM</div>
+                <div className="text-xs font-bold tabular-nums text-[#111827]">{r.playerOfMatchAwards}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tablet & Desktop Table */}
+      <div className="hidden md:block">
+        <table className="w-full text-left text-xs">
+          <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+            <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
+              <th className="py-3 pl-4 pr-2">{firstColumnLabel}</th>
+              <th className="py-3 px-1.5 text-right">Mat</th>
+              <th className="py-3 px-1.5 text-right">Runs</th>
+              <th className="py-3 px-1.5 text-right">HS</th>
+              <th className="py-3 px-1.5 text-right">Avg</th>
+              <th className="py-3 px-1.5 text-right">SR</th>
+              <th className="py-3 px-1.5 text-right">Wkts</th>
+              <th className="py-3 px-1.5 text-right">Overs</th>
+              <th className="py-3 px-1.5 text-right">Econ</th>
+              <th className="py-3 pl-1.5 pr-4 text-right">POM</th>
             </tr>
-          ) : (
-            rows.map((r) => (
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {rows.map((r) => (
               <tr key={r.key} className="hover:bg-[#F9FAFB]">
-                <td className="py-3 pl-4 pr-3 font-bold text-[#111827]">{nameAccessor(r)}</td>
-                <td className="py-3 px-2.5 text-right tabular-nums">{r.matches}</td>
-                <td className="py-3 px-2.5 text-right tabular-nums font-bold text-[#7A1426]">{r.runs}</td>
-                <td className="py-3 px-2.5 text-right tabular-nums">
+                <td className="py-3 pl-4 pr-2 font-bold text-[#111827]">{nameAccessor(r)}</td>
+                <td className="py-3 px-1.5 text-right tabular-nums">{r.matches}</td>
+                <td className="py-3 px-1.5 text-right tabular-nums font-bold text-[#7A1426]">{r.runs}</td>
+                <td className="py-3 px-1.5 text-right tabular-nums">
                   {r.highestScore}
                   {r.highestScoreNotOut && r.highestScore > 0 ? '*' : ''}
                 </td>
-                <td className="py-3 px-2.5 text-right tabular-nums">
+                <td className="py-3 px-1.5 text-right tabular-nums">
                   {r.battingAverage !== null ? r.battingAverage.toFixed(1) : '—'}
                 </td>
-                <td className="py-3 px-2.5 text-right tabular-nums">{r.strikeRate.toFixed(1)}</td>
-                <td className="py-3 px-2.5 text-right tabular-nums font-bold text-[#111827]">{r.wickets}</td>
-                <td className="py-3 px-2.5 text-right tabular-nums text-gray-600">{r.overs}</td>
-                <td className="py-3 px-2.5 text-right tabular-nums">{r.economy.toFixed(2)}</td>
-                <td className="py-3 pl-2.5 pr-4 text-right tabular-nums font-bold">{r.playerOfMatchAwards}</td>
+                <td className="py-3 px-1.5 text-right tabular-nums">{r.strikeRate.toFixed(1)}</td>
+                <td className="py-3 px-1.5 text-right tabular-nums font-bold text-[#111827]">{r.wickets}</td>
+                <td className="py-3 px-1.5 text-right tabular-nums text-gray-600">{r.overs}</td>
+                <td className="py-3 px-1.5 text-right tabular-nums">{r.economy.toFixed(2)}</td>
+                <td className="py-3 pl-1.5 pr-4 text-right tabular-nums font-bold">{r.playerOfMatchAwards}</td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
@@ -586,7 +652,7 @@ export function MatchHistorySection({
   navigate: (to: string) => void
 }) {
   return (
-    <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs">
+    <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs overflow-hidden">
       <CardHeader>
         <CardTitle className="text-base font-extrabold text-[#111827] flex items-center gap-2">
           <Trophy className="w-4 h-4 text-[#7A1426]" />
@@ -594,70 +660,56 @@ export function MatchHistorySection({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="table-wrapper" tabIndex={0} role="region" aria-label="Player match history table">
-          <table className="w-full min-w-[760px] text-left text-xs">
-            <thead className="bg-[#F9FAFB] border-y border-[#E5E7EB]">
-              <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
-                <th className="py-3 pl-5 pr-3">Date &amp; Match</th>
-                <th className="py-3 px-3">Tournament / Season</th>
-                <th className="py-3 px-3">Batting</th>
-                <th className="py-3 px-3">Bowling</th>
-                <th className="py-3 px-3">Fielding</th>
-                <th className="py-3 px-3">Result</th>
-                <th className="py-3 pl-3 pr-5 text-right">Scorecard</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {matches.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-10 text-center text-gray-400">
-                    No verified matches played yet. Stats appear after official scorecard verification.
-                  </td>
-                </tr>
-              ) : (
-                matches.map((m) => {
-                  const batText =
-                    m.batting.innings > 0
-                      ? `${m.batting.runs}${m.batting.notOut ? '*' : ''} (${m.batting.balls}b)`
-                      : 'DNB'
-                  const bowlText =
-                    m.bowling.innings > 0
-                      ? `${m.bowling.wickets}/${m.bowling.runsConceded} (${m.bowling.overs} ov)`
-                      : '—'
-                  const fldTotal = m.fielding.catches + m.fielding.runOuts + m.fielding.stumpings
-                  const fldText =
-                    fldTotal > 0
-                      ? [
-                          m.fielding.catches ? `${m.fielding.catches}c` : '',
-                          m.fielding.runOuts ? `${m.fielding.runOuts}ro` : '',
-                          m.fielding.stumpings ? `${m.fielding.stumpings}st` : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')
-                      : '—'
+        {matches.length === 0 ? (
+          <div className="border-t border-gray-100 px-5 py-10 text-center text-xs text-gray-500">
+            No verified matches played yet. Stats appear after official scorecard verification.
+          </div>
+        ) : (
+          <>
+            {/* Mobile Match History Cards (zero horizontal scrolling) */}
+            <div className="lg:hidden divide-y divide-gray-100 border-t border-[#E5E7EB]">
+              {matches.map((m) => {
+                const batText =
+                  m.batting.innings > 0
+                    ? `${m.batting.runs}${m.batting.notOut ? '*' : ''} (${m.batting.balls}b)`
+                    : 'DNB'
+                const bowlText =
+                  m.bowling.innings > 0
+                    ? `${m.bowling.wickets}/${m.bowling.runsConceded} (${m.bowling.overs})`
+                    : '—'
+                const fldTotal = m.fielding.catches + m.fielding.runOuts + m.fielding.stumpings
+                const fldText =
+                  fldTotal > 0
+                    ? [
+                        m.fielding.catches ? `${m.fielding.catches}c` : '',
+                        m.fielding.runOuts ? `${m.fielding.runOuts}ro` : '',
+                        m.fielding.stumpings ? `${m.fielding.stumpings}st` : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')
+                    : '—'
 
-                  return (
-                    <tr
-                      key={m.id}
-                      onClick={() => navigate(`/match/${m.matchId}`)}
-                      className="hover:bg-[#F9FAFB] transition-colors cursor-pointer"
-                    >
-                      <td className="py-3 pl-5 pr-3">
-                        <div className="font-bold text-[#111827]">
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => navigate(`/match/${m.matchId}`)}
+                    className="w-full text-left px-4 py-3.5 hover:bg-[#F9FAFB] active:bg-gray-100/70 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#7A1426] space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="min-w-0">
+                        <div className="font-bold text-sm text-[#111827] truncate">
                           {m.team?.shortName ?? 'Team'} vs {m.opponent?.name ?? 'Opponent'}
                         </div>
-                        <div className="text-[11px] text-gray-500">{fmtDate(m.matchDate)}</div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="font-semibold text-[#111827]">{m.tournament?.name ?? 'Tournament'}</div>
-                        <div className="text-[11px] text-gray-500">{m.season?.name ?? ''}</div>
-                      </td>
-                      <td className="py-3 px-3 tabular-nums font-bold text-[#7A1426]">{batText}</td>
-                      <td className="py-3 px-3 tabular-nums font-bold text-[#111827]">{bowlText}</td>
-                      <td className="py-3 px-3 text-gray-600">{fldText}</td>
-                      <td className="py-3 px-3">
+                        <div className="text-[11px] text-gray-500 mt-0.5 truncate">
+                          {fmtDate(m.matchDate)}
+                          {m.tournament?.name ? ` • ${m.tournament.name}` : ''}
+                          {m.season?.name ? ` • ${m.season.name}` : ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
                             m.result === 'WON'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : m.result === 'LOST'
@@ -668,23 +720,123 @@ export function MatchHistorySection({
                           {m.result}
                         </span>
                         {m.isPlayerOfMatch && (
-                          <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                             POM
                           </span>
                         )}
-                      </td>
-                      <td className="py-3 pl-3 pr-5 text-right">
-                        <span className="inline-flex items-center gap-1 font-bold text-[#7A1426]">
-                          View <ExternalLink className="w-3 h-3" />
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 rounded-xl bg-[#F9FAFB] border border-gray-100 px-2.5 py-2 text-center">
+                      <div>
+                        <div className="text-[9px] font-bold uppercase text-gray-400">Batting</div>
+                        <div className="text-xs font-bold tabular-nums text-[#7A1426]">{batText}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-bold uppercase text-gray-400">Bowling</div>
+                        <div className="text-xs font-bold tabular-nums text-[#111827]">{bowlText}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-bold uppercase text-gray-400">Fielding</div>
+                        <div className="text-xs font-semibold text-gray-700">{fldText}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end text-[11px] font-bold text-[#7A1426] gap-1">
+                      <span>View Scorecard</span>
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Desktop Full Match History Table */}
+            <div className="hidden lg:block" role="region" aria-label="Player match history table">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#F9FAFB] border-y border-[#E5E7EB]">
+                  <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
+                    <th className="py-3 pl-5 pr-3">Date &amp; Match</th>
+                    <th className="py-3 px-3">Tournament / Season</th>
+                    <th className="py-3 px-3">Batting</th>
+                    <th className="py-3 px-3">Bowling</th>
+                    <th className="py-3 px-3">Fielding</th>
+                    <th className="py-3 px-3">Result</th>
+                    <th className="py-3 pl-3 pr-5 text-right">Scorecard</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {matches.map((m) => {
+                    const batText =
+                      m.batting.innings > 0
+                        ? `${m.batting.runs}${m.batting.notOut ? '*' : ''} (${m.batting.balls}b)`
+                        : 'DNB'
+                    const bowlText =
+                      m.bowling.innings > 0
+                        ? `${m.bowling.wickets}/${m.bowling.runsConceded} (${m.bowling.overs} ov)`
+                        : '—'
+                    const fldTotal = m.fielding.catches + m.fielding.runOuts + m.fielding.stumpings
+                    const fldText =
+                      fldTotal > 0
+                        ? [
+                            m.fielding.catches ? `${m.fielding.catches}c` : '',
+                            m.fielding.runOuts ? `${m.fielding.runOuts}ro` : '',
+                            m.fielding.stumpings ? `${m.fielding.stumpings}st` : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')
+                        : '—'
+
+                    return (
+                      <tr
+                        key={m.id}
+                        onClick={() => navigate(`/match/${m.matchId}`)}
+                        className="hover:bg-[#F9FAFB] transition-colors cursor-pointer"
+                      >
+                        <td className="py-3 pl-5 pr-3">
+                          <div className="font-bold text-[#111827]">
+                            {m.team?.shortName ?? 'Team'} vs {m.opponent?.name ?? 'Opponent'}
+                          </div>
+                          <div className="text-[11px] text-gray-500">{fmtDate(m.matchDate)}</div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-semibold text-[#111827]">{m.tournament?.name ?? 'Tournament'}</div>
+                          <div className="text-[11px] text-gray-500">{m.season?.name ?? ''}</div>
+                        </td>
+                        <td className="py-3 px-3 tabular-nums font-bold text-[#7A1426]">{batText}</td>
+                        <td className="py-3 px-3 tabular-nums font-bold text-[#111827]">{bowlText}</td>
+                        <td className="py-3 px-3 text-gray-600">{fldText}</td>
+                        <td className="py-3 px-3">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              m.result === 'WON'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : m.result === 'LOST'
+                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  : 'bg-gray-100 text-gray-700 border border-gray-200'
+                            }`}
+                          >
+                            {m.result}
+                          </span>
+                          {m.isPlayerOfMatch && (
+                            <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                              POM
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 pl-3 pr-5 text-right">
+                          <span className="inline-flex items-center gap-1 font-bold text-[#7A1426]">
+                            View <ExternalLink className="w-3 h-3" />
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   )

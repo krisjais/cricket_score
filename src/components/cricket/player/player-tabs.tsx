@@ -34,11 +34,7 @@ export function PlayerTabs<T extends string>({
 
   function selectAndFocus(nextKey: T) {
     onSelect(nextKey)
-    const btn = tabRefs.current[nextKey]
-    if (btn) {
-      btn.focus()
-      btn.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-    }
+    tabRefs.current[nextKey]?.focus()
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
@@ -57,15 +53,18 @@ export function PlayerTabs<T extends string>({
     }
   }
 
+  const hasOddTabCount = tabs.length % 2 === 1
+
   return (
     <div
       role="tablist"
       aria-label={ariaLabel}
       onKeyDown={handleKeyDown}
-      className="player-tablist items-center gap-1 rounded-2xl bg-white border border-[#E5E7EB] px-2 pt-1.5 pb-1 shadow-2xs"
+      className="player-tablist grid grid-cols-2 gap-1.5 rounded-2xl bg-white border border-[#E5E7EB] p-1.5 md:flex md:flex-wrap md:items-center md:gap-1 md:px-2 md:pt-1.5 md:pb-1 shadow-2xs"
     >
-      {tabs.map((t) => {
+      {tabs.map((t, idx) => {
         const selected = t.key === activeKey
+        const isTrailingOdd = hasOddTabCount && idx === tabs.length - 1
         return (
           <button
             key={t.key}
@@ -77,22 +76,23 @@ export function PlayerTabs<T extends string>({
             role="tab"
             aria-selected={selected}
             tabIndex={selected ? 0 : -1}
-            onClick={(e) => {
-              onSelect(t.key)
-              e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-            }}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 pt-2 pb-2.5 text-xs font-bold whitespace-nowrap transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426] ${
+            onClick={() => onSelect(t.key)}
+            className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426] md:justify-start md:border-0 md:px-3.5 md:pt-2 md:pb-2.5 md:whitespace-nowrap ${
+              isTrailingOdd ? 'col-span-2 md:col-span-1' : ''
+            } ${
               selected
-                ? 'bg-[#7A1426]/6 text-[#7A1426]'
-                : 'text-gray-600 hover:bg-[#F3F4F6] hover:text-[#111827]'
+                ? 'bg-[#7A1426] border-[#7A1426] text-white shadow-xs md:bg-[#7A1426]/6 md:text-[#7A1426] md:shadow-none'
+                : 'bg-[#F8F9FB] border-gray-200/90 text-gray-700 hover:bg-[#F3F4F6] hover:text-[#111827] md:bg-transparent md:text-gray-600'
             }`}
           >
             {t.icon ? <span aria-hidden="true">{t.icon}</span> : null}
-            <span>{t.label}</span>
+            <span className="text-center md:text-left">{t.label}</span>
             {t.badge !== undefined && t.badge !== null && t.badge !== '' ? (
               <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                  selected ? 'bg-[#7A1426] text-white' : 'bg-gray-100 text-gray-600'
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums leading-none ${
+                  selected
+                    ? 'bg-white/20 text-white md:bg-[#7A1426] md:text-white'
+                    : 'bg-white border border-gray-200 text-gray-700 md:border-0 md:bg-gray-100 md:text-gray-600'
                 }`}
               >
                 {t.badge}

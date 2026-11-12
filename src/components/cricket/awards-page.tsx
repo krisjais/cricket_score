@@ -191,12 +191,23 @@ export function AwardsPage({
   }, [])
 
   useEffect(() => {
-    void loadAwards(true)
+    let alive = true
+    api<AwardsPayload>('/api/awards')
+      .then((res) => {
+        if (alive) setData(res)
+      })
+      .catch(() => {
+        // keep existing snapshot on transient failures
+      })
+      .finally(() => {
+        if (alive) setLoading(false)
+      })
     const sock = getSocket()
     const onUpdate = () => void loadAwards(true)
     sock.on('matches:update', onUpdate)
     sock.on('match:update', onUpdate)
     return () => {
+      alive = false
       sock.off('matches:update', onUpdate)
       sock.off('match:update', onUpdate)
     }
@@ -263,8 +274,15 @@ export function AwardsPage({
       )}
 
       {/* ===================== DIVISION FILTER & REFRESH BAR ===================== */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex flex-wrap items-center gap-1 bg-white border border-gray-200 p-1 rounded-xl shadow-2xs">
+      <section
+        aria-label="Division filter"
+        className="bg-white border border-gray-200 rounded-2xl p-2 sm:p-1.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+      >
+        <div
+          role="tablist"
+          aria-label="Filter tournament awards by division"
+          className="grid grid-cols-2 sm:inline-flex items-stretch sm:items-center gap-1.5 w-full sm:w-auto"
+        >
           {(
             [
               ['ALL', 'Both Divisions', null],
@@ -277,20 +295,23 @@ export function AwardsPage({
               <button
                 key={key}
                 type="button"
+                role="tab"
+                aria-selected={active}
                 onClick={() => setDivisionFilter(key)}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer',
+                  'inline-flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer whitespace-nowrap',
+                  key === 'ALL' && 'col-span-2 sm:col-span-1',
                   active
-                    ? 'bg-[#7A1426] text-white shadow-2xs'
-                    : 'text-gray-600 hover:text-[#111827] hover:bg-gray-50'
+                    ? 'bg-[#7A1426] border-[#7A1426] text-white shadow-xs'
+                    : 'bg-[#F8F9FB] border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-[#111827]'
                 )}
               >
                 <span>{label}</span>
                 {count !== null && (
                   <span
                     className={cn(
-                      'px-1.5 py-0.2 rounded-md text-[10px] font-extrabold tabular-nums',
-                      active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
+                      'px-1.5 py-0.5 rounded-md text-[10px] font-extrabold tabular-nums leading-none',
+                      active ? 'bg-white/20 text-white' : 'bg-white border border-gray-200 text-gray-700'
                     )}
                   >
                     {count}
@@ -306,14 +327,14 @@ export function AwardsPage({
             type="button"
             onClick={() => void loadAwards(false)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-xs font-semibold text-gray-700 shadow-2xs cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-1.5 rounded-xl bg-[#F8F9FB] border border-gray-200 hover:bg-gray-100 text-xs font-semibold text-gray-700 cursor-pointer disabled:opacity-50 w-full sm:w-auto"
             title="Refresh live tournament awards"
           >
             <RefreshCcw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
             <span>Refresh Live Leaders</span>
           </button>
         )}
-      </div>
+      </section>
 
       {/* ===================== MAIN CONTENT ===================== */}
       {loading ? (
@@ -369,18 +390,20 @@ function SummaryKpiCard({
   hint: string
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-2xs flex items-center gap-3.5">
-      <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', iconBg)}>
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 truncate">
+    <div className="bg-white rounded-2xl border border-gray-200 p-3.5 sm:p-4 shadow-2xs flex flex-col justify-between gap-2.5">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className={cn('w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0', iconBg)}>
+          {icon}
+        </div>
+        <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 leading-tight">
           {label}
         </div>
-        <div className="text-xl font-extrabold text-[#111827] tabular-nums leading-tight mt-0.5">
+      </div>
+      <div>
+        <div className="text-lg sm:text-xl font-extrabold text-[#111827] tabular-nums leading-tight">
           {value}
         </div>
-        <div className="text-[11px] text-gray-500 truncate mt-0.5">{hint}</div>
+        <div className="text-[11px] text-gray-500 leading-snug mt-0.5">{hint}</div>
       </div>
     </div>
   )

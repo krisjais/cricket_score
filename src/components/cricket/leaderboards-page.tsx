@@ -70,6 +70,40 @@ interface TeamOption {
   shortName: string
 }
 
+function getPrimaryMetric(category: string, entry: LeaderboardEntry): { value: string | number; label: string } {
+  switch (category) {
+    case 'batting_avg':
+      return { value: entry.battingAverage !== null ? entry.battingAverage.toFixed(1) : '—', label: 'Avg' }
+    case 'strike_rate':
+      return { value: entry.strikeRate.toFixed(1), label: 'SR' }
+    case 'hundreds':
+      return { value: entry.hundreds, label: '100s' }
+    case 'fifties':
+      return { value: entry.fifties, label: '50s' }
+    case 'sixes':
+      return { value: entry.sixes, label: 'Sixes' }
+    case 'wickets':
+      return { value: entry.wickets, label: 'Wkts' }
+    case 'bowling_avg':
+      return { value: entry.bowlingAverage !== null ? entry.bowlingAverage.toFixed(1) : '—', label: 'Bowl Avg' }
+    case 'economy':
+      return { value: entry.economy.toFixed(2), label: 'Econ' }
+    case 'best_bowling':
+      return { value: entry.bestBowlingDisplay, label: 'Best' }
+    case 'catches':
+      return { value: entry.catches, label: 'Catches' }
+    case 'run_outs':
+      return { value: entry.runOuts, label: 'Run-Outs' }
+    case 'player_of_match':
+      return { value: entry.playerOfMatch, label: 'POM' }
+    case 'all_rounder':
+      return { value: entry.allRounderScore, label: 'Pts' }
+    case 'runs':
+    default:
+      return { value: entry.runs, label: 'Runs' }
+  }
+}
+
 export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void }) {
   const [group, setGroup] = useState<LeaderboardGroup>('batting')
   const [category, setCategory] = useState('runs')
@@ -151,10 +185,10 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
       </div>
 
       {/* Category Group & Filter Bar */}
-      <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs">
+      <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs overflow-hidden">
         <CardContent className="p-4 sm:p-5 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex rounded-xl bg-[#F3F4F6] p-1 gap-1">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="grid grid-cols-2 sm:inline-flex w-full sm:w-auto rounded-xl bg-[#F3F4F6] p-1 gap-1">
               {(
                 [
                   ['batting', 'Batting', Trophy],
@@ -167,22 +201,22 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
                   key={k}
                   type="button"
                   onClick={() => handleGroupChange(k)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-all ${
+                  className={`w-full sm:w-auto justify-center px-3 py-2 sm:py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
                     group === k ? 'bg-[#7A1426] text-white shadow-2xs' : 'text-gray-600 hover:text-[#111827]'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  {label}
+                  <Icon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <select
                 aria-label="Filter scope"
                 value={scope}
                 onChange={(e) => setScope(e.target.value as typeof scope)}
-                className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-xs font-bold text-[#111827] focus:border-[#7A1426] focus:outline-none"
+                className="w-full sm:w-auto min-w-0 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 sm:py-1.5 text-xs font-bold text-[#111827] focus:border-[#7A1426] focus:outline-none"
               >
                 <option value="ALL_TIME">All-Time Career</option>
                 <option value="SEASON">Specific Season</option>
@@ -195,7 +229,7 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
                   aria-label="Select season"
                   value={seasonId}
                   onChange={(e) => setSeasonId(e.target.value)}
-                  className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-xs font-bold text-[#111827]"
+                  className="w-full sm:w-auto min-w-0 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 sm:py-1.5 text-xs font-bold text-[#111827]"
                 >
                   {seasons.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -210,7 +244,7 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
                   aria-label="Select tournament"
                   value={tournamentId}
                   onChange={(e) => setTournamentId(e.target.value)}
-                  className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-xs font-bold text-[#111827]"
+                  className="w-full sm:w-auto min-w-0 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 sm:py-1.5 text-xs font-bold text-[#111827]"
                 >
                   {tournaments.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -225,7 +259,7 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
                   aria-label="Select team"
                   value={teamId}
                   onChange={(e) => setTeamId(e.target.value)}
-                  className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-xs font-bold text-[#111827]"
+                  className="w-full sm:w-auto min-w-0 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 sm:py-1.5 text-xs font-bold text-[#111827]"
                 >
                   {teams.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -237,23 +271,25 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100">
-            {groupCategories.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                onClick={() => setCategory(c.key)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                  category === c.key
-                    ? 'border-[#7A1426] bg-[#7A1426]/10 text-[#7A1426]'
-                    : 'border-[#E5E7EB] bg-white text-gray-600 hover:bg-[#F9FAFB]'
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-2 border-t border-gray-100">
+            <div className="flex flex-wrap items-center gap-2">
+              {groupCategories.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setCategory(c.key)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                    category === c.key
+                      ? 'border-[#7A1426] bg-[#7A1426]/10 text-[#7A1426]'
+                      : 'border-[#E5E7EB] bg-white text-gray-600 hover:bg-[#F9FAFB]'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
             {data?.qualification && (
-              <span className="ml-auto text-[11px] font-semibold text-gray-500">
+              <span className="text-[11px] font-semibold text-gray-500 sm:text-right shrink-0">
                 Qualification: {data.qualification}
               </span>
             )}
@@ -275,34 +311,120 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
                 <div key={i} className="h-12 rounded-xl bg-gray-100 animate-pulse" />
               ))}
             </div>
+          ) : !data || data.entries.length === 0 ? (
+            <div className="px-5 py-12 text-center text-sm text-gray-500">
+              No players qualify for this leaderboard under current verified matches.
+            </div>
           ) : (
-            <div className="table-wrapper" tabIndex={0} role="region" aria-label="Player leaderboard rankings">
-              <table className="w-full min-w-[740px] text-left text-xs">
-                <thead className="bg-[#F9FAFB] border-y border-[#E5E7EB]">
-                  <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
-                    <th className="py-3 pl-5 pr-3 w-14">Rank</th>
-                    <th className="py-3 px-3">Player</th>
-                    <th className="py-3 px-3">Team</th>
-                    <th className="py-3 px-2.5 text-right">Mat</th>
-                    <th className="py-3 px-2.5 text-right">Runs</th>
-                    <th className="py-3 px-2.5 text-right">Avg</th>
-                    <th className="py-3 px-2.5 text-right">SR</th>
-                    <th className="py-3 px-2.5 text-right">Wkts</th>
-                    <th className="py-3 px-2.5 text-right">Econ</th>
-                    <th className="py-3 px-2.5 text-right">Best</th>
-                    <th className="py-3 px-2.5 text-right">Cat / RO</th>
-                    <th className="py-3 pl-2.5 pr-5 text-right">POM</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {(!data || data.entries.length === 0) ? (
-                    <tr>
-                      <td colSpan={12} className="py-12 text-center text-gray-400">
-                        No players qualify for this leaderboard under current verified matches.
-                      </td>
+            <>
+              {/* Mobile / Compact Leaderboard Rows (zero horizontal scrolling) */}
+              <div className="lg:hidden divide-y divide-gray-100 border-t border-gray-100">
+                {data.entries.map((entry) => {
+                  const primary = getPrimaryMetric(category, entry)
+                  return (
+                    <button
+                      key={entry.playerId}
+                      type="button"
+                      onClick={() => navigate(`/players/${entry.playerId}`)}
+                      className="w-full text-left px-4 py-3.5 hover:bg-[#F9FAFB] active:bg-gray-100/70 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#7A1426] space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="inline-flex shrink-0 items-center justify-center min-w-[28px] h-7 px-1.5 rounded-full bg-[#7A1426]/10 text-[#7A1426] font-black tabular-nums text-xs">
+                            #{entry.rank}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-bold text-sm text-[#111827] truncate">{entry.name}</span>
+                              {entry.isVerified && (
+                                <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" aria-hidden="true" />
+                              )}
+                            </div>
+                            <div className="text-[11px] font-semibold text-gray-500">
+                              {entry.team?.shortName ?? 'Independent'} &bull; {entry.matches} Mat
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="text-lg font-black tabular-nums text-[#7A1426] leading-tight">
+                            {primary.value}
+                          </div>
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                            {primary.label}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-1.5 rounded-xl bg-[#F9FAFB] border border-gray-100 px-2.5 py-1.5 text-center">
+                        {group === 'bowling' ? (
+                          <>
+                            <div>
+                              <div className="text-[9px] font-bold uppercase text-gray-400">Wkts</div>
+                              <div className="text-xs font-bold tabular-nums text-[#111827]">{entry.wickets}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold uppercase text-gray-400">Overs</div>
+                              <div className="text-xs font-semibold tabular-nums text-gray-700">{entry.overs}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold uppercase text-gray-400">Econ</div>
+                              <div className="text-xs font-semibold tabular-nums text-gray-700">{entry.economy.toFixed(2)}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold uppercase text-gray-400">Best</div>
+                              <div className="text-xs font-semibold tabular-nums text-gray-700">{entry.bestBowlingDisplay}</div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <div className="text-[9px] font-bold uppercase text-gray-400">Runs</div>
+                              <div className="text-xs font-bold tabular-nums text-[#111827]">{entry.runs}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold uppercase text-gray-400">Avg</div>
+                              <div className="text-xs font-semibold tabular-nums text-gray-700">
+                                {entry.battingAverage !== null ? entry.battingAverage.toFixed(1) : '—'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold uppercase text-gray-400">SR</div>
+                              <div className="text-xs font-semibold tabular-nums text-gray-700">{entry.strikeRate.toFixed(1)}</div>
+                            </div>
+                            <div>
+                              <div className="text-[9px] font-bold uppercase text-gray-400">POM</div>
+                              <div className="text-xs font-semibold tabular-nums text-gray-700">{entry.playerOfMatch}</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Desktop Full Leaderboard Table */}
+              <div className="hidden lg:block" role="region" aria-label="Player leaderboard rankings">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#F9FAFB] border-y border-[#E5E7EB]">
+                    <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
+                      <th className="py-3 pl-5 pr-3 w-14">Rank</th>
+                      <th className="py-3 px-3">Player</th>
+                      <th className="py-3 px-3">Team</th>
+                      <th className="py-3 px-2 text-right">Mat</th>
+                      <th className="py-3 px-2 text-right">Runs</th>
+                      <th className="py-3 px-2 text-right">Avg</th>
+                      <th className="py-3 px-2 text-right">SR</th>
+                      <th className="py-3 px-2 text-right">Wkts</th>
+                      <th className="py-3 px-2 text-right">Econ</th>
+                      <th className="py-3 px-2 text-right">Best</th>
+                      <th className="py-3 px-2 text-right">Cat / RO</th>
+                      <th className="py-3 pl-2 pr-5 text-right">POM</th>
                     </tr>
-                  ) : (
-                    data.entries.map((entry) => {
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {data.entries.map((entry) => {
                       const slug = entry.playerId
                       return (
                         <tr
@@ -322,26 +444,26 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
                           <td className="py-3 px-3 font-semibold text-gray-600">
                             {entry.team?.shortName ?? '—'}
                           </td>
-                          <td className="py-3 px-2.5 text-right tabular-nums">{entry.matches}</td>
-                          <td className="py-3 px-2.5 text-right tabular-nums font-bold text-[#7A1426]">{entry.runs}</td>
-                          <td className="py-3 px-2.5 text-right tabular-nums">
+                          <td className="py-3 px-2 text-right tabular-nums">{entry.matches}</td>
+                          <td className="py-3 px-2 text-right tabular-nums font-bold text-[#7A1426]">{entry.runs}</td>
+                          <td className="py-3 px-2 text-right tabular-nums">
                             {entry.battingAverage !== null ? entry.battingAverage.toFixed(1) : '—'}
                           </td>
-                          <td className="py-3 px-2.5 text-right tabular-nums">{entry.strikeRate.toFixed(1)}</td>
-                          <td className="py-3 px-2.5 text-right tabular-nums font-bold text-[#111827]">{entry.wickets}</td>
-                          <td className="py-3 px-2.5 text-right tabular-nums">{entry.economy.toFixed(2)}</td>
-                          <td className="py-3 px-2.5 text-right tabular-nums">{entry.bestBowlingDisplay}</td>
-                          <td className="py-3 px-2.5 text-right tabular-nums">
+                          <td className="py-3 px-2 text-right tabular-nums">{entry.strikeRate.toFixed(1)}</td>
+                          <td className="py-3 px-2 text-right tabular-nums font-bold text-[#111827]">{entry.wickets}</td>
+                          <td className="py-3 px-2 text-right tabular-nums">{entry.economy.toFixed(2)}</td>
+                          <td className="py-3 px-2 text-right tabular-nums">{entry.bestBowlingDisplay}</td>
+                          <td className="py-3 px-2 text-right tabular-nums">
                             {entry.catches} / {entry.runOuts}
                           </td>
-                          <td className="py-3 pl-2.5 pr-5 text-right tabular-nums font-bold">{entry.playerOfMatch}</td>
+                          <td className="py-3 pl-2 pr-5 text-right tabular-nums font-bold">{entry.playerOfMatch}</td>
                         </tr>
                       )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

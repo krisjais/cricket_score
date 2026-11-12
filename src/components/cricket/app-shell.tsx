@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Trophy, CalendarDays, Users, Shield, Home, Award, BarChart3, User, Sparkles, LogIn } from 'lucide-react'
 import { useAdminSession, useHashRoute, useMatchesFeed, usePlayerSession } from '@/lib/client'
 import { NplLogo } from '@/components/cricket/apl-logo'
@@ -51,6 +51,75 @@ export function AppShell() {
   ]
   const navItems = isPlayerSignedIn ? playerNavItems : publicNavItems
   const activeKey = seg[0] || (isPlayerSignedIn ? 'player' : 'home')
+  const isShellActive = !isAdminRoute && !isMatchDetailRoute && !isPlayerAuthRoute
+
+  const activeNavKey = isPlayerSignedIn
+    ? activeKey === 'matches'
+      ? 'matches'
+      : 'player'
+    : activeKey === 'awards'
+    ? 'awards'
+    : !seg[0]
+    ? 'home'
+    : seg[0] === 'team'
+    ? 'teams'
+    : navItems.some((item) => item.key === activeKey)
+    ? activeKey
+    : null
+
+  const navListRef = useRef<HTMLDivElement>(null)
+  const navPillRef = useRef<HTMLSpanElement>(null)
+  const navBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const prevNavKeyRef = useRef<string | null>(null)
+  const activeNavKeyRef = useRef<string | null>(activeNavKey)
+  const sheenTimerRef = useRef<number | null>(null)
+
+  const syncMobilePill = useCallback((key: string | null, triggerSheen: boolean) => {
+    const container = navListRef.current
+    const pill = navPillRef.current
+    if (!container || !pill) return
+
+    const activeBtn = key ? navBtnRefs.current[key] : null
+    if (!activeBtn || activeBtn.offsetWidth === 0) {
+      delete container.dataset.pillReady
+      return
+    }
+
+    pill.style.width = `${activeBtn.offsetWidth}px`
+    pill.style.height = `${activeBtn.offsetHeight}px`
+    pill.style.transform = `translate3d(${activeBtn.offsetLeft}px, ${activeBtn.offsetTop}px, 0)`
+    container.dataset.pillReady = 'true'
+
+    if (triggerSheen) {
+      pill.dataset.moving = 'false'
+      void pill.offsetWidth
+      pill.dataset.moving = 'true'
+      if (sheenTimerRef.current) window.clearTimeout(sheenTimerRef.current)
+      sheenTimerRef.current = window.setTimeout(() => {
+        if (navPillRef.current) delete navPillRef.current.dataset.moving
+      }, 600)
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    activeNavKeyRef.current = activeNavKey
+    if (!isShellActive) return
+    const changed = prevNavKeyRef.current !== null && prevNavKeyRef.current !== activeNavKey
+    prevNavKeyRef.current = activeNavKey
+    syncMobilePill(activeNavKey, changed)
+  }, [activeNavKey, isPlayerSignedIn, isShellActive, syncMobilePill])
+
+  useEffect(() => {
+    if (!isShellActive) return
+    const container = navListRef.current
+    if (!container || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => syncMobilePill(activeNavKeyRef.current, false))
+    observer.observe(container)
+    return () => {
+      observer.disconnect()
+      if (sheenTimerRef.current) window.clearTimeout(sheenTimerRef.current)
+    }
+  }, [isShellActive, syncMobilePill])
 
   const renderPage = () => {
     if (playerSession.loading && (!seg[0] || seg[0] === 'player')) {
@@ -176,17 +245,27 @@ export function AppShell() {
     )
   }
 
+  const isActiveNavItem = (key: string) =>
+    isPlayerSignedIn
+      ? (key === 'player' && activeKey !== 'matches') ||
+        (key === 'matches' && activeKey === 'matches')
+      : activeKey === key ||
+        (key === 'home' && !seg[0]) ||
+        (key === 'teams' && seg[0] === 'team')
+
+  const liveMatchCount = matches.filter((m) => m.status === 'LIVE').length
+
   return (
     <>
-      <div className="flex min-h-screen flex-col bg-[#F4F5F7] text-[#111827]">
+      <div className="flex min-h-dvh flex-col overflow-x-clip bg-[#F4F5F7] text-[#111827]">
       {/* ===================== PUBLIC HEADER (Panel 1 Reference) ===================== */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-2xs">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2.5 px-3 sm:px-6 lg:px-8 md:flex md:h-16 md:justify-between md:gap-4">
           {/* Logo Left */}
           <button
             type="button"
             onClick={() => navigate(isPlayerSignedIn ? '/player/dashboard' : '/')}
-            className="flex items-center text-left cursor-pointer focus:outline-none"
+            className="order-1 min-w-0 py-2.5 flex items-center text-left cursor-pointer rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]"
             aria-label={isPlayerSignedIn ? 'Nexcore Premier League Player Hub' : 'Nexcore Premier League Home'}
           >
             <NplLogo
@@ -197,49 +276,95 @@ export function AppShell() {
             />
           </button>
 
-          {/* Center Horizontal Nav Links */}
-          <nav aria-label="Main navigation" className="hidden md:flex items-center gap-5 lg:gap-7">
-            {navItems.map((item) => {
-              const active = isPlayerSignedIn
-                ? (item.key === 'player' && activeKey !== 'matches') ||
-                  (item.key === 'matches' && activeKey === 'matches')
-                : activeKey === item.key ||
-                  (item.key === 'home' && !seg[0]) ||
-                  (item.key === 'teams' && seg[0] === 'team')
-              return (
+          {/* Primary Navigation (wraps cleanly on phone with animated sliding pill; inline on md+) */}
+          <nav
+            aria-label="Primary navigation"
+            className="order-3 col-span-2 md:col-span-1 md:order-2 w-full md:w-auto border-t border-gray-100 md:border-t-0 py-2 md:py-0"
+          >
+            <div
+              ref={navListRef}
+              className="mobile-nav-group relative flex flex-wrap items-center justify-center gap-1.5 md:gap-5 lg:gap-7"
+            >
+              {/* Animated sliding maroon pill behind mobile nav tabs */}
+              <span
+                ref={navPillRef}
+                aria-hidden="true"
+                className="mobile-nav-pill md:hidden pointer-events-none absolute top-0 left-0 z-0 overflow-hidden rounded-lg bg-[#7A1426] shadow-xs"
+              >
+                <span className="mobile-nav-sheen pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-transparent via-white/45 to-transparent" />
+              </span>
+
+              {navItems.map((item, idx) => {
+                const active = isActiveNavItem(item.key)
+                const Icon = item.icon
+                return (
+                  <button
+                    ref={(el) => {
+                      navBtnRefs.current[item.key] = el
+                    }}
+                    type="button"
+                    key={item.key}
+                    onClick={() => navigate(item.to)}
+                    aria-current={active ? 'page' : undefined}
+                    style={{ ['--nav-idx' as string]: idx }}
+                    className={cn(
+                      'mobile-nav-item relative z-10 inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold transition-colors duration-200 cursor-pointer active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]',
+                      'md:rounded-none md:px-0 md:py-1 md:text-sm md:bg-transparent md:shadow-none md:active:scale-100',
+                      active
+                        ? 'text-white font-bold md:text-[#7A1426]'
+                        : 'text-gray-600 hover:bg-gray-100/80 hover:text-[#111827] md:hover:bg-transparent'
+                    )}
+                  >
+                    <Icon className="mobile-nav-icon w-3.5 h-3.5 shrink-0 md:hidden transition-transform duration-200" aria-hidden="true" />
+                    <span>{item.label}</span>
+                    {active && (
+                      <span
+                        aria-hidden="true"
+                        className="nav-desktop-underline hidden md:block absolute -bottom-[18px] left-0 right-0 h-[3px] bg-[#7A1426] rounded-t-full"
+                      />
+                    )}
+                  </button>
+                )
+              })}
+              {!isPlayerSignedIn && (
                 <button
+                  ref={(el) => {
+                    navBtnRefs.current.awards = el
+                  }}
                   type="button"
-                  key={item.key}
-                  onClick={() => navigate(item.to)}
+                  onClick={() => navigate('/awards')}
+                  aria-current={activeKey === 'awards' ? 'page' : undefined}
+                  style={{ ['--nav-idx' as string]: navItems.length }}
                   className={cn(
-                    'text-sm font-semibold transition-colors relative py-1 cursor-pointer',
-                    active ? 'text-[#7A1426] font-bold' : 'text-gray-600 hover:text-[#111827]'
+                    'mobile-nav-item relative z-10 md:hidden inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold transition-colors duration-200 cursor-pointer active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]',
+                    activeKey === 'awards'
+                      ? 'text-white font-bold'
+                      : 'text-gray-600 hover:bg-gray-100/80 hover:text-[#111827]'
                   )}
                 >
-                  <span>{item.label}</span>
-                  {active && (
-                    <span className="absolute -bottom-[19px] left-0 right-0 h-[3px] bg-[#7A1426] rounded-t-full" />
-                  )}
+                  <Award className="mobile-nav-icon w-3.5 h-3.5 shrink-0 transition-transform duration-200" aria-hidden="true" />
+                  <span>Awards</span>
                 </button>
-              )
-            })}
+              )}
+            </div>
           </nav>
 
           {/* Right Action: Player Portal, Awards & Admin Login / Panel Button */}
-          <div className="flex items-center gap-2">
+          <div className="order-2 md:order-3 flex items-center justify-self-end gap-2 shrink-0 py-2.5">
             {!isPlayerSignedIn && (
               <button
                 type="button"
                 onClick={() => navigate('/awards')}
+                aria-current={activeKey === 'awards' ? 'page' : undefined}
                 className={cn(
-                  'hidden lg:inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-colors cursor-pointer',
+                  'hidden md:inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]',
                   activeKey === 'awards'
                     ? 'bg-[#7A1426]/10 border-[#7A1426]/30 text-[#7A1426]'
                     : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
                 )}
                 title="Men & Women Tournament Awards"
               >
-                <Award className="w-3.5 h-3.5 text-[#7A1426]" />
+                <Award className="w-3.5 h-3.5 text-[#7A1426]" aria-hidden="true" />
                 <span>Awards</span>
               </button>
             )}
@@ -254,7 +379,7 @@ export function AppShell() {
               <button
                 type="button"
                 onClick={() => navigate('/admin')}
-                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold px-3.5 sm:px-4 py-2 rounded-full transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
+                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold px-3.5 sm:px-4 py-2 rounded-full transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]"
               >
                 <Shield className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Admin Console</span>
@@ -263,7 +388,7 @@ export function AppShell() {
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold px-3.5 sm:px-4 py-2 rounded-full transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98"
+                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold px-3.5 sm:px-4 py-2 rounded-full transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-98 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]"
               >
                 <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>Login</span>
@@ -271,128 +396,114 @@ export function AppShell() {
             )}
           </div>
         </div>
-
-        {/* Mobile Header Navigation (replaces bottom bar on small viewports) */}
-        <nav
-          aria-label="Mobile navigation"
-          className="md:hidden border-t border-gray-100 bg-gray-50/80 px-3 py-1.5 overflow-x-auto"
-        >
-          <div className="flex items-center gap-1 min-w-max">
-            {navItems.map((item) => {
-              const active = isPlayerSignedIn
-                ? (item.key === 'player' && activeKey !== 'matches') ||
-                  (item.key === 'matches' && activeKey === 'matches')
-                : activeKey === item.key ||
-                  (item.key === 'home' && !seg[0]) ||
-                  (item.key === 'teams' && seg[0] === 'team')
-              const Icon = item.icon
-              return (
-                <button
-                  type="button"
-                  key={item.key}
-                  onClick={() => navigate(item.to)}
-                  className={cn(
-                    'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap',
-                    active
-                      ? 'bg-[#7A1426] text-white font-bold shadow-2xs'
-                      : 'text-gray-600 hover:bg-gray-200/70 hover:text-[#111827]'
-                  )}
-                >
-                  <Icon className="w-3.5 h-3.5 shrink-0" />
-                  <span>{item.label}</span>
-                </button>
-              )
-            })}
-            {!isPlayerSignedIn && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => navigate('/awards')}
-                  className={cn(
-                    'lg:hidden flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap',
-                    activeKey === 'awards'
-                      ? 'bg-[#7A1426] text-white font-bold shadow-2xs'
-                      : 'text-gray-600 hover:bg-gray-200/70 hover:text-[#111827]'
-                  )}
-                >
-                  <Award className="w-3.5 h-3.5 shrink-0" />
-                  <span>Awards</span>
-                </button>
-              </>
-            )}
-          </div>
-        </nav>
       </header>
 
       {/* Main Content */}
-      <main id="main" className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-10">
+      <main id="main" className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-10 min-w-0">
         {renderPage()}
       </main>
 
       {/* Portal Footer */}
-      <footer className="border-t border-gray-200 bg-white/95">
-        <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 py-5">
-          <button
-            type="button"
-            onClick={() => navigate(isPlayerSignedIn ? '/player/dashboard' : '/')}
-            className="flex items-center text-left cursor-pointer focus:outline-none"
-            aria-label={isPlayerSignedIn ? 'Nexcore Premier League Player Hub' : 'Nexcore Premier League Home'}
-          >
-            <NplLogo
-              size="sm"
-              lazy
-              showText
-              title="Nexcore Premier League"
-              subtitle={isPlayerSignedIn ? 'APL Season 9 • Player Career Portal' : 'APL Season 9 • Official Cricket Portal'}
-            />
-          </button>
+      <footer className="relative overflow-hidden border-t-2 border-[#7A1426] bg-[#0B1120] text-gray-300">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(122,20,38,0.24),transparent_58%)]"
+        />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-10 pb-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:gap-10">
+            {/* Brand & League Summary */}
+            <div className="md:col-span-7 space-y-4">
+              <button
+                type="button"
+                onClick={() => navigate(isPlayerSignedIn ? '/player/dashboard' : '/')}
+                className="inline-flex items-center text-left cursor-pointer rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
+                aria-label={isPlayerSignedIn ? 'Nexcore Premier League Player Hub' : 'Nexcore Premier League Home'}
+              >
+                <NplLogo
+                  size="sm"
+                  lazy
+                  variant="dark"
+                  showText
+                  title="Nexcore Premier League"
+                  subtitle={isPlayerSignedIn ? 'APL Season 9 • Player Career Portal' : 'APL Season 9 • Official Cricket Portal'}
+                />
+              </button>
+              <p className="max-w-sm text-xs leading-relaxed text-gray-400">
+                Follow live match scorecards, fixtures, team squads, points standings, awards, and player career milestones across Season 9.
+              </p>
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setSplashReplayToken((c) => c + 1)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#7A1426]/60 bg-[#7A1426]/20 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#7A1426] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" aria-hidden="true" />
+                  <span>Arena Intro</span>
+                </button>
+                {liveMatchCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+                    <span>{liveMatchCount} Live {liveMatchCount === 1 ? 'Match' : 'Matches'}</span>
+                  </button>
+                )}
+              </div>
+            </div>
 
-          <nav aria-label="Footer navigation" className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-gray-500">
-            {navItems.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => navigate(item.to)}
-                className="hover:text-[#7A1426] transition-colors cursor-pointer"
-              >
-                {item.label}
-              </button>
-            ))}
-            {isPlayerSignedIn ? (
-              <button
-                type="button"
-                onClick={() => navigate('/player/dashboard?tab=profile')}
-                className="hover:text-[#7A1426] transition-colors cursor-pointer"
-              >
-                Edit Profile
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => navigate('/awards')}
-                  className="hover:text-[#7A1426] transition-colors cursor-pointer"
-                >
-                  Awards
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate(session.isAdmin ? '/admin' : '/login')}
-                  className="hover:text-[#7A1426] transition-colors cursor-pointer"
-                >
-                  {session.isAdmin ? 'Admin Console' : 'Login'}
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setSplashReplayToken((c) => c + 1)}
-              className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-[#7A1426] hover:bg-[#7A1426] hover:text-white transition-colors cursor-pointer"
-            >
-              <Sparkles className="w-3 h-3" aria-hidden="true" />
-              <span>Arena Intro</span>
-            </button>
-          </nav>
+            {/* Tournament Navigation */}
+            <nav aria-label="Footer tournament navigation" className="md:col-span-5">
+              <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-gray-400 mb-3.5">
+                Tournament Hub
+              </h2>
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs font-medium">
+                {navItems.map((item) => {
+                  const active = isActiveNavItem(item.key)
+                  return (
+                    <li key={item.key}>
+                      <button
+                        type="button"
+                        onClick={() => navigate(item.to)}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn(
+                          'text-left transition-colors cursor-pointer rounded px-1 -mx-1 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80',
+                          active ? 'text-white font-bold underline decoration-[#7A1426] decoration-2 underline-offset-4' : 'text-gray-300 hover:text-white'
+                        )}
+                      >
+                        {item.footerLabel}
+                      </button>
+                    </li>
+                  )
+                })}
+                {!isPlayerSignedIn && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/awards')}
+                      aria-current={activeKey === 'awards' ? 'page' : undefined}
+                      className={cn(
+                        'text-left transition-colors cursor-pointer rounded px-1 -mx-1 py-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80',
+                        activeKey === 'awards'
+                          ? 'text-white font-bold underline decoration-[#7A1426] decoration-2 underline-offset-4'
+                          : 'text-gray-300 hover:text-white'
+                      )}
+                    >
+                      Awards &amp; Honors
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </nav>
+          </div>
+        </div>
+
+        <div className="relative border-t border-white/10 bg-black/25">
+          <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-2 px-4 sm:px-6 lg:px-8 py-4 text-[11px] text-gray-400 text-center sm:text-left">
+            <span>Nexcore Premier League &bull; APL Season 9</span>
+            <span>Official Live Scoring &amp; Career Statistics Portal</span>
+          </div>
         </div>
       </footer>
       </div>
