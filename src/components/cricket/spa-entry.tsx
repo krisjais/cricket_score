@@ -1,8 +1,13 @@
 'use client'
 
-import { AppShell } from '@/components/cricket/app-shell'
+import dynamic from 'next/dynamic'
+import { SplashLoadingFallback } from '@/components/cricket/portal-splash'
 
-export function SpaEntry() {
-  return <AppShell />
-}
+export const SpaEntry = dynamic(
+  () => import('@/components/cricket/app-shell').then((mod) => mod.AppShell),
+  {
+    ssr: false,
+    loading: () => <SplashLoadingFallback />,
+  }
+)
 

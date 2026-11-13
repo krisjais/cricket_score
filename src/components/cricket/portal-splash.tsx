@@ -19,6 +19,42 @@ const EMBER_PARTICLES = [
 
 const COMPASS_ANGLES = Array.from({ length: 36 }, (_, i) => i * 10)
 
+/**
+ * Lightweight pre-hydration stadium fallback matching PortalSplashScreen
+ * so cold initial load is 100% opaque and matches the midnight arena theme.
+ */
+export function SplashLoadingFallback() {
+  return (
+    <div
+      className="min-h-dvh flex flex-col items-center justify-center px-6 text-center bg-[#070B16]"
+      style={{
+        backgroundImage:
+          'radial-gradient(circle at 50% 42%, rgba(122, 20, 38, 0.36) 0%, rgba(20, 25, 40, 0.94) 48%, #070B16 100%)',
+      }}
+    >
+      <div className="relative flex items-center justify-center mb-6">
+        <div
+          aria-hidden="true"
+          className="absolute h-48 w-48 rounded-full border border-[#F5C451]/30 border-t-[#F5C451] motion-safe:animate-spin"
+        />
+        <AplLogo
+          size="2xl"
+          variant="dark"
+          priority
+          alt="APL Season 9 Crest"
+          imgClassName="h-36 sm:h-44 xl:h-48"
+        />
+      </div>
+      <p className="text-sm font-extrabold uppercase tracking-[0.26em] text-[#F5C451]">
+        Alliance Premier League
+      </p>
+      <p className="mt-1.5 text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-300/80">
+        Entering APL Season 9 Arena...
+      </p>
+    </div>
+  )
+}
+
 export function PortalSplashScreen({
   onFinished,
 }: {
@@ -63,11 +99,11 @@ export function PortalSplashScreen({
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-    const step1 = window.setTimeout(() => setStageIndex(1), reducedMotion ? 1400 : 1850)
-    const step2 = window.setTimeout(() => setStageIndex(2), reducedMotion ? 2800 : 3850)
+    const step1 = window.setTimeout(() => setStageIndex(1), reducedMotion ? 260 : 800)
+    const step2 = window.setTimeout(() => setStageIndex(2), reducedMotion ? 520 : 1650)
     const autoClose = window.setTimeout(() => {
       void startDismiss()
-    }, reducedMotion ? 4200 : 5800)
+    }, reducedMotion ? 900 : 2400)
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -99,7 +135,7 @@ export function PortalSplashScreen({
       data-closing={closing ? 'true' : 'false'}
       role="region"
       aria-label="APL Season 9 Arena Intro"
-      className="portal-splash-root fixed inset-0 z-[9999] flex flex-col overflow-hidden select-none bg-[#070B16]"
+      className="portal-splash-root fixed inset-0 z-[100] flex flex-col overflow-hidden select-none"
     >
       {/* Solid Opaque Left & Right Parting Stadium Tunnel Gates (overlap slightly by 1px to avoid seam bleed) */}
       <div
@@ -345,13 +381,6 @@ export function PortalSplashScreen({
           <span className="bg-gradient-to-r from-white via-[#FDE68A] to-[#F5C451] bg-clip-text text-transparent">
             Alliance Premier League
           </span>
-        </p>
-
-        <p
-          className="splash-text-reveal mt-1.5 text-[11px] sm:text-xs font-semibold tracking-[0.22em] uppercase text-slate-300/85"
-          style={{ ['--reveal-delay' as string]: '0.3s' }}
-        >
-          Entering APL Season 9 Arena...
         </p>
 
         {/* Feature Chips */}

@@ -160,7 +160,7 @@ export function AppShell() {
   }, [isShellActive, syncMobilePill])
 
   const renderPage = () => {
-    if (playerSession.loading && seg[0] === 'player' && (!seg[1] || seg[1] === 'dashboard')) {
+    if (playerSession.loading && (!seg[0] || seg[0] === 'player')) {
       return <PlayerDashboardSkeleton />
     }
 
@@ -293,9 +293,9 @@ export function AppShell() {
   if (view) {
     return (
       <>
+        {view}
         <PortalSplashScreen key={splashReplayToken} />
         {transitionOverlay}
-        {view}
       </>
     )
   }
@@ -312,8 +312,6 @@ export function AppShell() {
 
   return (
     <>
-      <PortalSplashScreen key={splashReplayToken} />
-      {transitionOverlay}
       <div className="flex min-h-dvh flex-col overflow-x-clip bg-[#F4F5F7] text-[#111827]">
       {/* ===================== PUBLIC HEADER (Panel 1 Reference) ===================== */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-2xs">
@@ -570,6 +568,8 @@ export function AppShell() {
         </div>
       </footer>
       </div>
+      <PortalSplashScreen key={splashReplayToken} />
+      {transitionOverlay}
     </>
   )
 }

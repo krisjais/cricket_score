@@ -222,9 +222,14 @@
 }
 
 .portal-splash-root {
-  background-color: #070B16;
   opacity: 1;
   transition: opacity 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@starting-style {
+  .portal-splash-root {
+    opacity: 0;
+  }
 }
 
 .portal-splash-gate-left,
@@ -297,7 +302,7 @@
   }
   .splash-progress-bar {
     transform: scaleX(0.04);
-    animation: splash-progress-fill 5.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+    animation: splash-progress-fill 2.25s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards;
   }
 }
 
