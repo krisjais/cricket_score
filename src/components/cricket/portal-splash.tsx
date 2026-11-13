@@ -19,14 +19,6 @@ const EMBER_PARTICLES = [
 
 const COMPASS_ANGLES = Array.from({ length: 36 }, (_, i) => i * 10)
 
-/**
- * Ultra-light dark viewport placeholder to prevent FOUC during dynamic chunk evaluation.
- * Does not render any duplicate splash logo or text — PortalSplashScreen is the single source of truth.
- */
-export function SplashLoadingFallback() {
-  return <div aria-hidden="true" className="fixed inset-0 z-[100] bg-[#070B16]" />
-}
-
 export function PortalSplashScreen({
   onFinished,
 }: {
@@ -107,7 +99,7 @@ export function PortalSplashScreen({
       data-closing={closing ? 'true' : 'false'}
       role="region"
       aria-label="APL Season 9 Arena Intro"
-      className="portal-splash-root fixed inset-0 z-[100] flex flex-col overflow-hidden select-none"
+      className="portal-splash-root fixed inset-0 z-[9999] flex flex-col overflow-hidden select-none bg-[#070B16]"
     >
       {/* Solid Opaque Left & Right Parting Stadium Tunnel Gates (overlap slightly by 1px to avoid seam bleed) */}
       <div
