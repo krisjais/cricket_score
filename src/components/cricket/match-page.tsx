@@ -128,11 +128,11 @@ export function MatchPage({
               type="button"
               onClick={() => navigate(brandTo)}
               className="flex items-center gap-2.5 text-left cursor-pointer focus:outline-none min-w-0"
-              aria-label={brandTo === '/player/dashboard' ? 'Nexcore Premier League Player Hub' : 'Nexcore Premier League Home'}
+              aria-label={brandTo === '/player/dashboard' ? 'Alliance Premier League Player Hub' : 'Alliance Premier League Home'}
             >
               <AplLogo size="xs" />
               <div className="min-w-0">
-                <div className="text-sm font-bold text-[#111827] truncate">Nexcore Premier League</div>
+                <div className="text-sm font-bold text-[#111827] truncate">Alliance Premier League</div>
                 <div className="text-[11px] text-gray-500 font-medium truncate">
                   {m.teamA.shortName} vs {m.teamB.shortName} &bull; Live Match
                 </div>

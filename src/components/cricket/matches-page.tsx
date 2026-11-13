@@ -54,7 +54,7 @@ export function MatchesPage({
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#7A1426] mb-1">
             <Trophy className="w-3.5 h-3.5" />
-            <span>Nexcore Premier League</span>
+            <span>Alliance Premier League</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
             Matches &amp; Schedule

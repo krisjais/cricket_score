@@ -31,7 +31,7 @@ export function NplLogo({
   className = '',
   imgClassName = '',
   showText = false,
-  title = 'Nexcore Premier League',
+  title = 'Alliance Premier League',
   subtitle = 'Cricket Tournament',
   variant = 'light',
   lazy = false,

@@ -49,7 +49,7 @@ export function HomePage({
         {/* Background Batsman Image */}
         <img
           src="/npl-hero-banner.jpg"
-          alt="Nexcore Premier League Cricket"
+          alt="Alliance Premier League Cricket"
           fetchPriority="high"
           className="absolute inset-0 h-full w-full object-cover object-right select-none pointer-events-none"
         />
@@ -66,7 +66,7 @@ export function HomePage({
           <AplLogo size="xl" className="shrink-0 self-start sm:self-center" alt="APL Season 9 Official Emblem" />
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-[#111827] tracking-tight leading-[1.12]">
-              Nexcore
+              Alliance
               <br />
               Premier League
             </h1>

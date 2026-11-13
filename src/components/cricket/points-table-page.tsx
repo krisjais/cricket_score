@@ -83,7 +83,7 @@ export function PointsTablePage({
           </h1>
           <p className="text-xs text-gray-500 mt-0.5">
             {subTab === 'STANDINGS'
-              ? 'Official Nexcore Premier League team rankings, Net Run Rate (NRR), and recent form.'
+              ? 'Official Alliance Premier League team rankings, Net Run Rate (NRR), and recent form.'
               : 'Men & Women separate Best Batsman, Best Bowler, Best Fielder, and Tournament MVP leaders.'}
           </p>
         </div>

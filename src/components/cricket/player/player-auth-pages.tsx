@@ -195,7 +195,7 @@ function AuthSplitLayout({
             aria-hidden="true"
           />
 
-          {/* Signature Nexcore Crimson diagonal accent ribbon */}
+          {/* Signature Alliance Crimson diagonal accent ribbon */}
           <div
             className="absolute inset-0 bg-[#7A1426]"
             style={{ clipPath: 'polygon(0 0, 96.8% 0, 84.3% 100%, 0 100%)' }}
@@ -249,7 +249,7 @@ function AuthSplitLayout({
                 {activeTab === 'SIGN_IN' ? 'Account Portal' : 'Player Portal'}
               </h2>
               <p className="mt-2 font-serif text-xl xl:text-2xl font-semibold text-[#F5C451]">
-                Nexcore Premier League
+                Alliance Premier League
               </p>
               <p className="mt-4 max-w-[270px] text-xs sm:text-[13px] leading-relaxed text-slate-300/80">
                 {activeTab === 'SIGN_IN'
@@ -277,7 +277,7 @@ function AuthSplitLayout({
               <AplLogo size="md" variant="dark" priority alt="APL Season 9 Official Crest" />
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#F5C451]">
-                  Nexcore Premier League
+                  Alliance Premier League
                 </p>
                 <p className="font-serif text-lg font-bold text-white leading-tight">
                   {activeTab === 'SIGN_IN' ? 'Account Portal' : 'Player Portal'}
@@ -1055,7 +1055,7 @@ export function PlayerRegisterPage({
         },
       })
       await onAuthenticated()
-      toast.success('Registration complete! Welcome to Nexcore Premier League.')
+      toast.success('Registration complete! Welcome to Alliance Premier League.')
       navigate('/player/dashboard')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Registration failed'

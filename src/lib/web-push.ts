@@ -1,5 +1,5 @@
 // ============================================================================
-// Nexcore Premier League - Web Push Client Helper
+// Alliance Premier League - Web Push Client Helper
 // Standard Web Push API only (zero native mobile SDKs)
 // ============================================================================
 

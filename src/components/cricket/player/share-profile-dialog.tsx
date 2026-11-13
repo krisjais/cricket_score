@@ -53,8 +53,8 @@ export function ShareProfileDialog({
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const shareUrl = `${origin}/players/${encodeURIComponent(profileSlug)}`
-  const shareTitle = `${playerName} — Nexcore Premier League Profile`
-  const shareText = `Check out ${playerName}'s career stats and cricket profile on Nexcore Premier League:`
+  const shareTitle = `${playerName} — Alliance Premier League Profile`
+  const shareText = `Check out ${playerName}'s career stats and cricket profile on Alliance Premier League:`
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
   const handleCopy = async () => {

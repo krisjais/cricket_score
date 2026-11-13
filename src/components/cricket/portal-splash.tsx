@@ -46,7 +46,7 @@ export function SplashLoadingFallback() {
         />
       </div>
       <p className="text-sm font-extrabold uppercase tracking-[0.26em] text-[#F5C451]">
-        Nexcore Premier League
+        Alliance Premier League
       </p>
       <p className="mt-1.5 text-[11px] font-semibold tracking-[0.2em] uppercase text-slate-300/80">
         Entering APL Season 9 Arena...
@@ -379,7 +379,7 @@ export function PortalSplashScreen({
           style={{ ['--reveal-delay' as string]: '0.24s' }}
         >
           <span className="bg-gradient-to-r from-white via-[#FDE68A] to-[#F5C451] bg-clip-text text-transparent">
-            Nexcore Premier League
+            Alliance Premier League
           </span>
         </p>
 

@@ -4,10 +4,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Nexcore Premier League — Live Cricket Scoring",
+  title: "Alliance Premier League — Live Cricket Scoring",
   description:
-    "Official Nexcore Premier League match center with real-time ball-by-ball scoring, live scorecards, points table, and umpire console.",
-  keywords: ["Nexcore Premier League", "NPL", "cricket", "live score", "cricket scoring", "scorecard"],
+    "Official Alliance Premier League match center with real-time ball-by-ball scoring, live scorecards, points table, and umpire console.",
+  keywords: ["Alliance Premier League", "APL", "cricket", "live score", "cricket scoring", "scorecard"],
   icons: {
     icon: [{ url: "/apl-icon-s9.png", type: "image/png", sizes: "192x192" }],
     shortcut: "/apl-icon-s9.png",

@@ -374,7 +374,7 @@ export function NplPageTransition({
             {/* Broadcast Category Pill */}
             <div className="inline-flex items-center gap-1.5 rounded-full border border-[#7A1426]/60 bg-[#7A1426]/80 px-3.5 py-1 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#FDE68A] shadow-md">
               <Shield className="w-3.5 h-3.5 text-[#F5C451]" aria-hidden="true" />
-              <span>Nexcore Premier League • Portal</span>
+              <span>Alliance Premier League • Portal</span>
               <LogIn className="w-3.5 h-3.5 text-rose-300" aria-hidden="true" />
             </div>
 

@@ -321,12 +321,12 @@ export function AppShell() {
             type="button"
             onClick={() => navigate(isPlayerSignedIn ? '/player/dashboard' : '/')}
             className="order-1 min-w-0 py-2.5 flex items-center text-left cursor-pointer rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]"
-            aria-label={isPlayerSignedIn ? 'Nexcore Premier League Player Hub' : 'Nexcore Premier League Home'}
+            aria-label={isPlayerSignedIn ? 'Alliance Premier League Player Hub' : 'Alliance Premier League Home'}
           >
             <NplLogo
               size="sm"
               showText
-              title="Nexcore Premier League"
+              title="Alliance Premier League"
               subtitle={isPlayerSignedIn ? 'Player Career Portal' : 'Cricket Tournament'}
             />
           </button>
@@ -478,14 +478,14 @@ export function AppShell() {
                 type="button"
                 onClick={() => navigate(isPlayerSignedIn ? '/player/dashboard' : '/')}
                 className="inline-flex items-center text-left cursor-pointer rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/80"
-                aria-label={isPlayerSignedIn ? 'Nexcore Premier League Player Hub' : 'Nexcore Premier League Home'}
+                aria-label={isPlayerSignedIn ? 'Alliance Premier League Player Hub' : 'Alliance Premier League Home'}
               >
                 <NplLogo
                   size="sm"
                   lazy
                   variant="dark"
                   showText
-                  title="Nexcore Premier League"
+                  title="Alliance Premier League"
                   subtitle={isPlayerSignedIn ? 'APL Season 9 • Player Career Portal' : 'APL Season 9 • Official Cricket Portal'}
                 />
               </button>
@@ -562,7 +562,7 @@ export function AppShell() {
 
         <div className="relative border-t border-white/10 bg-black/25">
           <div className="mx-auto flex max-w-7xl flex-col sm:flex-row items-center justify-between gap-2 px-4 sm:px-6 lg:px-8 py-4 text-[11px] text-gray-400 text-center sm:text-left">
-            <span>Nexcore Premier League &bull; APL Season 9</span>
+            <span>Alliance Premier League &bull; APL Season 9</span>
             <span>Official Live Scoring &amp; Career Statistics Portal</span>
           </div>
         </div>
