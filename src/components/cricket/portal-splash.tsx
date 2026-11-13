@@ -20,114 +20,11 @@ const EMBER_PARTICLES = [
 const COMPASS_ANGLES = Array.from({ length: 36 }, (_, i) => i * 10)
 
 /**
- * High-fidelity pre-hydration stadium fallback matching PortalSplashScreen Stage 0
- * so cold initial load is 100% seamless, never flashes abruptly, and matches the midnight arena theme.
+ * Ultra-light dark viewport placeholder to prevent FOUC during dynamic chunk evaluation.
+ * Does not render any duplicate splash logo or text — PortalSplashScreen is the single source of truth.
  */
 export function SplashLoadingFallback() {
-  return (
-    <div
-      role="region"
-      aria-label="Alliance Premier League Arena Loading"
-      className="fixed inset-0 z-[100] flex flex-col overflow-hidden select-none bg-[#070B16]"
-      style={{
-        backgroundImage:
-          'radial-gradient(circle at 50% 42%, rgba(122, 20, 38, 0.48) 0%, rgba(20, 25, 40, 0.94) 52%, #070B16 100%)',
-      }}
-    >
-      {/* Stadium Pitch Texture Dot Grid */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.14]"
-        style={{
-          backgroundImage: 'radial-gradient(rgba(245, 196, 81, 0.45) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }}
-      />
-
-      {/* Top Navigation */}
-      <div className="relative z-20 shrink-0 flex items-center justify-between gap-2.5 px-3.5 sm:px-8 pt-4 sm:pt-6">
-        <div className="inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-white/10 bg-white/[0.05] px-2.5 sm:px-3 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.12em] sm:tracking-[0.2em] text-slate-300 whitespace-nowrap min-w-0">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
-          <span className="truncate">Season 9 Live Portal</span>
-        </div>
-      </div>
-
-      {/* Center Broadcast Crest Stage */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 pb-8 text-center">
-        {/* Central Logo */}
-        <div className="relative flex items-center justify-center mb-1">
-          <div
-            aria-hidden="true"
-            className="absolute h-48 w-48 sm:h-60 sm:w-60 rounded-full border border-[#F5C451]/30 border-t-[#F5C451] motion-safe:animate-spin"
-            style={{ animationDuration: '8s' }}
-          />
-          <div
-            aria-hidden="true"
-            className="absolute h-48 w-48 sm:h-60 sm:w-60 rounded-full blur-2xl pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(circle, rgba(245, 196, 81, 0.34) 0%, rgba(122, 20, 38, 0.38) 58%, transparent 100%)',
-            }}
-          />
-          <div className="relative overflow-hidden rounded-3xl p-2">
-            <AplLogo
-              size="2xl"
-              variant="dark"
-              priority
-              alt="APL Season 9 Crest"
-              imgClassName="h-44 sm:h-52 xl:h-56 drop-shadow-[0_16px_38px_rgba(245,196,81,0.42)]"
-            />
-          </div>
-        </div>
-
-        {/* Championship Edition Badge */}
-        <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-[#F5C451]/45 bg-[#7A1426]/80 px-3 sm:px-4 py-1 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-[0.16em] sm:tracking-[0.24em] text-[#FDE68A] shadow-md whitespace-nowrap">
-          <Sparkles className="w-3 h-3 shrink-0 text-[#F5C451]" aria-hidden="true" />
-          <span>Season 9 Championship Edition</span>
-        </div>
-
-        {/* Title */}
-        <p className="mt-3 font-serif text-3xl sm:text-5xl lg:text-[52px] font-black tracking-tight text-white leading-none">
-          <span className="bg-gradient-to-r from-white via-[#FDE68A] to-[#F5C451] bg-clip-text text-transparent">
-            Alliance Premier League
-          </span>
-        </p>
-
-        {/* Feature Chips */}
-        <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.16em] text-slate-200">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1">
-            <Radio className="w-3 h-3 text-rose-400" aria-hidden="true" />
-            Live Scoring
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1">
-            <BarChart3 className="w-3 h-3 text-[#F5C451]" aria-hidden="true" />
-            Points &amp; Leaders
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1">
-            <UserCheck className="w-3 h-3 text-emerald-400" aria-hidden="true" />
-            Player Profiles
-          </span>
-        </div>
-
-        {/* Calibration Bar */}
-        <div className="mt-6 w-full max-w-xs sm:max-w-sm space-y-2">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 p-[1px] border border-white/15">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: '38%',
-                background: 'linear-gradient(90deg, #7A1426 0%, #9E1C33 48%, #F5C451 100%)',
-              }}
-            />
-          </div>
-          <div className="flex items-center justify-between text-[11px] font-semibold tracking-wider text-slate-300">
-            <span>Calibrating Pitch &amp; Telemetry</span>
-            <span className="font-mono font-bold text-[#F5C451]">38%</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  return <div aria-hidden="true" className="fixed inset-0 z-[100] bg-[#070B16]" />
 }
 
 export function PortalSplashScreen({
@@ -456,6 +353,13 @@ export function PortalSplashScreen({
           <span className="bg-gradient-to-r from-white via-[#FDE68A] to-[#F5C451] bg-clip-text text-transparent">
             Alliance Premier League
           </span>
+        </p>
+
+        <p
+          className="splash-text-reveal mt-1.5 text-[11px] sm:text-xs font-semibold tracking-[0.22em] uppercase text-slate-300/85"
+          style={{ ['--reveal-delay' as string]: '0.3s' }}
+        >
+          Entering APL Season 9 Arena...
         </p>
 
         {/* Feature Chips */}
