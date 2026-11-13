@@ -20,17 +20,54 @@ import { PlayerDashboardPage } from '@/components/cricket/player/player-dashboar
 import { PlayerDashboardSkeleton } from '@/components/cricket/player/player-career-widgets'
 import { PublicPlayerProfilePage } from '@/components/cricket/player/public-player-profile-page'
 import { AdminPage } from '@/components/cricket/admin/admin-page'
+import { NplPageTransition, type NplTransitionType } from '@/components/cricket/transitions/npl-page-transition'
 import { cn } from '@/lib/utils'
 
 export function AppShell() {
-  const [route, navigate] = useHashRoute()
+  const [route, baseNavigate] = useHashRoute()
   const { matches, loading } = useMatchesFeed(null)
   const session = useAdminSession()
   const playerSession = usePlayerSession()
   const [splashReplayToken, setSplashReplayToken] = useState(0)
+  const [pageTransition, setPageTransition] = useState<{
+    type: NplTransitionType
+    targetUrl: string
+  } | null>(null)
 
   const seg = route.segments
   const isPlayerSignedIn = Boolean(playerSession.isAuthenticated && playerSession.player)
+
+  const navigate = useCallback(
+    (to: string, explicitType?: NplTransitionType) => {
+      const clean = to.startsWith('/') ? to : `/${to}`
+      const segTarget = clean.replace(/^\//, '').split('/')[0]
+
+      const type =
+        explicitType ??
+        (segTarget === 'awards'
+          ? 'awards'
+          : segTarget === 'login'
+          ? 'login'
+          : null)
+
+      const isCurrentAwards = seg[0] === 'awards'
+      const isCurrentLogin =
+        seg[0] === 'login' || (seg[0] === 'player' && seg[1] === 'login')
+
+      if (type === 'awards' && !isCurrentAwards) {
+        setPageTransition({ type: 'awards', targetUrl: clean })
+        return
+      }
+
+      if (type === 'login' && !isCurrentLogin) {
+        setPageTransition({ type: 'login', targetUrl: clean })
+        return
+      }
+
+      baseNavigate(to)
+    },
+    [baseNavigate, seg]
+  )
   const isAdminRoute = seg[0] === 'admin'
   const isMatchDetailRoute = seg[0] === 'match' && Boolean(seg[1])
   const isPlayerAuthRoute =
@@ -239,11 +276,26 @@ export function AppShell() {
     view = null
   }
 
+  const transitionOverlay = pageTransition ? (
+    <NplPageTransition
+      key={`${pageTransition.type}-${pageTransition.targetUrl}`}
+      type={pageTransition.type}
+      onCommitRoute={() => {
+        baseNavigate(pageTransition.targetUrl)
+        window.scrollTo({ top: 0, behavior: 'instant' })
+      }}
+      onFinished={() => {
+        setPageTransition(null)
+      }}
+    />
+  ) : null
+
   if (view) {
     return (
       <>
         {view}
         <PortalSplashScreen key={splashReplayToken} />
+        {transitionOverlay}
       </>
     )
   }
@@ -517,6 +569,7 @@ export function AppShell() {
       </footer>
       </div>
       <PortalSplashScreen key={splashReplayToken} />
+      {transitionOverlay}
     </>
   )
 }

@@ -322,6 +322,105 @@
   }
 }
 
+/* ==================== NPL Page Transitions (Home -> Awards & Home -> Login) ==================== */
+@keyframes npl-gate-in-left {
+  0% { transform: translate3d(-100%, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes npl-gate-in-right {
+  0% { transform: translate3d(100%, 0, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes npl-gate-out-left {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-108%, 0, 0); }
+}
+
+@keyframes npl-gate-out-right {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(108%, 0, 0); }
+}
+
+@keyframes npl-core-in {
+  0% { opacity: 0; transform: scale(0.82) translate3d(0, 18px, 0); }
+  65% { opacity: 1; transform: scale(1.04) translate3d(0, -2px, 0); }
+  100% { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+}
+
+@keyframes npl-core-out {
+  0% { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+  100% { opacity: 0; transform: scale(1.08) translate3d(0, -10px, 0); }
+}
+
+@keyframes npl-sheen-sweep {
+  0% { opacity: 0; transform: translate3d(-130%, 0, 0) skewX(-20deg); }
+  35% { opacity: 0.85; }
+  65% { opacity: 0.85; }
+  100% { opacity: 0; transform: translate3d(230%, 0, 0) skewX(-20deg); }
+}
+
+@keyframes npl-ember-float {
+  0% { opacity: 0; transform: translate3d(0, 20px, 0) scale(0.6); }
+  30% { opacity: 0.95; }
+  75% { opacity: 0.7; }
+  100% { opacity: 0; transform: translate3d(var(--ember-dx, 12px), -80px, 0) scale(1.1); }
+}
+
+@keyframes npl-beam-pulse {
+  0%, 100% { opacity: 0.25; transform: rotate(-20deg) scaleY(0.95); }
+  50% { opacity: 0.55; transform: rotate(14deg) scaleY(1.05); }
+}
+
+.npl-transition-gate-left-in {
+  animation: npl-gate-in-left 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.npl-transition-gate-right-in {
+  animation: npl-gate-in-right 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.npl-transition-gate-left-out {
+  animation: npl-gate-out-left 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.npl-transition-gate-right-out {
+  animation: npl-gate-out-right 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.npl-transition-core-in {
+  animation: npl-core-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.npl-transition-core-out {
+  animation: npl-core-out 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.npl-sheen-sweep-anim {
+  animation: npl-sheen-sweep 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s 1 both;
+}
+
+.npl-ember-float-anim {
+  animation: npl-ember-float var(--ember-dur, 2s) ease-out var(--ember-delay, 0s) infinite;
+}
+
+.npl-beam-sweep-anim {
+  animation: npl-beam-pulse 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .npl-transition-gate-left-in,
+  .npl-transition-gate-right-in,
+  .npl-transition-gate-left-out,
+  .npl-transition-gate-right-out,
+  .npl-transition-core-in,
+  .npl-transition-core-out {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 /* ==================== Player Account Popover & Tabs ==================== */
 [popover].player-account-popover:is(:popover-open, .\:popover-open) {
   display: block;
