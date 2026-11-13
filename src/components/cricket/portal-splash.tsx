@@ -63,11 +63,11 @@ export function PortalSplashScreen({
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-    const step1 = window.setTimeout(() => setStageIndex(1), reducedMotion ? 1000 : 1150)
-    const step2 = window.setTimeout(() => setStageIndex(2), reducedMotion ? 2100 : 2350)
+    const step1 = window.setTimeout(() => setStageIndex(1), reducedMotion ? 1400 : 1850)
+    const step2 = window.setTimeout(() => setStageIndex(2), reducedMotion ? 2800 : 3850)
     const autoClose = window.setTimeout(() => {
       void startDismiss()
-    }, reducedMotion ? 3000 : 3600)
+    }, reducedMotion ? 4200 : 5800)
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {

@@ -297,7 +297,7 @@
   }
   .splash-progress-bar {
     transform: scaleX(0.04);
-    animation: splash-progress-fill 3.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards;
+    animation: splash-progress-fill 5.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
   }
 }
 
