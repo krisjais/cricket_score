@@ -8,6 +8,7 @@ import {
   CalendarDays,
   CalendarClock,
   Shield,
+  Crown,
   Users,
   UserCheck,
   UserCog,
@@ -34,6 +35,7 @@ export type AdminTab =
   | 'teams'
   | 'players'
   | 'career'
+  | 'captains'
   | 'officials'
   | 'results'
   | 'awards'
@@ -72,6 +74,7 @@ export function AdminSidebar({
     { key: 'teams' as AdminTab, label: 'Teams', icon: Shield },
     { key: 'players' as AdminTab, label: 'Players', icon: Users },
     { key: 'career' as AdminTab, label: 'Career & Seasons', icon: UserCheck },
+    { key: 'captains' as AdminTab, label: 'Captain Management', icon: Crown },
     { key: 'officials' as AdminTab, label: 'Officials', icon: UserCog },
     { key: 'results' as AdminTab, label: 'Results', icon: Trophy },
     { key: 'awards' as AdminTab, label: 'Statistics & Awards', icon: BarChart3 },

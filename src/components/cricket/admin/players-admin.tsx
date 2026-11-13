@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
@@ -673,13 +674,16 @@ function PlayerFormDialog({
               <SelectTrigger className="rounded-xl border-[#E5E7EB] text-xs font-medium bg-[#F9FAFB]">
                 <SelectValue placeholder="Select team franchise" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg">
+              <SelectContent className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg max-h-64 overflow-y-auto">
                 <SelectItem value="none">
-                  <span className="text-[#9ca3af] font-medium">Unassigned / Free Agent (Assign later)</span>
+                  <span className="font-semibold text-gray-600">Unassigned / Free Agent (Assign later)</span>
                 </SelectItem>
                 {teams.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
-                    <span className="font-bold text-[#7A1426]">{t.name}</span> ({t.shortName})
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <span className="font-bold">{t.name}</span>
+                      <span className="text-[11px] font-mono opacity-80">({t.shortName})</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -760,13 +764,16 @@ function AssignTeamDialog({
               <SelectTrigger className="rounded-xl border-[#E5E7EB] text-xs font-medium bg-[#F9FAFB]">
                 <SelectValue placeholder="Choose a franchise team" />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg">
+              <SelectContent className="bg-white border border-[#E5E7EB] rounded-xl shadow-lg max-h-64 overflow-y-auto">
                 <SelectItem value="none">
-                  <span className="text-amber-800 font-bold">Unassigned / Free Agent Pool</span>
+                  <span className="font-semibold text-gray-600">Unassigned / Free Agent Pool</span>
                 </SelectItem>
                 {teams.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
-                    <span className="font-bold text-[#7A1426]">{t.name}</span> ({t.shortName})
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <span className="font-bold">{t.name}</span>
+                      <span className="text-[11px] font-mono opacity-80">({t.shortName})</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

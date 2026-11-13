@@ -281,6 +281,221 @@ export interface PlayerProfileDto {
   privacy?: PlayerPrivacy
 }
 
+export interface EnrichedCaptaincyStatus {
+  isCaptain: boolean
+  assignmentId?: string
+  playerId?: string
+  teamId?: string
+  seasonId?: string
+  assignedAt?: string
+  team?: {
+    id: string
+    name: string
+    shortName: string
+    color: string
+    logoUrl?: string | null
+  } | null
+  season?: {
+    id: string
+    name: string
+    code: string
+    year: number
+    status: string
+  } | null
+}
+
+export interface CaptaincyHistoryItem {
+  id: string
+  assignmentId: string
+  seasonId: string
+  seasonName: string
+  seasonYear: number
+  seasonStatus: string
+  teamId: string
+  teamName: string
+  teamShortName: string
+  teamColor: string
+  teamLogoUrl: string | null
+  assignedAt: string
+  endedAt: string | null
+  status: 'active' | 'completed' | 'revoked'
+  matchesCaptained: number
+  matchesWon: number
+  matchesLost: number
+  matchesTied: number
+  winPercentage: number
+  tournamentsWon: number
+  tournamentNamesWon: string[]
+  achievementLabel?: string | null
+}
+
+export interface CaptainBadgeDto {
+  id: string
+  key:
+    | 'CURRENT_CAPTAIN'
+    | 'FORMER_CAPTAIN'
+    | 'WINNING_CAPTAIN'
+    | 'CHAMPIONSHIP_WINNING_CAPTAIN'
+    | 'MULTIPLE_TIME_CAPTAIN'
+  title: string
+  subtitle: string
+  achievedAt: string | null
+}
+
+export interface TeamAnnouncementDto {
+  id: string
+  seasonId: string
+  teamId: string
+  authorPlayerId: string
+  title: string
+  content: string
+  priority: 'NORMAL' | 'IMPORTANT' | 'URGENT'
+  category:
+    | 'GENERAL'
+    | 'PRACTICE'
+    | 'MATCH_REMINDER'
+    | 'MEETING'
+    | 'UPDATE'
+    | 'TOURNAMENT'
+    | 'EMERGENCY'
+  status?: 'published' | 'archived'
+  publishedAt?: string
+  eventDate?: string | null
+  eventTime?: string | null
+  location?: string | null
+  attachmentUrl?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface InAppNotificationDto {
+  id: string
+  recipientPlayerId: string
+  announcementId: string
+  teamId:
+    | {
+        id?: string
+        _id?: string
+        name: string
+        shortName: string
+        color: string
+        logoUrl?: string | null
+      }
+    | string
+  captainPlayerId: string
+  captainName: string
+  title: string
+  content: string
+  category:
+    | 'GENERAL'
+    | 'PRACTICE'
+    | 'MATCH_REMINDER'
+    | 'MEETING'
+    | 'UPDATE'
+    | 'TOURNAMENT'
+    | 'EMERGENCY'
+  priority: 'NORMAL' | 'IMPORTANT' | 'URGENT'
+  eventDate?: string | null
+  eventTime?: string | null
+  location?: string | null
+  attachmentUrl?: string | null
+  isRead: boolean
+  readAt?: string | null
+  createdAt: string
+}
+
+export interface NotificationPreferencesDto {
+  emailEnabled: boolean
+  pushEnabled: boolean
+  categoryPreferences: {
+    GENERAL: boolean
+    PRACTICE: boolean
+    MATCH_REMINDER: boolean
+    MEETING: boolean
+    UPDATE: boolean
+    TOURNAMENT: boolean
+    EMERGENCY: boolean
+  }
+}
+
+export interface DeliveryReportDto {
+  announcementId: string
+  title: string
+  teamName: string
+  seasonName: string
+  publishedAt: string
+  eligibleRecipientsCount: number
+  inAppCreatedCount: number
+  inAppReadCount: number
+  emailJobsQueued: number
+  emailJobsSent: number
+  emailJobsFailed: number
+  pushAttempts: number
+  pushSent: number
+  pushFailed: number
+}
+
+export interface PlayingXISubmissionDto {
+  id: string
+  matchId: string
+  teamId: string
+  seasonId: string
+  captainId: string
+  submittedBy: string
+  playingXI: string[]
+  substitutes: string[]
+  notes: string | null
+  status: 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED'
+  reviewNotes: string | null
+  reviewedBy: string | null
+  reviewedAt: string | null
+  submittedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PlayerAvailabilityDto {
+  id: string
+  matchId: string
+  teamId: string
+  seasonId: string
+  playerId: string
+  status: 'AVAILABLE' | 'UNAVAILABLE' | 'TENTATIVE'
+  note: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TeamPerformanceStatsDto {
+  teamId: string
+  seasonId: string
+  matchesPlayed: number
+  matchesWon: number
+  matchesLost: number
+  matchesTied: number
+  winPercentage: number
+  totalRunsScored: number
+  totalWicketsTaken: number
+  highestTeamScore: {
+    runs: number
+    wickets: number
+    overs: string
+    opponentName: string | null
+  } | null
+  topRunScorer: {
+    playerId: string
+    playerName: string
+    runs: number
+    innings: number
+  } | null
+  topWicketTaker: {
+    playerId: string
+    playerName: string
+    wickets: number
+    runsConceded: number
+  } | null
+}
+
 export interface PlayerDashboardData {
   user: {
     id: string
@@ -301,6 +516,8 @@ export interface PlayerDashboardData {
   personalBests?: PersonalBestsDto | null
   achievements?: PlayerAchievementDto[]
   upcomingMatches?: UpcomingPlayerMatchDto[]
+  activeCaptaincy?: EnrichedCaptaincyStatus | null
+  captaincyHistory?: CaptaincyHistoryItem[]
   awards: Array<{
     id: string
     title: string
@@ -324,6 +541,9 @@ export interface PublicPlayerProfileData {
   memberships?: TeamMembershipDto[]
   career?: PlayerCareerStatDto | null
   recentMatches?: PlayerMatchHistoryRow[]
+  activeCaptaincy?: EnrichedCaptaincyStatus | null
+  captaincyHistory?: CaptaincyHistoryItem[]
+  captainBadges?: CaptainBadgeDto[]
   awards?: Array<{ id: string; title: string; awardType: string; awardedAt: string; matchId?: string | null }>
 }
 

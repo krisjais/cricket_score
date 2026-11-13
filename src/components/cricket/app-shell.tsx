@@ -15,6 +15,7 @@ import { AwardsPage } from '@/components/cricket/awards-page'
 import { LeaderboardsPage } from '@/components/cricket/leaderboards-page'
 import { PlayerLoginPage, PlayerRegisterPage } from '@/components/cricket/player/player-auth-pages'
 import { PlayerAccountMenu } from '@/components/cricket/player/player-account-menu'
+import { PlayerNotificationBell } from '@/components/cricket/player/player-notification-bell'
 import { PlayerDashboardPage } from '@/components/cricket/player/player-dashboard-page'
 import { PlayerDashboardSkeleton } from '@/components/cricket/player/player-career-widgets'
 import { PublicPlayerProfilePage } from '@/components/cricket/player/public-player-profile-page'
@@ -155,6 +156,7 @@ export function AppShell() {
           initialTab={seg[0] === 'player' ? route.query.get('tab') : null}
           navigate={navigate}
           onAuthChanged={playerSession.refresh}
+          playerSession={playerSession}
         />
       )
     }
@@ -185,6 +187,7 @@ export function AppShell() {
           initialTab={route.query.get('tab')}
           navigate={navigate}
           onAuthChanged={playerSession.refresh}
+          playerSession={playerSession}
         />
       )
     }
@@ -370,11 +373,17 @@ export function AppShell() {
             )}
 
             {isPlayerSignedIn ? (
-              <PlayerAccountMenu
-                playerSession={playerSession}
-                activeKey={activeKey}
-                navigate={navigate}
-              />
+              <div className="flex items-center gap-2">
+                <PlayerNotificationBell
+                  playerSession={playerSession}
+                  navigate={navigate}
+                />
+                <PlayerAccountMenu
+                  playerSession={playerSession}
+                  activeKey={activeKey}
+                  navigate={navigate}
+                />
+              </div>
             ) : session.isAdmin ? (
               <button
                 type="button"

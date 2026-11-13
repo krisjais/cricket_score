@@ -27,6 +27,29 @@ const SOCKET_URL = (
 
 const ADMIN_UNAUTH_EVENT = 'npl:admin-unauth'
 
+let silentRefreshPromise: Promise<boolean> | null = null
+
+async function silentPlayerRefresh(): Promise<boolean> {
+  if (silentRefreshPromise) return silentRefreshPromise
+
+  silentRefreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/player-auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const data = await res.json().catch(() => null)
+      return Boolean(res.ok && data?.ok && data?.data?.refreshed)
+    } catch {
+      return false
+    } finally {
+      silentRefreshPromise = null
+    }
+  })()
+
+  return silentRefreshPromise
+}
+
 export async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Promise<T> {
   const { json, ...rest } = init ?? {}
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`
@@ -39,10 +62,27 @@ export async function api<T>(path: string, init?: RequestInit & { json?: unknown
   })
   const data = (await res.json().catch(() => null)) as { ok?: boolean; data?: T; error?: string } | null
   if (!res.ok || !data?.ok) {
+    const isRetry = Boolean((init?.headers as Record<string, string> | undefined)?.['x-refresh-retry'])
+    const isAuthRoute = path.includes('/player-auth/') || path.includes('/auth/')
+
+    // If 401 on a non-auth route, attempt silent token refresh and retry
+    if (res.status === 401 && !isRetry && !isAuthRoute) {
+      const refreshed = await silentPlayerRefresh()
+      if (refreshed) {
+        return api<T>(path, {
+          ...init,
+          headers: {
+            ...((init?.headers as Record<string, string>) ?? {}),
+            'x-refresh-retry': '1',
+          },
+        })
+      }
+    }
+
     if (
       res.status === 401 &&
       typeof window !== 'undefined' &&
-      (data?.error === 'Admin authentication required' || path.startsWith('/api/admin'))
+      (path.startsWith('/api/admin') || path.startsWith('/admin'))
     ) {
       window.dispatchEvent(new Event(ADMIN_UNAUTH_EVENT))
     }
@@ -353,10 +393,22 @@ export interface PlayerSession {
     team?: { id: string; name: string; shortName: string; color: string; logoUrl?: string | null } | null
     season?: { id: string; name: string; year: number; status: string } | null
   } | null
+  activeCaptaincy?: {
+    isCaptain: boolean
+    assignmentId?: string
+    playerId?: string
+    teamId?: string
+    seasonId?: string
+    assignedAt?: string
+    team?: { id: string; name: string; shortName: string; color: string; logoUrl?: string | null } | null
+    season?: { id: string; name: string; code: string; year: number; status: string } | null
+  } | null
   loading: boolean
   refresh: () => Promise<void>
   logout: () => Promise<void>
 }
+
+let playerRefreshInFlight: Promise<void> | null = null
 
 export function usePlayerSession(): PlayerSession {
   const [state, setState] = useState<Omit<PlayerSession, 'loading' | 'refresh' | 'logout'>>({
@@ -364,51 +416,68 @@ export function usePlayerSession(): PlayerSession {
     user: null,
     player: null,
     currentMembership: null,
+    activeCaptaincy: null,
   })
   const [loading, setLoading] = useState(true)
   const mounted = useRef(true)
   const wasAuthedRef = useRef<boolean | null>(null)
 
   const refresh = useCallback(async () => {
-    try {
-      type PlayerMePayload = {
-        isAuthenticated: boolean
-        user: PlayerSessionUser | null
-        player: PlayerSessionProfile | null
-        currentMembership: PlayerSession['currentMembership']
-      }
-      let me = await api<PlayerMePayload>('/api/player-auth/me')
-      const onAdminPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
-      if (!me.isAuthenticated && !onAdminPage) {
-        try {
-          await api('/api/player-auth/refresh', { method: 'POST' })
-          me = await api<PlayerMePayload>('/api/player-auth/me')
-        } catch {
-          // No valid refresh cookie; remain signed out
-        }
-      }
-      if (mounted.current) {
-        const nextAuthed = Boolean(me.isAuthenticated)
-        const prevAuthed = wasAuthedRef.current
-        wasAuthedRef.current = nextAuthed
-        setState({
-          isAuthenticated: nextAuthed,
-          user: me.user,
-          player: me.player,
-          currentMembership: me.currentMembership ?? null,
-        })
-        if (prevAuthed !== null && prevAuthed !== nextAuthed && nextAuthed) {
-          notifyAuthSync('player')
-        }
-      }
-    } catch {
-      if (mounted.current) {
-        wasAuthedRef.current = false
-        setState({ isAuthenticated: false, user: null, player: null, currentMembership: null })
-      }
-    } finally {
-      if (mounted.current) setLoading(false)
+    if (playerRefreshInFlight) {
+      await playerRefreshInFlight
+      return
     }
+
+    const run = async () => {
+      try {
+        type PlayerMePayload = {
+          isAuthenticated: boolean
+          user: PlayerSessionUser | null
+          player: PlayerSessionProfile | null
+          currentMembership: PlayerSession['currentMembership']
+          activeCaptaincy?: PlayerSession['activeCaptaincy']
+        }
+        let me = await api<PlayerMePayload>('/api/player-auth/me')
+        const onAdminPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+        if (!me.isAuthenticated && !onAdminPage) {
+          try {
+            const refRes = await api<{ refreshed?: boolean }>('/api/player-auth/refresh', { method: 'POST' })
+            if (refRes?.refreshed) {
+              me = await api<PlayerMePayload>('/api/player-auth/me')
+            }
+          } catch {
+            // No valid refresh cookie; remain signed out
+          }
+        }
+        if (mounted.current) {
+          const nextAuthed = Boolean(me.isAuthenticated)
+          const prevAuthed = wasAuthedRef.current
+          wasAuthedRef.current = nextAuthed
+          setState({
+            isAuthenticated: nextAuthed,
+            user: me.user,
+            player: me.player,
+            currentMembership: me.currentMembership ?? null,
+            activeCaptaincy: me.activeCaptaincy ?? null,
+          })
+          if (prevAuthed !== null && prevAuthed !== nextAuthed && nextAuthed) {
+            notifyAuthSync('player')
+          }
+        }
+      } catch {
+        if (mounted.current) {
+          wasAuthedRef.current = false
+          setState({ isAuthenticated: false, user: null, player: null, currentMembership: null, activeCaptaincy: null })
+        }
+      } finally {
+        if (mounted.current) setLoading(false)
+      }
+    }
+
+    playerRefreshInFlight = run().finally(() => {
+      playerRefreshInFlight = null
+    })
+    await playerRefreshInFlight
   }, [])
 
   useEffect(() => {

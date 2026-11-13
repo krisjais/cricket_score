@@ -5,8 +5,10 @@ import {
   Award,
   BadgeCheck,
   Calendar,
+  Crown,
   ExternalLink,
   Shield,
+  Sparkles,
   TrendingUp,
   Trophy,
   Users,
@@ -14,6 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TeamLogo } from '@/components/cricket/ui-bits'
 import {
+  CaptaincyHistoryItem,
   CareerBreakdownRow,
   PlayerCareerStatDto,
   PlayerMatchHistoryRow,
@@ -177,12 +180,14 @@ export function PlayerOverviewHero({
   currentMembership,
   rightSlot,
   compact = false,
+  isCaptain = false,
 }: {
   player: PlayerProfileDto
   career: PlayerCareerStatDto | null | undefined
   currentMembership: TeamMembershipDto | null | undefined
   rightSlot?: React.ReactNode
   compact?: boolean
+  isCaptain?: boolean
 }) {
   const c = career
   const batAvg = c?.battingAverage !== null && c?.battingAverage !== undefined ? c.battingAverage.toFixed(2) : '—'
@@ -222,6 +227,12 @@ export function PlayerOverviewHero({
               <h1 className="text-xl sm:text-2xl font-black tracking-tight truncate max-w-full">
                 {player.name}
               </h1>
+              {isCaptain && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 border border-amber-400/35 px-2.5 py-0.5 text-[11px] font-black text-amber-300 shrink-0 shadow-xs">
+                  <Crown className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+                  Captain
+                </span>
+              )}
               {player.isVerified && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300 shrink-0">
                   <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
@@ -519,9 +530,11 @@ export function BreakdownTable({
 export function SeasonAndTeamHistorySection({
   career,
   memberships,
+  captaincyHistory = [],
 }: {
   career: PlayerCareerStatDto | null | undefined
   memberships: TeamMembershipDto[]
+  captaincyHistory?: CaptaincyHistoryItem[]
 }) {
   const seasons = career?.seasonBreakdown ?? []
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('ALL')
@@ -532,6 +545,114 @@ export function SeasonAndTeamHistorySection({
 
   return (
     <div className="space-y-6">
+      {captaincyHistory && captaincyHistory.length > 0 && (
+        <Card className="rounded-3xl border border-amber-200/80 bg-gradient-to-br from-amber-50/60 via-white to-amber-50/30 shadow-xs overflow-hidden">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-100">
+            <div>
+              <CardTitle className="text-base font-extrabold text-[#111827] flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-500" />
+                Permanent Captaincy Career Record
+              </CardTitle>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Official seasonal team captaincies, win rates, match records, and tournament achievements across all NPL editions.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-black uppercase tracking-wider self-start sm:self-auto shrink-0">
+              <Trophy className="w-3.5 h-3.5 text-amber-600" />
+              {captaincyHistory.length} {captaincyHistory.length === 1 ? 'Tenure' : 'Tenures'}
+            </span>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {captaincyHistory.map((item) => {
+                const isActive = item.status === 'active'
+                return (
+                  <div
+                    key={item.id || item.assignmentId}
+                    className={`rounded-2xl border p-4 transition-all ${
+                      isActive
+                        ? 'border-amber-300 bg-white shadow-xs'
+                        : 'border-[#E5E7EB] bg-[#F9FAFB]'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <TeamLogo
+                          name={item.teamName}
+                          shortName={item.teamShortName}
+                          color={item.teamColor}
+                          logoUrl={item.teamLogoUrl}
+                          size="sm"
+                        />
+                        <div className="min-w-0">
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426] flex items-center gap-1">
+                            {item.seasonName} ({item.seasonYear})
+                          </div>
+                          <div className="text-sm font-extrabold text-[#111827] truncate">
+                            {item.teamName}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shrink-0 ${
+                          isActive
+                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                            : item.status === 'completed'
+                            ? 'bg-slate-100 text-slate-700 border border-slate-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {isActive ? 'Current Captain' : item.status === 'completed' ? 'Tenure Completed' : 'Revoked'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2 py-2 px-3 rounded-xl bg-white/80 border border-[#E5E7EB] text-center">
+                      <div>
+                        <div className="text-[10px] font-bold text-gray-500 uppercase">Matches</div>
+                        <div className="text-sm font-black text-[#111827] tabular-nums">{item.matchesCaptained}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-emerald-600 uppercase">Won</div>
+                        <div className="text-sm font-black text-emerald-700 tabular-nums">{item.matchesWon}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-rose-600 uppercase">Lost</div>
+                        <div className="text-sm font-black text-rose-700 tabular-nums">{item.matchesLost}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-amber-600 uppercase">Win %</div>
+                        <div className="text-sm font-black text-amber-700 tabular-nums">
+                          {item.winPercentage.toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-500 pt-2 border-t border-gray-100">
+                      <div>
+                        Tenure: <span className="font-semibold text-gray-700">{fmtDate(item.assignedAt)}</span> –{' '}
+                        <span className="font-semibold text-gray-700">{item.endedAt ? fmtDate(item.endedAt) : 'Present'}</span>
+                      </div>
+                      {item.tournamentsWon > 0 ? (
+                        <span className="inline-flex items-center gap-1 font-extrabold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                          <Trophy className="w-3 h-3 text-amber-500" />
+                          {item.tournamentsWon} {item.tournamentsWon === 1 ? 'Title' : 'Titles'}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {item.achievementLabel && (
+                      <div className="mt-2 text-[11px] font-bold text-amber-700 bg-amber-100/50 rounded-lg px-2.5 py-1 flex items-center gap-1.5">
+                        <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                        <span>{item.achievementLabel}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>

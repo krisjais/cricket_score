@@ -13,10 +13,13 @@ import {
   YAxis,
 } from 'recharts'
 import {
+  Bell,
   CheckCircle2,
   ChevronDown,
+  Crown,
   Globe,
   Mail,
+  Megaphone,
   Phone,
   RotateCcw,
   Save,
@@ -24,12 +27,14 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { api } from '@/lib/client'
+import { api, type PlayerSession } from '@/lib/client'
 import { AplLogo } from '@/components/cricket/apl-logo'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PlayerAvatarField } from './player-avatar-field'
 import { ShareProfileDialog } from './share-profile-dialog'
+import { CaptainsCorner } from './captains-corner'
+import { PlayerNotificationsPage } from './player-notifications-page'
 import {
   CareerStatsGrid,
   MatchHistorySection,
@@ -46,17 +51,128 @@ import {
   UpcomingMatchesSection,
 } from './player-overview-sections'
 import { PlayerTabs, getPlayerPanelId, getPlayerTabId, type PlayerTabItem } from './player-tabs'
-import { PlayerDashboardData, formatCricketLabel } from './player-types'
+import { PlayerDashboardData, TeamAnnouncementDto, formatCricketLabel } from './player-types'
 
-type DashTab = 'overview' | 'matches' | 'seasons' | 'graphs' | 'profile'
+type DashTab = 'overview' | 'matches' | 'seasons' | 'graphs' | 'profile' | 'captain' | 'notifications'
 
-const VALID_DASH_TABS: readonly DashTab[] = ['overview', 'matches', 'seasons', 'graphs', 'profile']
+const VALID_DASH_TABS: readonly DashTab[] = [
+  'overview',
+  'matches',
+  'seasons',
+  'graphs',
+  'profile',
+  'captain',
+  'notifications',
+]
 
 function resolveDashTab(raw?: string | null): DashTab {
   if (raw && (VALID_DASH_TABS as readonly string[]).includes(raw)) {
     return raw as DashTab
   }
   return 'overview'
+}
+
+function PlayerAnnouncementsBanner({ onOpenNotifications }: { onOpenNotifications?: () => void }) {
+  const [announcements, setAnnouncements] = useState<TeamAnnouncementDto[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    api<any>('/api/captains/player-announcements')
+      .then((res) => {
+        if (!alive) return
+        const list: TeamAnnouncementDto[] = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.announcements)
+          ? res.announcements
+          : []
+        setAnnouncements(list)
+      })
+      .catch(() => {
+        // Player might not belong to a team with announcements
+      })
+      .finally(() => {
+        if (alive) setLoaded(true)
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  if (!loaded || announcements.length === 0) return null
+
+  return (
+    <Card className="rounded-3xl border border-amber-200/90 bg-gradient-to-br from-amber-50/70 via-white to-amber-50/30 shadow-xs overflow-hidden">
+      <CardHeader className="pb-2.5 pt-4 px-5 border-b border-amber-100 flex flex-row items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Megaphone className="w-4 h-4 text-amber-600" />
+          <CardTitle className="text-sm font-extrabold text-[#111827]">
+            Team Announcements from Captain
+          </CardTitle>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+            {announcements.length} {announcements.length === 1 ? 'Notice' : 'Notices'}
+          </span>
+          {onOpenNotifications && (
+            <button
+              type="button"
+              onClick={onOpenNotifications}
+              className="text-xs font-bold text-[#7A1426] hover:underline cursor-pointer ml-1"
+            >
+              View All &rarr;
+            </button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-4 space-y-3">
+        {announcements.map((a) => (
+          <div key={a.id} className="rounded-2xl border border-amber-100 bg-white p-3.5 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-[#111827]">{a.title}</span>
+                {a.priority === 'URGENT' && (
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 px-1.5 py-0.2 rounded border border-rose-200">
+                    Urgent
+                  </span>
+                )}
+                {a.priority === 'IMPORTANT' && (
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.2 rounded border border-amber-200">
+                    Important
+                  </span>
+                )}
+              </div>
+              <span className="text-[11px] text-gray-500">
+                {new Date(a.createdAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>
+            </div>
+            <p className="text-xs text-gray-700 whitespace-pre-line leading-relaxed">{a.content}</p>
+            {(a.eventDate || a.location) && (
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-gray-600 bg-amber-50/60 p-2 rounded-xl">
+                {a.eventDate && (
+                  <span>
+                    <strong>Date:</strong> {new Date(a.eventDate).toLocaleDateString()} {a.eventTime || ''}
+                  </span>
+                )}
+                {a.location && (
+                  <span>
+                    <strong>Location:</strong> {a.location}
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="mt-2 text-[10px] text-gray-500 font-medium">
+              Category: <span className="font-semibold text-gray-700">{formatCricketLabel(a.category)}</span>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  )
 }
 
 const PROFILE_INPUT_CLASS =
@@ -68,10 +184,12 @@ export function PlayerDashboardPage({
   initialTab,
   navigate,
   onAuthChanged,
+  playerSession,
 }: {
   initialTab?: string | null
   navigate: (to: string) => void
   onAuthChanged: () => Promise<void>
+  playerSession: PlayerSession
 }) {
   const [data, setData] = useState<PlayerDashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -190,6 +308,42 @@ export function PlayerDashboardPage({
     }
   }
 
+  const isCaptain = Boolean(data?.activeCaptaincy?.isCaptain)
+  const activeTab = tab === 'captain' && !isCaptain ? 'overview' : tab
+
+  const tabs: ReadonlyArray<PlayerTabItem<DashTab>> = useMemo(() => {
+    const list: PlayerTabItem<DashTab>[] = [
+      { key: 'overview', label: 'Career Overview' },
+    ]
+
+    if (isCaptain) {
+      list.push({
+        key: 'captain',
+        label: "Captain's Corner",
+        icon: <Crown className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />,
+        badge: 'Captain',
+      })
+    }
+
+    list.push(
+      {
+        key: 'matches',
+        label: 'My Matches',
+        badge: (data?.matchHistory?.length ?? 0) > 0 ? data!.matchHistory.length : undefined,
+      },
+      { key: 'seasons', label: 'Seasons & Teams' },
+      { key: 'graphs', label: 'Performance Graphs' },
+      {
+        key: 'notifications',
+        label: 'Notifications',
+        icon: <Bell className="w-3.5 h-3.5 text-[#7A1426]" aria-hidden="true" />,
+      },
+      { key: 'profile', label: 'Edit Profile' }
+    )
+
+    return list
+  }, [data, isCaptain])
+
   if (loading) {
     return <PlayerDashboardSkeleton />
   }
@@ -232,18 +386,6 @@ export function PlayerDashboardPage({
 
   const publicSlug = data.player.id
 
-  const tabs: ReadonlyArray<PlayerTabItem<DashTab>> = [
-    { key: 'overview', label: 'Career Overview' },
-    {
-      key: 'matches',
-      label: 'My Matches',
-      badge: data.matchHistory.length > 0 ? data.matchHistory.length : undefined,
-    },
-    { key: 'seasons', label: 'Seasons & Teams' },
-    { key: 'graphs', label: 'Performance Graphs' },
-    { key: 'profile', label: 'Edit Profile' },
-  ]
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-end text-xs">
@@ -257,7 +399,8 @@ export function PlayerDashboardPage({
         player={data.player}
         career={data.career}
         currentMembership={data.currentMembership}
-        compact={tab !== 'overview' || (data.career?.matches ?? 0) === 0}
+        isCaptain={isCaptain}
+        compact={activeTab !== 'overview' || (data.career?.matches ?? 0) === 0}
         rightSlot={
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -286,17 +429,28 @@ export function PlayerDashboardPage({
         idPrefix="dash"
         ariaLabel="Player dashboard sections"
         tabs={tabs}
-        activeKey={tab}
+        activeKey={activeTab}
         onSelect={switchTab}
       />
 
-      {tab === 'overview' && (
+      {activeTab === 'captain' && isCaptain && data.activeCaptaincy && (
+        <div
+          role="tabpanel"
+          id={getPlayerPanelId('dash', 'captain')}
+          aria-labelledby={getPlayerTabId('dash', 'captain')}
+        >
+          <CaptainsCorner activeCaptaincy={data.activeCaptaincy} navigate={navigate} />
+        </div>
+      )}
+
+      {activeTab === 'overview' && (
         <div
           role="tabpanel"
           id={getPlayerPanelId('dash', 'overview')}
           aria-labelledby={getPlayerTabId('dash', 'overview')}
           className="space-y-6"
         >
+          <PlayerAnnouncementsBanner onOpenNotifications={() => switchTab('notifications')} />
           <CareerStatsGrid career={data.career} />
           <RecentFormSection
             matches={data.matchHistory}
@@ -323,7 +477,7 @@ export function PlayerDashboardPage({
         </div>
       )}
 
-      {tab === 'matches' && (
+      {activeTab === 'matches' && (
         <div
           role="tabpanel"
           id={getPlayerPanelId('dash', 'matches')}
@@ -333,17 +487,21 @@ export function PlayerDashboardPage({
         </div>
       )}
 
-      {tab === 'seasons' && (
+      {activeTab === 'seasons' && (
         <div
           role="tabpanel"
           id={getPlayerPanelId('dash', 'seasons')}
           aria-labelledby={getPlayerTabId('dash', 'seasons')}
         >
-          <SeasonAndTeamHistorySection career={data.career} memberships={data.memberships} />
+          <SeasonAndTeamHistorySection
+            career={data.career}
+            memberships={data.memberships}
+            captaincyHistory={data.captaincyHistory}
+          />
         </div>
       )}
 
-      {tab === 'graphs' && (
+      {activeTab === 'graphs' && (
         <div
           role="tabpanel"
           id={getPlayerPanelId('dash', 'graphs')}
@@ -692,6 +850,16 @@ export function PlayerDashboardPage({
               </form>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {activeTab === 'notifications' && (
+        <div
+          role="tabpanel"
+          id={getPlayerPanelId('dash', 'notifications')}
+          aria-labelledby={getPlayerTabId('dash', 'notifications')}
+        >
+          <PlayerNotificationsPage playerSession={playerSession} navigate={navigate} />
         </div>
       )}
 

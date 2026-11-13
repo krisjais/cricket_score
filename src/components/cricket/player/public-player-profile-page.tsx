@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Award, BarChart3, CalendarDays, Home, Lock, Settings, Share2 } from 'lucide-react'
+import { ArrowLeft, Award, BarChart3, CalendarDays, Crown, Home, Lock, Settings, Share2 } from 'lucide-react'
 import { api } from '@/lib/client'
 import { AplLogo } from '@/components/cricket/apl-logo'
 import { Button } from '@/components/ui/button'
@@ -195,6 +195,7 @@ export function PublicPlayerProfilePage({
         player={profile.player}
         career={profile.career}
         currentMembership={profile.currentMembership}
+        isCaptain={Boolean(profile.activeCaptaincy?.isCaptain)}
         rightSlot={
           <div className="flex flex-wrap items-center gap-2">
             {isOwnProfile && (
@@ -220,15 +221,25 @@ export function PublicPlayerProfilePage({
         }
       />
 
-      {profile.awards && profile.awards.length > 0 && (
+      {((profile.awards && profile.awards.length > 0) || (profile.captainBadges && profile.captainBadges.length > 0)) && (
         <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-extrabold text-[#7A1426] flex items-center gap-2">
-              <Award className="w-4 h-4" /> Achievements &amp; Honors
+              <Award className="w-4 h-4" /> Achievements, Honors &amp; Badges
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            {profile.awards.map((a) => (
+            {profile.captainBadges?.map((b) => (
+              <span
+                key={b.id || b.key}
+                title={b.subtitle}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/70 px-3 py-1.5 text-xs font-black text-amber-900 shadow-2xs"
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-600" />
+                {b.title}
+              </span>
+            ))}
+            {profile.awards?.map((a) => (
               <span
                 key={a.id}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900"
@@ -263,7 +274,11 @@ export function PublicPlayerProfilePage({
           id={getPlayerPanelId('pub', 'seasons')}
           aria-labelledby={getPlayerTabId('pub', 'seasons')}
         >
-          <SeasonAndTeamHistorySection career={profile.career} memberships={profile.memberships ?? []} />
+          <SeasonAndTeamHistorySection
+            career={profile.career}
+            memberships={profile.memberships ?? []}
+            captaincyHistory={profile.captaincyHistory}
+          />
         </div>
       )}
       {section === 'matches' && (
