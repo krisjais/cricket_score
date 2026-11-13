@@ -226,12 +226,6 @@
   transition: opacity 0.46s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@starting-style {
-  .portal-splash-root {
-    opacity: 0;
-  }
-}
-
 .portal-splash-gate-left,
 .portal-splash-gate-right {
   translate: 0 0;
