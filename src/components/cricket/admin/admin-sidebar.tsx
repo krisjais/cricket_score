@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NplLogo } from '@/components/cricket/apl-logo'
 import {
   LayoutDashboard,
@@ -65,6 +65,17 @@ export function AdminSidebar({
 }: AdminSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const isScorerMode = currentTab === 'scoring'
+
+  // Lock background body scrolling when mobile drawer is open
+  useEffect(() => {
+    if (mobileOpen) {
+      const prevOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = prevOverflow
+      }
+    }
+  }, [mobileOpen])
 
   const adminNavItems = [
     { key: 'dashboard' as AdminTab, label: 'Dashboard', icon: LayoutDashboard },
@@ -236,9 +247,15 @@ export function AdminSidebar({
 
       {/* Mobile Drawer Overlay */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs" onClick={() => setMobileOpen(false)} />
-          <aside className="relative w-64 max-w-[80vw] h-full shadow-2xl z-10">{sidebarBody}</aside>
+        <div className="md:hidden fixed inset-0 z-50 flex overscroll-contain">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs touch-none"
+            onClick={() => setMobileOpen(false)}
+            onTouchMove={(e) => e.preventDefault()}
+          />
+          <aside className="relative w-64 max-w-[80vw] h-full shadow-2xl z-10 touch-auto overscroll-contain">
+            {sidebarBody}
+          </aside>
         </div>
       )}
 

@@ -43,6 +43,17 @@ export function AdminDashboardView({
   const [season, setSeason] = useState('APL 2026')
   const [notifOpen, setNotifOpen] = useState(false)
 
+  // Lock background body scrolling when notification modal is open
+  useEffect(() => {
+    if (notifOpen) {
+      const prevOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = prevOverflow
+      }
+    }
+  }, [notifOpen])
+
   useEffect(() => {
     let alive = true
     api<any[]>('/api/teams')
@@ -154,10 +165,11 @@ export function AdminDashboardView({
 
             {notifOpen && (
               <>
-                {/* Backdrop overlay for closing on click-outside */}
+                {/* Backdrop overlay for closing on click-outside & preventing touch scroll */}
                 <div
-                  className="fixed inset-0 z-40 bg-black/20 sm:bg-transparent backdrop-blur-[1px] sm:backdrop-blur-none"
+                  className="fixed inset-0 z-40 bg-black/40 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none touch-none overscroll-contain"
                   onClick={() => setNotifOpen(false)}
+                  onTouchMove={(e) => e.preventDefault()}
                 />
 
                 {/* Popover Card (Centered with margins on mobile, anchored right on desktop) */}
