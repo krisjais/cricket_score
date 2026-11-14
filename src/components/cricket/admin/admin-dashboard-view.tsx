@@ -11,6 +11,8 @@ import {
   Bell,
   ChevronDown,
   Plus,
+  Trophy,
+  ShieldCheck,
 } from 'lucide-react'
 import { LiveBadge } from '@/components/cricket/ui-bits'
 import type { AdminTab } from './admin-sidebar'
@@ -38,7 +40,7 @@ export function AdminDashboardView({
 }: AdminDashboardViewProps) {
   const [teamsCount, setTeamsCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
-  const [season, setSeason] = useState('NPL 2026')
+  const [season, setSeason] = useState('APL 2026')
   const [notifOpen, setNotifOpen] = useState(false)
 
   useEffect(() => {
@@ -85,30 +87,52 @@ export function AdminDashboardView({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-full bg-[#F4F5F7] pb-8 space-y-6">
-      {/* ===================== DASHBOARD HEADER (Panel 3 Reference) ===================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* ===================== DASHBOARD HEADER ===================== */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-gray-200/70">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-[#7A1426]/10 text-[#7A1426] border border-[#7A1426]/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#7A1426]" />
+              Alliance Premier League
+            </span>
+            {liveCount > 0 ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-rose-600 text-[10px] font-extrabold tracking-wide">
+                <span className="h-2 w-2 rounded-full bg-rose-600 animate-pulse" />
+                {liveCount} Live {liveCount === 1 ? 'Match' : 'Matches'}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                System Active
+              </span>
+            )}
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight">
             Dashboard
           </h1>
-          <p className="text-xs text-gray-500 mt-0.5 font-medium">
-            Welcome back, {username || 'Admin'}
+          <p className="text-xs text-gray-500 mt-0.5 font-medium flex items-center gap-1.5 flex-wrap">
+            <span>Welcome back, <b className="text-[#111827] capitalize">{username || 'Admin'}</b></span>
+            <span className="text-gray-300">•</span>
+            <span className="text-gray-500">Tournament Overview &amp; Live Operations</span>
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
           {/* Season Selector */}
-          <div className="relative">
+          <div className="relative flex items-center">
+            <div className="absolute left-3 pointer-events-none text-[#7A1426]">
+              <Trophy className="w-3.5 h-3.5" />
+            </div>
             <select
               value={season}
               onChange={(e) => setSeason(e.target.value)}
               aria-label="Select Season"
-              className="appearance-none bg-white border border-gray-200 rounded-full pl-3.5 pr-8 py-1.5 text-xs font-bold text-[#111827] shadow-2xs focus:outline-none focus:border-[#7A1426] cursor-pointer"
+              className="h-10 appearance-none bg-white hover:bg-gray-50/80 border border-gray-200 rounded-full pl-8 pr-8 text-xs font-bold text-[#111827] shadow-2xs focus:outline-none focus:border-[#7A1426] cursor-pointer transition-colors"
             >
-              <option value="NPL 2026">NPL 2026</option>
+              <option value="APL 2026">APL 2026</option>
               <option value="Season 8">Season 8</option>
             </select>
-            <ChevronDown className="w-3.5 h-3.5 text-gray-500 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" />
+            <ChevronDown className="w-3.5 h-3.5 text-gray-400 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" />
           </div>
 
           {/* Notification Bell */}
@@ -116,46 +140,74 @@ export function AdminDashboardView({
             <button
               type="button"
               onClick={() => setNotifOpen(!notifOpen)}
-              className="relative p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 shadow-2xs cursor-pointer"
+              className="relative h-10 w-10 flex items-center justify-center rounded-full bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 hover:text-[#111827] shadow-2xs cursor-pointer transition-colors"
               aria-label="Tournament notifications"
             >
               <Bell className="w-4 h-4" />
               {liveCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#7A1426]" />
+                <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7A1426] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#7A1426] ring-2 ring-white" />
+                </span>
               )}
             </button>
 
             {notifOpen && (
-              <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white border border-gray-200 shadow-xl p-4 z-30 text-xs space-y-2">
+              <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white border border-gray-200 shadow-xl p-4 z-30 text-xs space-y-2.5 animate-in fade-in slide-in-from-top-1">
                 <div className="font-bold text-[#111827] border-b border-gray-100 pb-2 flex items-center justify-between">
-                  <span>Live Alerts</span>
+                  <span className="flex items-center gap-1.5">
+                    <Bell className="w-3.5 h-3.5 text-[#7A1426]" />
+                    <span>Live Alerts</span>
+                  </span>
                   <button
                     type="button"
                     onClick={() => setNotifOpen(false)}
-                    className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                    className="text-gray-400 hover:text-gray-600 font-medium cursor-pointer"
                   >
                     Close
                   </button>
                 </div>
                 {liveCount > 0 ? (
-                  <p className="text-gray-600">
-                    <b className="text-[#7A1426]">{liveCount} live match{liveCount === 1 ? '' : 'es'}</b> currently broadcasting on Socket.IO.
-                  </p>
+                  <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-100 space-y-1.5">
+                    <p className="text-gray-700 font-medium leading-relaxed">
+                      <b className="text-[#7A1426]">{liveCount} live match{liveCount === 1 ? '' : 'es'}</b> currently broadcasting on Socket.IO.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNotifOpen(false)
+                        onSelectTab('scoring')
+                      }}
+                      className="text-xs font-bold text-[#7A1426] hover:text-[#5E0E1D] inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Go to Scorer Panel</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 ) : (
-                  <p className="text-gray-500">No live matches running. Create or start a fixture from Matches.</p>
+                  <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 text-center">
+                    <p className="text-xs">No live matches running currently.</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Start or schedule matches from the Matches tab.</p>
+                  </div>
                 )}
               </div>
             )}
           </div>
 
           {/* Admin Avatar Profile Chip */}
-          <div className="flex items-center gap-2.5 bg-white border border-gray-200 rounded-full pl-1.5 pr-3.5 py-1 shadow-2xs">
-            <div className="w-7 h-7 rounded-full bg-[#121826] text-white flex items-center justify-center text-xs font-extrabold uppercase">
-              {(username || 'A')[0]}
+          <div className="h-10 flex items-center gap-2.5 bg-white border border-gray-200 rounded-full pl-1.5 pr-4 shadow-2xs hover:border-gray-300 transition-colors">
+            <div className="relative">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#7A1426] to-[#4A0E18] text-white flex items-center justify-center text-xs font-extrabold uppercase shadow-2xs">
+                {(username || 'A')[0]}
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
             </div>
             <div className="text-left leading-tight">
-              <div className="text-xs font-bold text-[#111827] capitalize">{username || 'Admin'}</div>
-              <div className="text-[10px] text-gray-500">Super Admin</div>
+              <div className="text-xs font-extrabold text-[#111827] capitalize flex items-center gap-1">
+                <span>{username || 'Admin'}</span>
+                <ShieldCheck className="w-3 h-3 text-[#7A1426]" />
+              </div>
+              <div className="text-[10px] font-semibold text-gray-400">Super Admin</div>
             </div>
           </div>
         </div>
