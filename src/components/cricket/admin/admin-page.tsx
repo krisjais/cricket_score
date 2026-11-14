@@ -18,6 +18,7 @@ import { PlayerCareerAdminPanel } from '@/components/cricket/admin/player-career
 import { CaptainsAdmin } from '@/components/cricket/admin/captains-admin'
 import { ScoringConsole } from '@/components/cricket/admin/scoring-console'
 import { PointsTablePage } from '@/components/cricket/points-table-page'
+import { cn } from '@/lib/utils'
 
 const PRIORITY: Record<string, number> = {
   LIVE: 0,
@@ -76,7 +77,12 @@ export function AdminPage({
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#F4F5F7] text-[#111827]">
+    <div
+      className={cn(
+        'flex flex-col md:flex-row min-h-screen text-[#111827]',
+        tab === 'scoring' ? 'bg-[#070B14] h-screen overflow-hidden' : 'bg-[#F4F5F7]'
+      )}
+    >
       {/* Dark Left Sidebar (Dashboard & Scorer Modes) */}
       <AdminSidebar
         currentTab={tab}
@@ -91,8 +97,15 @@ export function AdminPage({
         liveCount={liveCount}
       />
 
-      {/* Right Light Content Area */}
-      <main className="flex-1 min-w-0 overflow-x-hidden">
+      {/* Right Content Area */}
+      <main
+        className={cn(
+          'flex-1 min-w-0',
+          tab === 'scoring'
+            ? 'h-[calc(100dvh-3.25rem)] md:h-screen overflow-hidden flex flex-col bg-[#070B14]'
+            : 'overflow-x-hidden'
+        )}
+      >
         {tab === 'dashboard' && (
           <AdminDashboardView
             matches={matches}
@@ -106,35 +119,7 @@ export function AdminPage({
         )}
 
         {tab === 'scoring' && (
-          <div className="p-4 sm:p-6 lg:p-8 min-h-full pb-8">
-            <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-[#111827] tracking-tight">
-                  Umpire &amp; Scorer Panel
-                </h1>
-                <p className="text-xs text-gray-500 mt-0.5 font-medium">
-                  Fast ball-by-ball match control with live audience broadcasting
-                </p>
-              </div>
-
-              {actionable.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500">Match:</span>
-                  <select
-                    value={effectiveId ?? ''}
-                    onChange={(e) => setSelectedId(e.target.value)}
-                    className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-[#111827] shadow-2xs focus:border-[#7A1426] focus:outline-none cursor-pointer"
-                  >
-                    {actionable.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.teamA.shortName} vs {m.teamB.shortName} ({m.format}) — {m.status.replace('_', ' ')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
+          <div className="h-full w-full bg-[#070B14] overflow-hidden flex flex-col">
             {effectiveId ? (
               <ScoringConsole
                 key={effectiveId}
@@ -146,9 +131,9 @@ export function AdminPage({
                 onSelectMatch={setSelectedId}
               />
             ) : (
-              <div className="bg-white border border-dashed border-gray-300 rounded-2xl p-12 text-center text-gray-500">
-                <p className="text-base font-bold text-[#111827] mb-1">No Matches Found</p>
-                <p className="text-xs text-gray-400 mb-4">Create a match in the Matches tab to begin live scoring.</p>
+              <div className="m-auto bg-[#0D1526] border border-[#172136] rounded-2xl p-8 sm:p-12 text-center text-slate-400 max-w-md">
+                <p className="text-base font-bold text-white mb-1">No Matches Found</p>
+                <p className="text-xs text-slate-400 mb-4">Create a match in the Matches tab to begin live scoring.</p>
                 <button
                   type="button"
                   onClick={() => setTab('matches')}

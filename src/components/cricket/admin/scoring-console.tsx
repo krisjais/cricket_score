@@ -146,234 +146,125 @@ export function ScoringConsole({
     call(`/api/matches/${matchId}/action`, { method: 'POST', json: { action: act, playerId } }, okMsg)
 
   if (!payload || !m) {
-    return <div className="h-64 animate-pulse rounded-2xl bg-gray-200" />
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-[#070B14]">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#7A1426] border-t-transparent" />
+      </div>
+    )
   }
 
+  const battingTeam = current ? (current.battingTeamId === m.teamA.id ? m.teamA : m.teamB) : m.teamA
   const striker = current?.batting.find((b) => b.id === live?.strikerId)
   const nonStriker = current?.batting.find((b) => b.id === live?.nonStrikerId)
   const bowlerCard = current?.bowling.find((b) => b.id === live?.bowlerId)
   const bowlerOption = live?.bowlers.find((b) => b.id === live?.bowlerId)
   const bowlerName = bowlerCard?.name ?? bowlerOption?.name ?? '—'
-  const bowlerStatsDisplay = bowlerCard
-    ? `${bowlerCard.overs} - ${bowlerCard.maidens} - ${bowlerCard.runsConceded} - ${bowlerCard.wickets}`
-    : bowlerOption
-    ? `${bowlerOption.overs} - 0 - ${bowlerOption.runs} - ${bowlerOption.wickets}`
-    : '0.0 - 0 - 0 - 0'
+  const bowlerOvers = bowlerCard?.overs ?? bowlerOption?.overs ?? '0.0'
+  const bowlerRuns = bowlerCard?.runsConceded ?? bowlerOption?.runs ?? 0
+  const bowlerWickets = bowlerCard?.wickets ?? bowlerOption?.wickets ?? 0
   const tossTeam = m.tossWinnerId ? (m.tossWinnerId === m.teamA.id ? m.teamA : m.teamB) : null
 
   return (
-    <div className="space-y-5">
-      {/* ===================== HEADER ROW: Scoreboard + Match Controls (Panel 4 Reference) ===================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-        {/* Main White Scoreboard Card */}
-        <div className="lg:col-span-9 bg-white rounded-2xl border border-gray-200 shadow-xs p-4 sm:p-5 flex flex-col justify-between gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 font-semibold">
-            <span>
-              {m.format === 'CUSTOM' ? `${m.totalOvers} Overs` : m.format}
-              {m.venue ? ` • ${m.venue}` : ' • Turf 01'}
-              {current ? ` • Innings ${current.number}` : ''}
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium">
-                <span className={cn('h-2 w-2 rounded-full', connected ? 'bg-emerald-500' : 'bg-amber-400')} />
-                <span>{connected ? 'Synced' : 'Reconnecting'}</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => navigate(`/match/${m.id}`)}
-                className="text-[11px] font-semibold text-gray-600 hover:text-[#7A1426] inline-flex items-center gap-1 cursor-pointer"
-              >
-                <span>Public</span>
-                <ExternalLink className="w-3 h-3" />
-              </button>
-              {m.status === 'LIVE' ? <LiveBadge /> : <StatusBadge status={m.status} />}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3 py-1">
-            {/* Team A */}
-            <div className="flex items-center gap-3 min-w-0">
-              <TeamLogo
-                name={m.teamA.name}
-                shortName={m.teamA.shortName}
-                color={m.teamA.color}
-                logoUrl={m.teamA.logoUrl}
-                size="lg"
-              />
-              <div className="min-w-0">
-                <div className="text-sm sm:text-base font-extrabold text-[#111827] truncate">{m.teamA.name}</div>
-                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600">
-                  {m.teamA.shortName}
-                </span>
-              </div>
-            </div>
-
-            {/* Center Score + Overs */}
-            <div className="text-center shrink-0 px-2">
-              <div className="text-3xl sm:text-4xl font-black text-[#111827] tabular-nums tracking-tight leading-none">
-                {current ? `${current.runs}/${current.wickets}` : 'VS'}
-              </div>
-              {current && (
-                <div className="text-xs font-semibold text-gray-500 mt-1 tabular-nums">
-                  {current.oversDisplay} Overs &bull; RR {current.runRate.toFixed(2)}
-                  {m.target ? ` • Target ${m.target}` : ''}
-                </div>
-              )}
-            </div>
-
-            {/* Team B */}
-            <div className="flex flex-row-reverse items-center gap-3 text-right min-w-0">
-              <TeamLogo
-                name={m.teamB.name}
-                shortName={m.teamB.shortName}
-                color={m.teamB.color}
-                logoUrl={m.teamB.logoUrl}
-                size="lg"
-              />
-              <div className="min-w-0">
-                <div className="text-sm sm:text-base font-extrabold text-[#111827] truncate">{m.teamB.name}</div>
-                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-600">
-                  {m.teamB.shortName}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Card: Match Controls (Panel 4 Reference) */}
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-200 shadow-xs p-4 flex flex-col justify-between gap-2">
-          <div className="text-xs font-bold text-[#111827]">Match Controls</div>
-          <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
-            {m.status === 'PAUSED' ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void action('RESUME', undefined, 'Match resumed')}
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2 px-3 cursor-pointer disabled:opacity-50"
-              >
-                <Play className="w-3.5 h-3.5" />
-                <span>Resume</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                disabled={busy || m.status !== 'LIVE'}
-                onClick={() => void action('PAUSE', undefined, 'Match paused')}
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-[#111827] text-xs font-bold py-2 px-3 cursor-pointer disabled:opacity-45"
-              >
-                <Pause className="w-3.5 h-3.5" />
-                <span>Pause</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              disabled={busy || (m.status !== 'LIVE' && m.status !== 'PAUSED')}
-              onClick={() => setConfirmAction('END_INNINGS')}
-              className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-[#111827] text-xs font-bold py-2 px-3 cursor-pointer disabled:opacity-45"
-            >
-              <Flag className="w-3.5 h-3.5 text-[#7A1426]" />
-              <span>End Innings</span>
-            </button>
-          </div>
-          {m.status !== 'COMPLETED' && m.status !== 'ABANDONED' && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => setConfirmAction('ABANDON')}
-              className="text-[11px] font-semibold text-rose-600 hover:underline self-end cursor-pointer"
-            >
-              Abandon match
-            </button>
-          )}
-        </div>
-      </div>
-
+    <div className="h-full w-full bg-[#070B14] text-white flex flex-col overflow-hidden">
       {/* ===================== SCORER SUB-VIEWS (Details / Log / Switch) ===================== */}
       {scorerSubView === 'details' && (
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-xs">
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h2 className="text-base font-bold text-[#111827]">Match Information</h2>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-xl mx-auto w-full">
+          <div className="rounded-2xl border border-[#172136] bg-[#0D1526] p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#172136] pb-3">
+              <h2 className="text-base font-bold text-white">Match Information</h2>
               {onSelectSubView && (
-                <Button size="sm" variant="outline" onClick={() => onSelectSubView('score')}>
+                <button
+                  type="button"
+                  onClick={() => onSelectSubView('score')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+                >
                   Back to Scoring
-                </Button>
+                </button>
               )}
             </div>
             <dl className="grid gap-4 sm:grid-cols-2 text-xs">
               <div>
-                <dt className="font-bold text-gray-500 uppercase">Teams</dt>
-                <dd className="font-bold text-sm text-[#111827] mt-0.5">{m.teamA.name} vs {m.teamB.name}</dd>
+                <dt className="font-bold text-slate-400 uppercase">Teams</dt>
+                <dd className="font-bold text-sm text-white mt-0.5">{m.teamA.name} vs {m.teamB.name}</dd>
               </div>
               <div>
-                <dt className="font-bold text-gray-500 uppercase">Venue / Turf</dt>
-                <dd className="font-semibold text-[#111827] mt-0.5">{m.venue || 'Main Ground'}</dd>
+                <dt className="font-bold text-slate-400 uppercase">Venue / Turf</dt>
+                <dd className="font-semibold text-white mt-0.5">{m.venue || 'Main Ground'}</dd>
               </div>
               <div>
-                <dt className="font-bold text-gray-500 uppercase">Format</dt>
-                <dd className="font-semibold text-[#111827] mt-0.5">{m.format} ({m.totalOvers} overs)</dd>
+                <dt className="font-bold text-slate-400 uppercase">Format</dt>
+                <dd className="font-semibold text-white mt-0.5">{m.format} ({m.totalOvers} overs)</dd>
               </div>
               <div>
-                <dt className="font-bold text-gray-500 uppercase">Toss Decision</dt>
-                <dd className="font-semibold text-[#111827] mt-0.5">
+                <dt className="font-bold text-slate-400 uppercase">Toss Decision</dt>
+                <dd className="font-semibold text-white mt-0.5">
                   {tossTeam ? `${tossTeam.name} elected to ${m.tossDecision?.toLowerCase()}` : 'Not recorded'}
                 </dd>
               </div>
               <div>
-                <dt className="font-bold text-gray-500 uppercase">Started</dt>
-                <dd className="font-semibold text-[#111827] mt-0.5">{fmtDate(m.startedAt)}</dd>
+                <dt className="font-bold text-slate-400 uppercase">Started</dt>
+                <dd className="font-semibold text-white mt-0.5">{fmtDate(m.startedAt)}</dd>
               </div>
               <div>
-                <dt className="font-bold text-gray-500 uppercase">Status</dt>
-                <dd className="font-bold text-[#7A1426] mt-0.5">{m.status.replace('_', ' ')}</dd>
+                <dt className="font-bold text-slate-400 uppercase">Status</dt>
+                <dd className="font-bold text-[#F43F5E] mt-0.5">{m.status.replace('_', ' ')}</dd>
               </div>
             </dl>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {scorerSubView === 'log' && (
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-xs overflow-hidden">
-          <div className="px-5 py-3.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-            <span className="text-sm font-bold text-[#111827] flex items-center gap-2">
-              <ScrollText className="w-4 h-4 text-[#7A1426]" />
-              <span>Match Ball-by-Ball Log</span>
-            </span>
-            {onSelectSubView && (
-              <Button size="sm" variant="outline" onClick={() => onSelectSubView('score')}>
-                Back to Scoring
-              </Button>
-            )}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-xl mx-auto w-full">
+          <div className="rounded-2xl border border-[#172136] bg-[#0D1526] overflow-hidden">
+            <div className="px-5 py-3.5 bg-[#0B1120] border-b border-[#172136] flex items-center justify-between">
+              <span className="text-sm font-bold text-white flex items-center gap-2">
+                <ScrollText className="w-4 h-4 text-[#F43F5E]" />
+                <span>Match Ball-by-Ball Log</span>
+              </span>
+              {onSelectSubView && (
+                <button
+                  type="button"
+                  onClick={() => onSelectSubView('score')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+                >
+                  Back to Scoring
+                </button>
+              )}
+            </div>
+            <div className="divide-y divide-[#172136] max-h-[500px] overflow-y-auto">
+              {payload.innings.every((i) => i.commentary.length === 0) ? (
+                <div className="p-10 text-center text-xs text-slate-400">No deliveries logged yet.</div>
+              ) : (
+                [...payload.innings].reverse().map((inn) =>
+                  inn.commentary.map((c) => (
+                    <div key={`${inn.number}-${c.sequence}`} className="px-4 py-2.5 flex items-center gap-2.5 text-xs hover:bg-slate-800/40">
+                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-[10px]">Inn {inn.number}</span>
+                      <span className="font-mono font-bold text-slate-400 w-9">{c.overDisplay}</span>
+                      <DarkBallDot ball={{ label: c.kind === 'W' ? 'W' : c.kind === '4' ? '4' : c.kind === '6' ? '6' : String(c.runs), kind: c.kind, runs: c.runs }} />
+                      <span className="text-slate-200 flex-1">{c.text}</span>
+                    </div>
+                  ))
+                )
+              )}
+            </div>
           </div>
-          <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
-            {payload.innings.every((i) => i.commentary.length === 0) ? (
-              <div className="p-10 text-center text-xs text-gray-400">No deliveries logged yet.</div>
-            ) : (
-              [...payload.innings].reverse().map((inn) =>
-                inn.commentary.map((c) => (
-                  <div key={`${inn.number}-${c.sequence}`} className="px-5 py-3 flex items-center gap-3 text-xs hover:bg-gray-50">
-                    <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-bold">Inn {inn.number}</span>
-                    <span className="font-mono font-bold text-gray-500 w-10">{c.overDisplay}</span>
-                    <BallDot ball={{ label: c.kind === 'W' ? 'W' : c.kind === '4' ? '4' : c.kind === '6' ? '6' : String(c.runs), kind: c.kind }} size="sm" />
-                    <span className="text-gray-800 flex-1">{c.text}</span>
-                  </div>
-                ))
-              )
-            )}
-          </div>
-        </Card>
+        </div>
       )}
 
       {scorerSubView === 'switch' && (
-        <Card className="rounded-2xl border border-gray-200 bg-white shadow-xs">
-          <CardContent className="p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h2 className="text-base font-bold text-[#111827]">Switch Active Match</h2>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 max-w-xl mx-auto w-full">
+          <div className="rounded-2xl border border-[#172136] bg-[#0D1526] p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#172136] pb-3">
+              <h2 className="text-base font-bold text-white">Switch Active Match</h2>
               {onSelectSubView && (
-                <Button size="sm" variant="outline" onClick={() => onSelectSubView('score')}>
+                <button
+                  type="button"
+                  onClick={() => onSelectSubView('score')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+                >
                   Cancel
-                </Button>
+                </button>
               )}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -388,15 +279,15 @@ export function ScoringConsole({
                   className={cn(
                     'rounded-xl border p-4 text-left transition-all cursor-pointer flex items-center justify-between gap-3',
                     item.id === matchId
-                      ? 'border-[#7A1426] bg-[#7A1426]/[0.04]'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
+                      ? 'border-[#F43F5E] bg-[#F43F5E]/10'
+                      : 'border-[#172136] hover:border-slate-700 bg-[#070B14]'
                   )}
                 >
                   <div>
-                    <div className="font-bold text-sm text-[#111827]">
+                    <div className="font-bold text-sm text-white">
                       {item.teamA.shortName} vs {item.teamB.shortName}
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
+                    <div className="text-xs text-slate-400 mt-0.5">
                       {item.venue || 'Turf 01'} &bull; {item.format}
                     </div>
                   </div>
@@ -404,8 +295,8 @@ export function ScoringConsole({
                 </button>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* ===================== MAIN SCORING VIEW ===================== */}
@@ -413,220 +304,311 @@ export function ScoringConsole({
         <>
           {/* Pre-match Setup States */}
           {m.status === 'SCHEDULED' && (
-            <Card className="rounded-2xl border border-gray-200 bg-white shadow-xs">
-              <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-                <Coins className="h-8 w-8 text-[#7A1426]" aria-hidden />
-                <p className="text-sm font-medium text-gray-600">
-                  Match is scheduled. Record the toss to unlock live scoring.
-                </p>
-                <Button
-                  className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer"
-                  onClick={() => setTossOpen(true)}
-                >
-                  <Coins className="h-4 w-4 mr-1.5" aria-hidden /> Record Toss
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="m-auto max-w-md w-full p-6 bg-[#0D1526] border border-[#172136] rounded-2xl text-center space-y-3">
+              <Coins className="h-8 w-8 text-[#F43F5E] mx-auto" />
+              <p className="text-sm font-medium text-slate-300">
+                Match is scheduled. Record the toss to unlock live scoring.
+              </p>
+              <Button
+                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                onClick={() => setTossOpen(true)}
+              >
+                <Coins className="h-4 w-4 mr-1.5" /> Record Toss
+              </Button>
+            </div>
           )}
 
           {m.status === 'TOSS_DONE' && (
-            <Card className="rounded-2xl border border-gray-200 bg-white shadow-xs">
-              <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-                <Play className="h-8 w-8 text-[#7A1426]" aria-hidden />
-                <p className="text-sm font-medium text-gray-600">
-                  Toss done &mdash; pick the two openers and the opening bowler to start play.
-                </p>
-                <Button
-                  className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer"
-                  onClick={() => setStartOpen(true)}
-                >
-                  <Play className="h-4 w-4 mr-1.5" aria-hidden /> Start Match
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="m-auto max-w-md w-full p-6 bg-[#0D1526] border border-[#172136] rounded-2xl text-center space-y-3">
+              <Play className="h-8 w-8 text-[#F43F5E] mx-auto" />
+              <p className="text-sm font-medium text-slate-300">
+                Toss done &mdash; pick the two openers and the opening bowler to start play.
+              </p>
+              <Button
+                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                onClick={() => setStartOpen(true)}
+              >
+                <Play className="h-4 w-4 mr-1.5" /> Start Match
+              </Button>
+            </div>
           )}
 
           {m.status === 'INNINGS_BREAK' && (
-            <Card className="rounded-2xl border border-gray-200 bg-white shadow-xs">
-              <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-                <Play className="h-8 w-8 text-[#7A1426]" aria-hidden />
-                <p className="text-sm font-medium text-gray-600">
-                  Innings 1 closed. Target: <b className="text-[#7A1426]">{m.target}</b>. Start the second innings.
-                </p>
-                <Button
-                  className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer"
-                  onClick={() => setStartOpen(true)}
-                >
-                  <Play className="h-4 w-4 mr-1.5" aria-hidden /> Start Innings 2
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="m-auto max-w-md w-full p-6 bg-[#0D1526] border border-[#172136] rounded-2xl text-center space-y-3">
+              <Play className="h-8 w-8 text-[#F43F5E] mx-auto" />
+              <p className="text-sm font-medium text-slate-300">
+                Innings 1 closed. Target: <b className="text-[#F43F5E]">{m.target}</b>. Start the second innings.
+              </p>
+              <Button
+                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                onClick={() => setStartOpen(true)}
+              >
+                <Play className="h-4 w-4 mr-1.5" /> Start Innings 2
+              </Button>
+            </div>
           )}
 
-          {/* LIVE / PAUSED 2-COLUMN SCORING COCKPIT (Panel 4 Reference) */}
+          {(m.status === 'COMPLETED' || m.status === 'ABANDONED') && (
+            <div className="m-auto max-w-md w-full p-6 bg-[#0D1526] border border-[#172136] rounded-2xl text-center space-y-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-slate-800 text-slate-300">
+                {m.status === 'COMPLETED' ? 'Match Completed' : 'Abandoned'}
+              </span>
+              <p className="text-base font-bold text-white">{m.resultText ?? '—'}</p>
+              {ballsBowled > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => setUndoOpen(true)}
+                  className="bg-transparent border-slate-700 text-slate-200 hover:bg-slate-800"
+                >
+                  <Undo2 className="h-3.5 w-3.5 mr-1.5" /> Undo last ball &amp; re-open
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* ===================== LIVE / PAUSED SCORING COCKPIT ===================== */}
           {(m.status === 'LIVE' || m.status === 'PAUSED') && live && current && (
-            <div className="space-y-4 min-w-0">
-              {/* Urgent Selection Banners */}
-              {(live.needsNewBatsman || live.overComplete) && m.status === 'LIVE' && (
-                <Card className="rounded-2xl border-amber-300 bg-amber-50">
-                  <CardContent className="p-4 space-y-3">
-                    <p className="flex items-center gap-2 text-sm font-bold text-amber-900">
-                      <AlertTriangle className="h-4 w-4" aria-hidden />
-                      {live.needsNewBatsman
-                        ? `Wicket! Select the new ${live.needsNewBatsman === 'STRIKER' ? 'striker' : 'non-striker'}`
-                        : 'Over complete — select the bowler for the next over'}
-                    </p>
-                    {live.needsNewBatsman ? (
-                      <BatsmanPrompt
-                        yetToBat={live.yetToBat}
-                        disabled={busy}
-                        onPick={(pid) => void action('NEW_BATSMAN', pid, 'New batsman in')}
-                      />
+            <>
+              {/* PHONE / MOBILE VIEW (lg:hidden) — STRICTLY UNCHANGED AS REQUESTED */}
+              <div className="lg:hidden h-full w-full max-w-md mx-auto flex flex-col p-2 overflow-hidden select-none gap-2">
+                {/* TOP STATUS LINE (Matches Image 3 + Pause & End Innings buttons) */}
+                <div className="flex items-center justify-between gap-1 px-0.5 shrink-0">
+                  <div className="flex items-center gap-1 min-w-0">
+                    {matches.length > 1 ? (
+                      <select
+                        value={m.id}
+                        onChange={(e) => onSelectMatch?.(e.target.value)}
+                        className="bg-transparent text-xs font-bold text-slate-200 border-none outline-none cursor-pointer truncate max-w-[160px] hover:text-white"
+                        title="Switch match"
+                      >
+                        {matches.map((item) => (
+                          <option key={item.id} value={item.id} className="bg-[#0D1526] text-white">
+                            {item.teamA.shortName} vs {item.teamB.shortName} · {item.totalOvers} Ov · Inn {current?.number ?? 1}
+                          </option>
+                        ))}
+                      </select>
                     ) : (
-                      <BowlerPrompt
-                        bowlers={live.bowlers}
-                        disabled={busy}
-                        onPick={(pid) => void action('NEW_BOWLER', pid, 'Bowler set')}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {m.status === 'PAUSED' && (
-                <Card className="rounded-2xl border-orange-300 bg-orange-50">
-                  <CardContent className="p-4 flex items-center justify-between gap-3">
-                    <p className="flex items-center gap-2 text-sm font-bold text-orange-900">
-                      <Pause className="h-4 w-4" aria-hidden /> Scoring is currently paused.
-                    </p>
-                    <Button
-                      size="sm"
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white"
-                      disabled={busy}
-                      onClick={() => void action('RESUME', undefined, 'Match resumed')}
-                    >
-                      <Play className="h-4 w-4 mr-1" aria-hidden /> Resume Scoring
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                {/* LEFT COLUMN (Panel 4 Reference): Current Batters, Current Bowler, Change Buttons */}
-                <div className="lg:col-span-5 space-y-4">
-                  {/* Current Batters */}
-                  <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold text-[#111827]">
-                      <Pencil className="w-3.5 h-3.5 text-[#7A1426]" />
-                      <span>Current Batters</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      {[striker, nonStriker].map((b, idx) => {
-                        const onStrike = idx === 0 && Boolean(live.strikerId)
-                        return (
-                          <div
-                            key={b?.id ?? idx}
-                            className={cn(
-                              'flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm border transition-colors',
-                              onStrike
-                                ? 'bg-[#7A1426]/[0.06] border-[#7A1426]/30 text-[#111827]'
-                                : 'bg-gray-50 border-gray-200/70 text-[#111827]'
-                            )}
-                          >
-                            <span className="font-bold truncate pr-2">
-                              {b ? `${b.name}${onStrike ? ' *' : ''}` : <span className="text-gray-400 font-normal">Awaiting batter</span>}
-                            </span>
-                            <span className="font-mono font-extrabold tabular-nums shrink-0 text-xs sm:text-sm">
-                              {b ? `${b.runs} (${b.balls})` : '—'}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Current Bowler */}
-                  <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-4 space-y-2.5">
-                    <div className="text-xs font-bold text-[#111827]">Current Bowler</div>
-                    <div className="flex items-center justify-between rounded-xl bg-gray-50 border border-gray-200/70 px-3.5 py-2.5">
-                      <div>
-                        <div className="font-bold text-sm text-[#111827]">{bowlerName}</div>
-                        <div className="text-xs font-mono text-gray-500 mt-0.5 tabular-nums">
-                          {bowlerStatsDisplay}
-                        </div>
-                      </div>
-                      <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-600">
-                        O-M-R-W
+                      <span className="text-xs font-bold text-slate-200 truncate">
+                        {m.teamA.shortName} vs {m.teamB.shortName} · {m.totalOvers} Ov · Inn {current.number}
                       </span>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Compact This Over & Extras */}
-                  <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-4 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-bold text-gray-600">
-                      <span>This Over ({Math.floor(current.legalBalls / 6) + (live.overComplete ? 0 : 1)})</span>
-                      <span className="font-mono text-[#7A1426]">Extras: {current.extras.total}</span>
-                    </div>
-                    <BallDotsRow balls={live.thisOver} />
-                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {/* Pause / Resume Button */}
+                    {m.status === 'PAUSED' ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void action('RESUME', undefined, 'Match resumed')}
+                        className="px-2 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 border border-emerald-600/70 text-emerald-300 text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-all cursor-pointer animate-pulse"
+                        title="Resume Scoring"
+                      >
+                        <Play className="w-3 h-3 fill-emerald-400 text-emerald-400" />
+                        <span>Resume</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={busy || m.status !== 'LIVE'}
+                        onClick={() => void action('PAUSE', undefined, 'Match paused')}
+                        className="px-2 py-1 rounded-lg bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-[11px] font-semibold flex items-center gap-1 active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                        title="Pause Inning"
+                      >
+                        <Pause className="w-3 h-3 text-amber-400" />
+                        <span>Pause</span>
+                      </button>
+                    )}
 
-                  {/* 2 Action Buttons: Change Striker | Change Bowler */}
-                  <div className="grid grid-cols-2 gap-3">
+                    {/* End Innings Button */}
                     <button
                       type="button"
-                      disabled={busy || m.status !== 'LIVE' || !live.strikerId || !live.nonStrikerId}
-                      onClick={() => void action('SWAP_STRIKE', undefined, 'Strike swapped')}
-                      className="flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-[#111827] font-bold text-xs py-2.5 px-3 shadow-2xs transition-all cursor-pointer disabled:opacity-45"
+                      disabled={busy || (m.status !== 'LIVE' && m.status !== 'PAUSED')}
+                      onClick={() => setConfirmAction('END_INNINGS')}
+                      className="px-2 py-1 rounded-lg bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-[11px] font-semibold flex items-center gap-1 active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                      title="End Current Innings"
                     >
-                      <ArrowLeftRight className="w-3.5 h-3.5 text-[#7A1426]" />
-                      <span>Change Striker</span>
+                      <Flag className="w-3 h-3 text-[#F43F5E]" />
+                      <span>End</span>
                     </button>
-                    <button
-                      type="button"
-                      disabled={busy || m.status !== 'LIVE'}
-                      onClick={() => setBowlerDialogOpen(true)}
-                      className="flex items-center justify-center gap-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-[#111827] font-bold text-xs py-2.5 px-3 shadow-2xs transition-all cursor-pointer disabled:opacity-45"
-                    >
-                      <Ban className="w-3.5 h-3.5 text-[#7A1426]" />
-                      <span>Change Bowler</span>
-                    </button>
+
+                    {/* LIVE Badge */}
+                    {m.status === 'LIVE' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#32070F] border border-[#5B0E1D] text-rose-500 font-extrabold text-[10px] tracking-wide">
+                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                        LIVE
+                      </span>
+                    ) : m.status === 'PAUSED' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-800/60 text-amber-400 font-extrabold text-[10px] tracking-wide">
+                        PAUSED
+                      </span>
+                    ) : (
+                      <StatusBadge status={m.status} />
+                    )}
                   </div>
                 </div>
 
-                {/* RIGHT COLUMN (Panel 4 Reference): Record Ball Keypad */}
-                <div className="lg:col-span-7 bg-white rounded-2xl border border-gray-200 shadow-xs p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-[#111827]">Record Ball</h2>
-                    {scoringBlocked && m.status === 'LIVE' && (
-                      <span className="text-[11px] font-bold text-amber-700">
-                        Select new player above to continue
-                      </span>
-                    )}
+                {/* CARD 1: MAIN SCORE CARD */}
+                <div className="bg-[#0D1526] border border-[#172136] rounded-2xl px-4 py-2.5 sm:py-3 shrink-0 shadow-sm">
+                  <div className="flex items-center justify-between text-xs font-semibold">
+                    <span className="text-slate-400 truncate max-w-[200px]">
+                      {battingTeam.name}
+                    </span>
+                    <span className="text-slate-200 font-bold tabular-nums">
+                      {current.oversDisplay} / {m.totalOvers} ov
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between mt-1">
+                    <div className="text-4xl sm:text-5xl font-black text-white tracking-tight tabular-nums">
+                      {current.runs}/{current.wickets}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-slate-400 tabular-nums">
+                        CRR {current.runRate.toFixed(2)}
+                      </div>
+                      {m.target && (
+                        <div className="text-[11px] font-bold text-amber-400 mt-0.5 tabular-nums">
+                          Target {m.target}
+                          <span className="text-slate-400 ml-1">
+                            (Need {Math.max(0, m.target - current.runs)})
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* CARD 2: BATTERS & BOWLER TABLE */}
+                <div className="bg-[#0D1526] border border-[#172136] rounded-2xl px-4 py-2.5 sm:py-3 shrink-0 shadow-sm text-xs">
+                  {/* Batters Header */}
+                  <div className="flex items-center justify-between text-slate-400 font-medium mb-1 px-0.5">
+                    <span>Batter</span>
+                    <div className="flex items-center gap-2 sm:gap-3 text-right tabular-nums">
+                      <span className="w-6 sm:w-7 text-right">R</span>
+                      <span className="w-6 sm:w-7 text-right">B</span>
+                      <span className="w-6 sm:w-7 text-right">4s</span>
+                      <span className="w-6 sm:w-7 text-right">6s</span>
+                    </div>
                   </div>
 
+                  {/* Striker Row (Highlighted in Crimson/Rose) */}
+                  <div className="flex items-center justify-between py-1 px-0.5">
+                    <span className="font-bold text-[#F43F5E] truncate pr-2">
+                      {striker ? `${striker.name} *` : <span className="text-slate-500 italic">Select striker</span>}
+                    </span>
+                    <div className="flex items-center gap-2 sm:gap-3 text-right font-bold text-white tabular-nums">
+                      <span className="w-6 sm:w-7 text-right">{striker?.runs ?? 0}</span>
+                      <span className="w-6 sm:w-7 text-right">{striker?.balls ?? 0}</span>
+                      <span className="w-6 sm:w-7 text-right">{striker?.fours ?? 0}</span>
+                      <span className="w-6 sm:w-7 text-right">{striker?.sixes ?? 0}</span>
+                    </div>
+                  </div>
+
+                  {/* Non-Striker Row */}
+                  <div className="flex items-center justify-between py-1 px-0.5">
+                    <span className="font-medium text-slate-200 truncate pr-2">
+                      {nonStriker ? nonStriker.name : <span className="text-slate-500 italic">Select non-striker</span>}
+                    </span>
+                    <div className="flex items-center gap-2 sm:gap-3 text-right font-bold text-white tabular-nums">
+                      <span className="w-6 sm:w-7 text-right">{nonStriker?.runs ?? 0}</span>
+                      <span className="w-6 sm:w-7 text-right">{nonStriker?.balls ?? 0}</span>
+                      <span className="w-6 sm:w-7 text-right">{nonStriker?.fours ?? 0}</span>
+                      <span className="w-6 sm:w-7 text-right">{nonStriker?.sixes ?? 0}</span>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-[#172136] my-1 sm:my-1.5" />
+
+                  {/* Bowler Header */}
+                  <div className="flex items-center justify-between text-slate-400 font-medium mb-1 px-0.5">
+                    <span>Bowler</span>
+                    <div className="flex items-center gap-2 sm:gap-3 text-right tabular-nums">
+                      <span className="w-6 sm:w-7 text-right">O</span>
+                      <span className="w-6 sm:w-7 text-right">R</span>
+                      <span className="w-6 sm:w-7 text-right">W</span>
+                    </div>
+                  </div>
+
+                  {/* Bowler Row */}
+                  <div className="flex items-center justify-between py-1 px-0.5">
+                    <span className="font-medium text-slate-200 truncate pr-2">
+                      {bowlerName !== '—' ? bowlerName : <span className="text-slate-500 italic">Select bowler</span>}
+                    </span>
+                    <div className="flex items-center gap-2 sm:gap-3 text-right font-bold text-white tabular-nums">
+                      <span className="w-6 sm:w-7 text-right">{bowlerOvers}</span>
+                      <span className="w-6 sm:w-7 text-right">{bowlerRuns}</span>
+                      <span className="w-6 sm:w-7 text-right">{bowlerWickets}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CARD 3: THIS OVER STRIP */}
+                <div className="bg-[#0D1526] border border-[#172136] rounded-xl px-3.5 py-2 flex items-center justify-between shrink-0 shadow-sm">
+                  <div className="flex items-center gap-2 min-w-0 overflow-x-auto no-scrollbar">
+                    <span className="text-xs font-medium text-slate-400 shrink-0">This over</span>
+                    {!live.thisOver.length ? (
+                      <span className="text-xs text-slate-400 font-normal">No deliveries yet</span>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        {live.thisOver.map((b, i) => (
+                          <DarkBallDot key={i} ball={b} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium text-slate-400 shrink-0 pl-2">
+                    Extras: {current.extras.total}
+                  </span>
+                </div>
+
+                {/* CARD 4: QUICK ACTION BUTTONS */}
+                <div className="grid grid-cols-2 gap-2 shrink-0">
+                  <button
+                    type="button"
+                    disabled={busy || m.status !== 'LIVE' || !live.strikerId || !live.nonStrikerId}
+                    onClick={() => void action('SWAP_STRIKE', undefined, 'Strike swapped')}
+                    className="h-9 sm:h-10 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-98 disabled:opacity-40"
+                  >
+                    <ArrowLeftRight className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Change striker</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || m.status !== 'LIVE'}
+                    onClick={() => setBowlerDialogOpen(true)}
+                    className="h-9 sm:h-10 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-98 disabled:opacity-40"
+                  >
+                    <span>Change bowler</span>
+                  </button>
+                </div>
+
+                {/* CARD 5: KEYPAD (Balanced height, minimized slightly to avoid tall stretching) */}
+                <div className="flex-1 flex flex-col gap-1.5 min-h-0 pt-0.5 justify-end">
                   {/* Row 1: 0, 1, 2, 3 */}
-                  <div className="grid grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[38px] max-h-[56px]">
                     {[0, 1, 2, 3].map((r) => (
                       <button
                         key={r}
                         type="button"
                         disabled={scoringBlocked}
                         onClick={() => void record({ runsOffBat: r, extraType: null, extraRuns: 0 })}
-                        className="h-14 rounded-xl border border-gray-200 bg-white hover:border-[#7A1426] hover:bg-gray-50 text-xl font-extrabold text-[#111827] shadow-2xs transition-all active:scale-95 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                        className="h-full rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-white text-xl sm:text-2xl font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {r}
                       </button>
                     ))}
                   </div>
 
-                  {/* Row 2: Wide buttons for 4 (Maroon), 6 (Maroon), Wicket (Red) */}
-                  <div className="grid grid-cols-3 gap-2.5">
+                  {/* Row 2: 4, 6, Wicket, Undo */}
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[38px] max-h-[56px]">
                     <button
                       type="button"
                       disabled={scoringBlocked}
                       onClick={() => void record({ runsOffBat: 4, extraType: null, extraRuns: 0 })}
-                      className="h-14 rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xl font-extrabold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                      className="h-full rounded-xl bg-[#4A0E18] hover:bg-[#5E0E1D] border border-[#6B1424]/60 text-white text-xl sm:text-2xl font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       4
                     </button>
@@ -634,7 +616,7 @@ export function ScoringConsole({
                       type="button"
                       disabled={scoringBlocked}
                       onClick={() => void record({ runsOffBat: 6, extraType: null, extraRuns: 0 })}
-                      className="h-14 rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xl font-extrabold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                      className="h-full rounded-xl bg-[#4A0E18] hover:bg-[#5E0E1D] border border-[#6B1424]/60 text-white text-xl sm:text-2xl font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       6
                     </button>
@@ -642,78 +624,74 @@ export function ScoringConsole({
                       type="button"
                       disabled={scoringBlocked}
                       onClick={() => setWicketDialog('NORMAL')}
-                      className="h-14 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-[#991B1B] font-bold text-sm shadow-2xs transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-45 disabled:cursor-not-allowed"
+                      className="h-full rounded-xl bg-[#28060D] hover:bg-[#380912] border border-[#4C0D18]/80 text-[#EF4444] font-extrabold text-sm sm:text-base flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      <span className="w-6 h-6 rounded-full bg-[#991B1B] text-white text-xs font-black inline-flex items-center justify-center">
-                        W
-                      </span>
-                      <span>Wicket</span>
-                    </button>
-                  </div>
-
-                  {/* Row 3: Wide, No Ball, Bye, Leg Bye, Undo */}
-                  <div className="grid grid-cols-5 gap-2">
-                    <button
-                      type="button"
-                      disabled={scoringBlocked}
-                      onClick={() => setExtraDialog('WIDE')}
-                      className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 py-2.5 text-center transition-all cursor-pointer disabled:opacity-45"
-                    >
-                      <div className="text-xs font-bold text-[#111827]">Wide</div>
-                      <div className="text-[10px] font-semibold text-gray-400">W</div>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={scoringBlocked}
-                      onClick={() => setExtraDialog('NO_BALL')}
-                      className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 py-2.5 text-center transition-all cursor-pointer disabled:opacity-45"
-                    >
-                      <div className="text-xs font-bold text-[#111827]">No Ball</div>
-                      <div className="text-[10px] font-semibold text-gray-400">NB</div>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={scoringBlocked}
-                      onClick={() => setExtraDialog('BYE')}
-                      className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 py-2.5 text-center transition-all cursor-pointer disabled:opacity-45"
-                    >
-                      <div className="text-xs font-bold text-[#111827]">Bye</div>
-                      <div className="text-[10px] font-semibold text-gray-400">B</div>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={scoringBlocked}
-                      onClick={() => setExtraDialog('LEG_BYE')}
-                      className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 py-2.5 text-center transition-all cursor-pointer disabled:opacity-45"
-                    >
-                      <div className="text-xs font-bold text-[#111827]">Leg Bye</div>
-                      <div className="text-[10px] font-semibold text-gray-400">LB</div>
+                      Wicket
                     </button>
                     <button
                       type="button"
                       disabled={busy || ballsBowled === 0}
                       onClick={() => setUndoOpen(true)}
-                      className="rounded-xl border border-gray-200 bg-white hover:bg-rose-50 hover:border-rose-200 py-2.5 text-center transition-all cursor-pointer disabled:opacity-45"
+                      className="h-full rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-300 font-semibold text-xs sm:text-sm flex items-center justify-center gap-1 cursor-pointer transition-all active:scale-95 disabled:opacity-40"
                     >
-                      <div className="text-xs font-bold text-[#111827]">Undo</div>
-                      <Undo2 className="w-3 h-3 mx-auto text-gray-500 mt-0.5" />
+                      <Undo2 className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Undo</span>
                     </button>
                   </div>
 
-                  {/* Bottom Row: End Over | Next Ball -> */}
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                  {/* Row 3: Wide, No ball, Bye, Leg bye */}
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[38px] max-h-[52px]">
+                    <button
+                      type="button"
+                      disabled={scoringBlocked}
+                      onClick={() => setExtraDialog('WIDE')}
+                      className="h-full rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40"
+                    >
+                      <span className="text-xs sm:text-sm font-bold text-slate-200 leading-tight">Wide</span>
+                      <span className="text-[10px] font-semibold text-slate-400 leading-tight">Wd</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={scoringBlocked}
+                      onClick={() => setExtraDialog('NO_BALL')}
+                      className="h-full rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40"
+                    >
+                      <span className="text-xs sm:text-sm font-bold text-slate-200 leading-tight">No ball</span>
+                      <span className="text-[10px] font-semibold text-slate-400 leading-tight">Nb</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={scoringBlocked}
+                      onClick={() => setExtraDialog('BYE')}
+                      className="h-full rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40"
+                    >
+                      <span className="text-xs sm:text-sm font-bold text-slate-200 leading-tight">Bye</span>
+                      <span className="text-[10px] font-semibold text-slate-400 leading-tight">B</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={scoringBlocked}
+                      onClick={() => setExtraDialog('LEG_BYE')}
+                      className="h-full rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40"
+                    >
+                      <span className="text-xs sm:text-sm font-bold text-slate-200 leading-tight">Leg bye</span>
+                      <span className="text-[10px] font-semibold text-slate-400 leading-tight">LB</span>
+                    </button>
+                  </div>
+
+                  {/* Row 4: End over & Next ball */}
+                  <div className="grid grid-cols-12 gap-1.5 flex-1 min-h-[40px] max-h-[56px]">
                     <button
                       type="button"
                       disabled={busy || m.status !== 'LIVE'}
                       onClick={() => setBowlerDialogOpen(true)}
-                      className="h-11 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-[#111827] text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-45"
+                      className="col-span-5 h-full rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 font-bold text-xs sm:text-sm flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40"
                     >
-                      <Flag className="w-3.5 h-3.5 text-gray-600" />
-                      <span>End Over</span>
+                      End over
                     </button>
                     <button
                       type="button"
-                      disabled={busy || m.status !== 'LIVE'}
+                      disabled={busy || m.status !== 'LIVE' || (scoringBlocked && !live.overComplete)}
                       onClick={() => {
                         if (live.overComplete) {
                           setBowlerDialogOpen(true)
@@ -721,43 +699,481 @@ export function ScoringConsole({
                           void record({ runsOffBat: 0, extraType: null, extraRuns: 0 })
                         }
                       }}
-                      title="Record quick dot ball (0) or advance to next bowler after over"
-                      className="h-11 rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-45 active:scale-98"
+                      className="col-span-7 h-full rounded-xl bg-[#5B0E1D] hover:bg-[#6E1224] border border-[#7A1426]/60 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 disabled:opacity-40"
                     >
-                      <span>{live.overComplete ? 'Pick Next Bowler' : 'Next Ball'}</span>
+                      <span>{live.overComplete ? 'Pick Next Bowler' : 'Next ball'}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Completed / Abandoned */}
-          {(m.status === 'COMPLETED' || m.status === 'ABANDONED') && (
-            <Card className="rounded-2xl border border-gray-200 bg-white shadow-xs">
-              <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-                <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-gray-100 text-gray-700">
-                  {m.status === 'COMPLETED' ? 'Match Completed' : 'Abandoned'}
-                </span>
-                <p className="text-base font-bold text-[#111827]">{m.resultText ?? '—'}</p>
-                {ballsBowled > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => setUndoOpen(true)}
-                  >
-                    <Undo2 className="h-3.5 w-3.5 mr-1.5" aria-hidden /> Undo last ball &amp; re-open
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+              {/* DESKTOP VIEW (hidden lg:flex) — OPTIMIZED WIDE DUAL-COLUMN COCKPIT */}
+              <div className="hidden lg:flex flex-col h-full w-full max-w-6xl xl:max-w-7xl mx-auto p-4 xl:p-6 justify-between gap-4 overflow-hidden select-none">
+                {/* DESKTOP TOP BAR */}
+                <div className="flex items-center justify-between pb-3 border-b border-[#172136] shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-black text-white tracking-tight">
+                        {m.teamA.shortName} vs {m.teamB.shortName}
+                      </span>
+                      <span className="text-xs px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">
+                        {m.format === 'CUSTOM' ? `${m.totalOvers} Overs` : m.format}
+                      </span>
+                      <span className="text-xs px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">
+                        Innings {current.number}
+                      </span>
+                      {m.venue && (
+                        <span className="text-xs text-slate-400 font-medium">
+                          • {m.venue}
+                        </span>
+                      )}
+                    </div>
+
+                    {matches.length > 1 && (
+                      <select
+                        value={m.id}
+                        onChange={(e) => onSelectMatch?.(e.target.value)}
+                        className="ml-3 bg-[#0D1526] text-xs font-bold text-slate-200 border border-[#172136] rounded-lg px-2.5 py-1 outline-none cursor-pointer hover:border-slate-600"
+                        title="Switch match"
+                      >
+                        {matches.map((item) => (
+                          <option key={item.id} value={item.id} className="bg-[#0D1526] text-white">
+                            Switch: {item.teamA.shortName} vs {item.teamB.shortName} ({item.status})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Pause / Resume Button */}
+                    {m.status === 'PAUSED' ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void action('RESUME', undefined, 'Match resumed')}
+                        className="px-3.5 py-1.5 rounded-xl bg-emerald-950 hover:bg-emerald-900 border border-emerald-600/70 text-emerald-300 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer animate-pulse"
+                        title="Resume Match Scoring"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
+                        <span>Resume Inning</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={busy || m.status !== 'LIVE'}
+                        onClick={() => void action('PAUSE', undefined, 'Match paused')}
+                        className="px-3.5 py-1.5 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                        title="Pause Current Inning"
+                      >
+                        <Pause className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Pause Inning</span>
+                      </button>
+                    )}
+
+                    {/* End Innings Button */}
+                    <button
+                      type="button"
+                      disabled={busy || (m.status !== 'LIVE' && m.status !== 'PAUSED')}
+                      onClick={() => setConfirmAction('END_INNINGS')}
+                      className="px-3.5 py-1.5 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                      title="End Current Innings"
+                    >
+                      <Flag className="w-3.5 h-3.5 text-[#F43F5E]" />
+                      <span>End Innings</span>
+                    </button>
+
+                    {/* Public Match Page Link */}
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/match/${m.id}`)}
+                      className="px-3 py-1.5 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                      title="Open Public Match Center"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Public</span>
+                    </button>
+
+                    {/* Abandon Match Button */}
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setConfirmAction('ABANDON')}
+                      className="px-3 py-1.5 rounded-xl bg-[#0D1526] hover:bg-rose-950/40 border border-[#172136] text-rose-400 hover:text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                      title="Abandon Match"
+                    >
+                      <Ban className="w-3.5 h-3.5" />
+                      <span>Abandon</span>
+                    </button>
+
+                    {/* LIVE / PAUSED Badge */}
+                    {m.status === 'LIVE' ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#32070F] border border-[#5B0E1D] text-rose-500 font-extrabold text-xs tracking-wide">
+                        <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                        LIVE
+                      </span>
+                    ) : m.status === 'PAUSED' ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/80 border border-amber-800/60 text-amber-400 font-extrabold text-xs tracking-wide">
+                        PAUSED
+                      </span>
+                    ) : (
+                      <StatusBadge status={m.status} />
+                    )}
+                  </div>
+                </div>
+
+                {/* DESKTOP 2-COLUMN MAIN COCKPIT */}
+                <div className="grid grid-cols-12 gap-5 flex-1 min-h-0 items-start">
+                  {/* LEFT COLUMN: SCOREBOARD, BATTERS & BOWLER, THIS OVER */}
+                  <div className="col-span-7 flex flex-col gap-3.5 min-h-0">
+                    {/* Scoreboard Hero Card */}
+                    <div className="bg-[#0D1526] border border-[#172136] rounded-2xl p-4 xl:p-5 shadow-sm shrink-0">
+                      <div className="flex items-center justify-between text-sm font-semibold">
+                        <div className="flex items-center gap-3">
+                          <TeamLogo
+                            name={battingTeam.name}
+                            shortName={battingTeam.shortName}
+                            color={battingTeam.color}
+                            logoUrl={battingTeam.logoUrl}
+                            size="md"
+                          />
+                          <div>
+                            <div className="text-base font-extrabold text-white">{battingTeam.name}</div>
+                            <div className="text-xs text-slate-400 font-medium">Batting • Innings {current.number}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-slate-200 tabular-nums">
+                            {current.oversDisplay} <span className="text-slate-400 font-normal">/ {m.totalOvers} ov</span>
+                          </div>
+                          <div className="text-xs font-bold text-slate-400 tabular-nums mt-0.5">
+                            CRR: {current.runRate.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-baseline justify-between mt-3 pt-3 border-t border-[#172136]">
+                        <div className="text-5xl font-black text-white tracking-tight tabular-nums">
+                          {current.runs}/{current.wickets}
+                        </div>
+                        {m.target && (
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-amber-400 tabular-nums">
+                              Target: {m.target}
+                            </div>
+                            <div className="text-xs text-slate-400 tabular-nums mt-0.5">
+                              Need {Math.max(0, m.target - current.runs)} runs from{' '}
+                              {Math.max(0, m.totalOvers * 6 - current.legalBalls)} balls
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Batters & Bowler Table Card */}
+                    <div className="bg-[#0D1526] border border-[#172136] rounded-2xl p-4 xl:p-5 shadow-sm text-sm shrink-0">
+                      {/* Batters Header */}
+                      <div className="flex items-center justify-between text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 px-1">
+                        <span>Batting</span>
+                        <div className="flex items-center gap-4 text-right tabular-nums">
+                          <span className="w-8 text-right">R</span>
+                          <span className="w-8 text-right">B</span>
+                          <span className="w-8 text-right">4s</span>
+                          <span className="w-8 text-right">6s</span>
+                          <span className="w-12 text-right">SR</span>
+                        </div>
+                      </div>
+
+                      {/* Striker Row */}
+                      <div className="flex items-center justify-between py-1.5 px-2 rounded-xl bg-slate-900/60 border border-transparent">
+                        <span className="font-bold text-[#F43F5E] truncate pr-2 flex items-center gap-1.5">
+                          <span>{striker ? striker.name : 'Select striker'}</span>
+                          <span className="text-rose-400 font-black">*</span>
+                        </span>
+                        <div className="flex items-center gap-4 text-right font-bold text-white tabular-nums">
+                          <span className="w-8 text-right">{striker?.runs ?? 0}</span>
+                          <span className="w-8 text-right text-slate-300 font-medium">{striker?.balls ?? 0}</span>
+                          <span className="w-8 text-right text-slate-300 font-medium">{striker?.fours ?? 0}</span>
+                          <span className="w-8 text-right text-slate-300 font-medium">{striker?.sixes ?? 0}</span>
+                          <span className="w-12 text-right text-slate-300 font-medium">{striker?.strikeRate?.toFixed(1) ?? '0.0'}</span>
+                        </div>
+                      </div>
+
+                      {/* Non-Striker Row */}
+                      <div className="flex items-center justify-between py-1.5 px-2 mt-1 rounded-xl">
+                        <span className="font-medium text-slate-200 truncate pr-2">
+                          {nonStriker ? nonStriker.name : 'Select non-striker'}
+                        </span>
+                        <div className="flex items-center gap-4 text-right font-bold text-white tabular-nums">
+                          <span className="w-8 text-right">{nonStriker?.runs ?? 0}</span>
+                          <span className="w-8 text-right text-slate-300 font-medium">{nonStriker?.balls ?? 0}</span>
+                          <span className="w-8 text-right text-slate-300 font-medium">{nonStriker?.fours ?? 0}</span>
+                          <span className="w-8 text-right text-slate-300 font-medium">{nonStriker?.sixes ?? 0}</span>
+                          <span className="w-12 text-right text-slate-300 font-medium">{nonStriker?.strikeRate?.toFixed(1) ?? '0.0'}</span>
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="border-t border-[#172136] my-2.5" />
+
+                      {/* Bowler Header */}
+                      <div className="flex items-center justify-between text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 px-1">
+                        <span>Bowling</span>
+                        <div className="flex items-center gap-4 text-right tabular-nums">
+                          <span className="w-8 text-right">O</span>
+                          <span className="w-8 text-right">M</span>
+                          <span className="w-8 text-right">R</span>
+                          <span className="w-8 text-right">W</span>
+                          <span className="w-12 text-right">ECON</span>
+                        </div>
+                      </div>
+
+                      {/* Bowler Row */}
+                      <div className="flex items-center justify-between py-1.5 px-2 rounded-xl">
+                        <span className="font-medium text-slate-200 truncate pr-2">
+                          {bowlerName !== '—' ? bowlerName : 'Select bowler'}
+                        </span>
+                        <div className="flex items-center gap-4 text-right font-bold text-white tabular-nums">
+                          <span className="w-8 text-right">{bowlerOvers}</span>
+                          <span className="w-8 text-right text-slate-300 font-medium">{bowlerCard?.maidens ?? 0}</span>
+                          <span className="w-8 text-right">{bowlerRuns}</span>
+                          <span className="w-8 text-right text-rose-400 font-black">{bowlerWickets}</span>
+                          <span className="w-12 text-right text-slate-300 font-medium">{bowlerCard?.economy?.toFixed(2) ?? '0.00'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* This Over Strip */}
+                    <div className="bg-[#0D1526] border border-[#172136] rounded-xl px-4 py-3 flex items-center justify-between shadow-sm shrink-0">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 shrink-0">
+                          This over ({Math.floor(current.legalBalls / 6) + (live.overComplete ? 0 : 1)}):
+                        </span>
+                        {!live.thisOver.length ? (
+                          <span className="text-xs text-slate-500 font-normal">No deliveries yet in this over</span>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            {live.thisOver.map((b, i) => (
+                              <DarkBallDot key={i} ball={b} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs font-medium text-slate-400 shrink-0">
+                        <span>Wd: {current.extras.wides}</span>
+                        <span>Nb: {current.extras.noBalls}</span>
+                        <span>B: {current.extras.byes}</span>
+                        <span>LB: {current.extras.legByes}</span>
+                        <span className="font-bold text-white ml-1">Total: {current.extras.total}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RIGHT COLUMN: ACTIONS, RECORD BALL KEYPAD */}
+                  <div className="col-span-5 flex flex-col justify-between gap-3 min-h-0">
+                    {/* Quick Action Buttons */}
+                    <div className="grid grid-cols-2 gap-3 shrink-0">
+                      <button
+                        type="button"
+                        disabled={busy || m.status !== 'LIVE' || !live.strikerId || !live.nonStrikerId}
+                        onClick={() => void action('SWAP_STRIKE', undefined, 'Strike swapped')}
+                        className="h-11 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors active:scale-98 disabled:opacity-40 shadow-xs"
+                      >
+                        <ArrowLeftRight className="w-4 h-4 text-slate-400" />
+                        <span>Change Striker</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy || m.status !== 'LIVE'}
+                        onClick={() => setBowlerDialogOpen(true)}
+                        className="h-11 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-colors active:scale-98 disabled:opacity-40 shadow-xs"
+                      >
+                        <span>Change Bowler</span>
+                      </button>
+                    </div>
+
+                    {/* Keypad Console Card */}
+                    <div className="bg-[#0D1526] border border-[#172136] rounded-2xl p-4 xl:p-5 shadow-sm space-y-3 flex-1 flex flex-col justify-between">
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider pb-0.5">
+                        <span>Record Delivery</span>
+                        {scoringBlocked && m.status === 'LIVE' && (
+                          <span className="text-amber-400 font-bold lowercase">
+                            (action required)
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Row 1: 0, 1, 2, 3 */}
+                      <div className="grid grid-cols-4 gap-2.5">
+                        {[0, 1, 2, 3].map((r) => (
+                          <button
+                            key={r}
+                            type="button"
+                            disabled={scoringBlocked}
+                            onClick={() => void record({ runsOffBat: r, extraType: null, extraRuns: 0 })}
+                            className="h-12 xl:h-14 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] hover:border-slate-600 text-white text-2xl font-black flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                          >
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Row 2: 4, 6, Wicket, Undo */}
+                      <div className="grid grid-cols-4 gap-2.5">
+                        <button
+                          type="button"
+                          disabled={scoringBlocked}
+                          onClick={() => void record({ runsOffBat: 4, extraType: null, extraRuns: 0 })}
+                          className="h-12 xl:h-14 rounded-xl bg-[#4A0E18] hover:bg-[#5E0E1D] border border-[#6B1424]/70 text-white text-2xl font-black flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                        >
+                          4
+                        </button>
+                        <button
+                          type="button"
+                          disabled={scoringBlocked}
+                          onClick={() => void record({ runsOffBat: 6, extraType: null, extraRuns: 0 })}
+                          className="h-12 xl:h-14 rounded-xl bg-[#4A0E18] hover:bg-[#5E0E1D] border border-[#6B1424]/70 text-white text-2xl font-black flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                        >
+                          6
+                        </button>
+                        <button
+                          type="button"
+                          disabled={scoringBlocked}
+                          onClick={() => setWicketDialog('NORMAL')}
+                          className="h-12 xl:h-14 rounded-xl bg-[#28060D] hover:bg-[#380912] border border-[#4C0D18]/80 text-[#EF4444] font-black text-base flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                        >
+                          Wicket
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy || ballsBowled === 0}
+                          onClick={() => setUndoOpen(true)}
+                          className="h-12 xl:h-14 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] text-slate-300 font-semibold text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                        >
+                          <Undo2 className="w-4 h-4 text-slate-400" />
+                          <span>Undo</span>
+                        </button>
+                      </div>
+
+                      {/* Row 3: Wide, No ball, Bye, Leg bye */}
+                      <div className="grid grid-cols-4 gap-2.5">
+                        <button
+                          type="button"
+                          disabled={scoringBlocked}
+                          onClick={() => setExtraDialog('WIDE')}
+                          className="h-11 xl:h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                        >
+                          <span className="text-sm font-bold text-slate-200">Wide</span>
+                          <span className="text-[10px] font-semibold text-slate-400">Wd</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={scoringBlocked}
+                          onClick={() => setExtraDialog('NO_BALL')}
+                          className="h-11 xl:h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                        >
+                          <span className="text-sm font-bold text-slate-200">No ball</span>
+                          <span className="text-[10px] font-semibold text-slate-400">Nb</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={scoringBlocked}
+                          onClick={() => setExtraDialog('BYE')}
+                          className="h-11 xl:h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                        >
+                          <span className="text-sm font-bold text-slate-200">Bye</span>
+                          <span className="text-[10px] font-semibold text-slate-400">B</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={scoringBlocked}
+                          onClick={() => setExtraDialog('LEG_BYE')}
+                          className="h-11 xl:h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                        >
+                          <span className="text-sm font-bold text-slate-200">Leg bye</span>
+                          <span className="text-[10px] font-semibold text-slate-400">LB</span>
+                        </button>
+                      </div>
+
+                      {/* Row 4: End Over & Next Ball */}
+                      <div className="grid grid-cols-12 gap-2.5 pt-1">
+                        <button
+                          type="button"
+                          disabled={busy || m.status !== 'LIVE'}
+                          onClick={() => setBowlerDialogOpen(true)}
+                          className="col-span-5 h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] text-slate-200 font-bold text-sm flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                        >
+                          End over
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy || m.status !== 'LIVE' || (scoringBlocked && !live.overComplete)}
+                          onClick={() => {
+                            if (live.overComplete) {
+                              setBowlerDialogOpen(true)
+                            } else if (!scoringBlocked) {
+                              void record({ runsOffBat: 0, extraType: null, extraRuns: 0 })
+                            }
+                          }}
+                          className="col-span-7 h-12 rounded-xl bg-[#5B0E1D] hover:bg-[#6E1224] border border-[#7A1426]/70 text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98 disabled:opacity-40 shadow-xs"
+                        >
+                          <span>{live.overComplete ? 'Pick Next Bowler' : 'Next ball (dot)'}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </>
       )}
 
       {/* ===================== DIALOGS ===================== */}
+      {/* Needs New Batsman Dialog (Auto popup on wicket) */}
+      {live?.needsNewBatsman && m.status === 'LIVE' && (
+        <Dialog open onOpenChange={() => {}}>
+          <DialogContent className="sm:max-w-md bg-[#0D1526] border border-[#172136] text-white rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-white text-base font-bold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+                Select New {live.needsNewBatsman === 'STRIKER' ? 'Striker' : 'Non-Striker'}
+              </DialogTitle>
+              <DialogDescription className="text-slate-400 text-xs">
+                A wicket has fallen. Pick the next batsman to walk out to the middle.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2 max-h-[300px] overflow-y-auto py-2">
+              {live.yetToBat.length === 0 ? (
+                <div className="text-center py-4 text-xs text-slate-400">No batters remaining</div>
+              ) : (
+                live.yetToBat.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void action('NEW_BATSMAN', p.id, 'New batsman in')}
+                    className="flex items-center justify-between p-3 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] text-left transition-all cursor-pointer"
+                  >
+                    <div>
+                      <div className="font-bold text-white text-sm">{p.name}</div>
+                      {p.jerseyNumber != null && (
+                        <div className="text-[11px] text-slate-400">#{p.jerseyNumber}</div>
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                      Select
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {tossOpen && summary && (
         <TossDialog
           match={summary}
@@ -786,19 +1202,38 @@ export function ScoringConsole({
 
       {bowlerDialogOpen && live && (
         <Dialog open onOpenChange={(o) => !o && setBowlerDialogOpen(false)}>
-          <DialogContent className="sm:max-w-md bg-white rounded-2xl">
+          <DialogContent className="sm:max-w-md bg-[#0D1526] border border-[#172136] text-white rounded-2xl">
             <DialogHeader>
-              <DialogTitle>Select Bowler</DialogTitle>
-              <DialogDescription>Choose a bowler from the fielding team to deliver the over.</DialogDescription>
+              <DialogTitle className="text-white text-base font-bold">Select Bowler</DialogTitle>
+              <DialogDescription className="text-slate-400 text-xs">
+                Choose a bowler from the fielding team to deliver the over.
+              </DialogDescription>
             </DialogHeader>
-            <BowlerPrompt
-              bowlers={live.bowlers}
-              disabled={busy}
-              onPick={async (pid) => {
-                const done = await action('NEW_BOWLER', pid, 'Bowler updated')
-                if (done) setBowlerDialogOpen(false)
-              }}
-            />
+            <div className="grid gap-2 max-h-[320px] overflow-y-auto py-2">
+              {live.bowlers.map((b) => (
+                <button
+                  key={b.id}
+                  type="button"
+                  disabled={busy || b.blocked}
+                  onClick={async () => {
+                    const done = await action('NEW_BOWLER', b.id, 'Bowler updated')
+                    if (done) setBowlerDialogOpen(false)
+                  }}
+                  className="flex items-center justify-between rounded-xl border border-[#172136] bg-[#070B14] hover:bg-slate-800 p-3 text-left text-xs transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <div>
+                    <div className="font-bold text-white text-sm">{b.name}</div>
+                    <div className="text-[11px] text-slate-400 tabular-nums mt-0.5">
+                      {b.overs} ov &bull; {b.runs}R &bull; {b.wickets}W
+                      {b.blocked ? ` • ${b.blockedReason ?? 'unavailable'}` : ''}
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold px-2 py-1 rounded bg-slate-800 text-slate-300">
+                    {b.blocked ? 'Blocked' : 'Select'}
+                  </span>
+                </button>
+              ))}
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -844,17 +1279,19 @@ export function ScoringConsole({
       )}
 
       <AlertDialog open={undoOpen} onOpenChange={(o) => !o && setUndoOpen(false)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0D1526] border border-[#172136] text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Undo the last delivery?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The most recent ball is removed and the match state is restored cleanly.
+            <AlertDialogTitle className="text-white">Undo the last delivery?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              The most recent ball will be removed and the match state restored cleanly.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-[#7A1426] hover:bg-[#5E0E1D]"
+              className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white"
               onClick={async () => {
                 await call(`/api/matches/${matchId}/undo`, { method: 'POST' }, 'Last ball undone')
                 setUndoOpen(false)
@@ -867,12 +1304,12 @@ export function ScoringConsole({
       </AlertDialog>
 
       <AlertDialog open={!!confirmAction} onOpenChange={(o) => !o && setConfirmAction(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#0D1526] border border-[#172136] text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-white">
               {confirmAction === 'END_INNINGS' ? 'End the innings now?' : 'Abandon this match?'}
             </AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-slate-400">
               {confirmAction === 'END_INNINGS'
                 ? m.currentInnings === 1
                   ? 'Innings 1 will be closed and the innings break begins.'
@@ -881,9 +1318,11 @@ export function ScoringConsole({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
-              className={confirmAction === 'ABANDON' ? 'bg-red-700 hover:bg-red-800' : 'bg-[#7A1426] hover:bg-[#5E0E1D]'}
+              className={confirmAction === 'ABANDON' ? 'bg-red-700 hover:bg-red-800 text-white' : 'bg-[#7A1426] hover:bg-[#5E0E1D] text-white'}
               onClick={async () => {
                 const kind = confirmAction
                 setConfirmAction(null)
@@ -896,6 +1335,40 @@ export function ScoringConsole({
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+function DarkBallDot({ ball }: { ball: { label: string; kind: string; runs: number } }) {
+  const label = ball.label === '•' ? '0' : ball.label
+  const isDot = label === '0'
+  const isWicket = ball.kind === 'W' || label === 'W'
+  const isFour = ball.kind === '4' || label === '4'
+  const isSix = ball.kind === '6' || label === '6'
+  const isExtra =
+    ball.kind === 'extra' || ['WD', 'NB', 'B', 'LB'].includes(label.toUpperCase())
+
+  const style = isWicket
+    ? 'bg-rose-950/80 border-rose-700 text-rose-300 font-black'
+    : isFour
+    ? 'bg-emerald-950/80 border-emerald-700 text-emerald-300 font-bold'
+    : isSix
+    ? 'bg-purple-950/80 border-purple-700 text-purple-300 font-black'
+    : isExtra
+    ? 'bg-amber-950/80 border-amber-700 text-amber-300 font-bold'
+    : isDot
+    ? 'bg-slate-800/80 border-slate-700 text-slate-400 font-medium'
+    : 'bg-slate-800 border-slate-600 text-white font-bold'
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center justify-center rounded-full text-[10px] h-6 w-6 border shrink-0 tabular-nums',
+        style
+      )}
+      title={label}
+    >
+      {label}
+    </span>
   )
 }
 
