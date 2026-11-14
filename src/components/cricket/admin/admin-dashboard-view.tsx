@@ -153,44 +153,55 @@ export function AdminDashboardView({
             </button>
 
             {notifOpen && (
-              <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl bg-white border border-gray-200 shadow-xl p-4 z-30 text-xs space-y-2.5 animate-in fade-in slide-in-from-top-1">
-                <div className="font-bold text-[#111827] border-b border-gray-100 pb-2 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Bell className="w-3.5 h-3.5 text-[#7A1426]" />
-                    <span>Live Alerts</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setNotifOpen(false)}
-                    className="text-gray-400 hover:text-gray-600 font-medium cursor-pointer"
-                  >
-                    Close
-                  </button>
+              <>
+                {/* Backdrop overlay for closing on click-outside */}
+                <div
+                  className="fixed inset-0 z-40 bg-black/20 sm:bg-transparent backdrop-blur-[1px] sm:backdrop-blur-none"
+                  onClick={() => setNotifOpen(false)}
+                />
+
+                {/* Popover Card (Centered with margins on mobile, anchored right on desktop) */}
+                <div className="fixed inset-x-4 top-28 sm:static sm:inset-auto z-50">
+                  <div className="sm:absolute sm:right-0 sm:top-full sm:mt-2 w-full sm:w-80 rounded-2xl bg-white border border-gray-200 shadow-2xl sm:shadow-xl p-4 text-xs space-y-2.5 animate-in fade-in slide-in-from-top-1">
+                    <div className="font-bold text-[#111827] border-b border-gray-100 pb-2 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Bell className="w-3.5 h-3.5 text-[#7A1426]" />
+                        <span>Live Alerts</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setNotifOpen(false)}
+                        className="text-gray-400 hover:text-gray-600 font-medium cursor-pointer p-0.5"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    {liveCount > 0 ? (
+                      <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-100 space-y-2">
+                        <p className="text-gray-700 font-medium leading-relaxed">
+                          <b className="text-[#7A1426]">{liveCount} live match{liveCount === 1 ? '' : 'es'}</b> currently broadcasting on Socket.IO.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNotifOpen(false)
+                            onSelectTab('scoring')
+                          }}
+                          className="w-full sm:w-auto px-3 py-1.5 rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                        >
+                          <span>Go to Scorer Panel</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 text-center">
+                        <p className="text-xs">No live matches running currently.</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Start or schedule matches from the Matches tab.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {liveCount > 0 ? (
-                  <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-100 space-y-1.5">
-                    <p className="text-gray-700 font-medium leading-relaxed">
-                      <b className="text-[#7A1426]">{liveCount} live match{liveCount === 1 ? '' : 'es'}</b> currently broadcasting on Socket.IO.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNotifOpen(false)
-                        onSelectTab('scoring')
-                      }}
-                      className="text-xs font-bold text-[#7A1426] hover:text-[#5E0E1D] inline-flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>Go to Scorer Panel</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 text-gray-500 text-center">
-                    <p className="text-xs">No live matches running currently.</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Start or schedule matches from the Matches tab.</p>
-                  </div>
-                )}
-              </div>
+              </>
             )}
           </div>
 

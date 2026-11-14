@@ -102,7 +102,7 @@ export function AdminSidebar({
             size="sm"
             variant="dark"
             showText
-            title="NPL"
+            title="APL"
             subtitle={isScorerMode ? 'Scorer Panel' : 'Admin Panel'}
           />
         </button>
@@ -221,7 +221,7 @@ export function AdminSidebar({
           size="sm"
           variant="dark"
           showText
-          title="NPL"
+          title="APL"
           subtitle={isScorerMode ? 'Scorer Panel' : 'Admin Panel'}
         />
         <button
