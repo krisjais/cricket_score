@@ -17,6 +17,7 @@ import {
 import { LiveBadge } from '@/components/cricket/ui-bits'
 import type { AdminTab } from './admin-sidebar'
 import { cn } from '@/lib/utils'
+import { useBodyScrollLock, usePreventTouchMove } from '@/hooks/use-body-scroll-lock'
 
 interface AdminDashboardViewProps {
   matches: MatchSummary[]
@@ -43,16 +44,9 @@ export function AdminDashboardView({
   const [season, setSeason] = useState('APL 2026')
   const [notifOpen, setNotifOpen] = useState(false)
 
-  // Lock background body scrolling when notification modal is open
-  useEffect(() => {
-    if (notifOpen) {
-      const prevOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-      return () => {
-        document.body.style.overflow = prevOverflow
-      }
-    }
-  }, [notifOpen])
+  // Lock background body scrolling completely when notification modal is open
+  useBodyScrollLock(notifOpen)
+  const notifBackdropRef = usePreventTouchMove<HTMLDivElement>()
 
   useEffect(() => {
     let alive = true
@@ -167,13 +161,13 @@ export function AdminDashboardView({
               <>
                 {/* Backdrop overlay for closing on click-outside & preventing touch scroll */}
                 <div
+                  ref={notifBackdropRef}
                   className="fixed inset-0 z-40 bg-black/40 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none touch-none overscroll-contain"
                   onClick={() => setNotifOpen(false)}
-                  onTouchMove={(e) => e.preventDefault()}
                 />
 
                 {/* Popover Card (Centered with margins on mobile, anchored right on desktop) */}
-                <div className="fixed inset-x-4 top-28 sm:static sm:inset-auto z-50">
+                <div className="fixed inset-x-4 top-28 sm:static sm:inset-auto z-50 overscroll-contain">
                   <div className="sm:absolute sm:right-0 sm:top-full sm:mt-2 w-full sm:w-80 rounded-2xl bg-white border border-gray-200 shadow-2xl sm:shadow-xl p-4 text-xs space-y-2.5 animate-in fade-in slide-in-from-top-1">
                     <div className="font-bold text-[#111827] border-b border-gray-100 pb-2 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">

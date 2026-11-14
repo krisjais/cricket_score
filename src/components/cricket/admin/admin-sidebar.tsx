@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import type { AdminSession } from '@/lib/client'
 import { cn } from '@/lib/utils'
+import { useBodyScrollLock, usePreventTouchMove } from '@/hooks/use-body-scroll-lock'
 
 export type AdminTab =
   | 'dashboard'
@@ -66,16 +67,9 @@ export function AdminSidebar({
   const [mobileOpen, setMobileOpen] = useState(false)
   const isScorerMode = currentTab === 'scoring'
 
-  // Lock background body scrolling when mobile drawer is open
-  useEffect(() => {
-    if (mobileOpen) {
-      const prevOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-      return () => {
-        document.body.style.overflow = prevOverflow
-      }
-    }
-  }, [mobileOpen])
+  // Lock background body scrolling completely when mobile drawer is open
+  useBodyScrollLock(mobileOpen)
+  const backdropRef = usePreventTouchMove<HTMLDivElement>()
 
   const adminNavItems = [
     { key: 'dashboard' as AdminTab, label: 'Dashboard', icon: LayoutDashboard },
@@ -120,7 +114,7 @@ export function AdminSidebar({
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-4 space-y-1">
         {isScorerMode && onSelectScorerSubView ? (
           <>
             {scorerNavItems.map((item) => {
@@ -249,9 +243,9 @@ export function AdminSidebar({
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex overscroll-contain">
           <div
+            ref={backdropRef}
             className="fixed inset-0 bg-black/50 backdrop-blur-xs touch-none"
             onClick={() => setMobileOpen(false)}
-            onTouchMove={(e) => e.preventDefault()}
           />
           <aside className="relative w-64 max-w-[80vw] h-full shadow-2xl z-10 touch-auto overscroll-contain">
             {sidebarBody}
