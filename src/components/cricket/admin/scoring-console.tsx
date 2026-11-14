@@ -481,7 +481,7 @@ export function ScoringConsole({
                 </div>
 
                 {/* CARD 2: BATTERS & BOWLER TABLE */}
-                <div className="bg-[#0D1526] border border-[#172136] rounded-2xl px-4 py-3 shadow-sm text-xs flex-1 min-h-[165px] max-h-[220px] flex flex-col justify-between">
+                <div className="bg-[#0D1526] border border-[#172136] rounded-2xl px-4 py-3 shadow-sm text-xs flex-1 min-h-[160px] flex flex-col justify-between">
                   <div>
                     {/* Batters Header */}
                     <div className="flex items-center justify-between text-slate-400 font-medium mb-1.5 px-0.5">
@@ -590,9 +590,9 @@ export function ScoringConsole({
                 </div>
 
                 {/* CARD 5: KEYPAD */}
-                <div className="flex-[1.6] flex flex-col gap-1.5 min-h-0 pt-0.5">
+                <div className="flex-[1.5] flex flex-col gap-1.5 min-h-0 pt-0.5">
                   {/* Row 1: 0, 1, 2, 3 */}
-                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[42px] max-h-[70px]">
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[42px]">
                     {[0, 1, 2, 3].map((r) => (
                       <button
                         key={r}
@@ -607,7 +607,7 @@ export function ScoringConsole({
                   </div>
 
                   {/* Row 2: 4, 6, Wicket, Undo */}
-                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[42px] max-h-[70px]">
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[42px]">
                     <button
                       type="button"
                       disabled={scoringBlocked}
@@ -644,7 +644,7 @@ export function ScoringConsole({
                   </div>
 
                   {/* Row 3: Wide, No ball, Bye, Leg bye */}
-                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[40px] max-h-[66px]">
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[40px]">
                     <button
                       type="button"
                       disabled={scoringBlocked}
@@ -684,7 +684,7 @@ export function ScoringConsole({
                   </div>
 
                   {/* Row 4: End over & Next ball */}
-                  <div className="grid grid-cols-12 gap-1.5 flex-1 min-h-[42px] max-h-[70px]">
+                  <div className="grid grid-cols-12 gap-1.5 flex-1 min-h-[42px]">
                     <button
                       type="button"
                       disabled={busy || m.status !== 'LIVE'}
