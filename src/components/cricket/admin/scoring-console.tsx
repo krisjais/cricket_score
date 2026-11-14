@@ -451,7 +451,7 @@ export function ScoringConsole({
                 </div>
 
                 {/* CARD 1: MAIN SCORE CARD */}
-                <div className="bg-[#0D1526] border border-[#172136] rounded-2xl px-4 py-2.5 sm:py-3 shrink-0 shadow-sm">
+                <div className="bg-[#0D1526] border border-[#172136] rounded-2xl px-4 py-3 sm:py-3.5 shrink-0 shadow-sm">
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-slate-400 truncate max-w-[200px]">
                       {battingTeam.name}
@@ -481,66 +481,70 @@ export function ScoringConsole({
                 </div>
 
                 {/* CARD 2: BATTERS & BOWLER TABLE */}
-                <div className="bg-[#0D1526] border border-[#172136] rounded-2xl px-4 py-2.5 sm:py-3 shrink-0 shadow-sm text-xs">
-                  {/* Batters Header */}
-                  <div className="flex items-center justify-between text-slate-400 font-medium mb-1 px-0.5">
-                    <span>Batter</span>
-                    <div className="flex items-center gap-2 sm:gap-3 text-right tabular-nums">
-                      <span className="w-6 sm:w-7 text-right">R</span>
-                      <span className="w-6 sm:w-7 text-right">B</span>
-                      <span className="w-6 sm:w-7 text-right">4s</span>
-                      <span className="w-6 sm:w-7 text-right">6s</span>
+                <div className="bg-[#0D1526] border border-[#172136] rounded-2xl px-4 py-3 shadow-sm text-xs flex-1 min-h-[165px] max-h-[220px] flex flex-col justify-between">
+                  <div>
+                    {/* Batters Header */}
+                    <div className="flex items-center justify-between text-slate-400 font-medium mb-1.5 px-0.5">
+                      <span>Batter</span>
+                      <div className="flex items-center gap-2 sm:gap-3 text-right tabular-nums">
+                        <span className="w-6 sm:w-7 text-right">R</span>
+                        <span className="w-6 sm:w-7 text-right">B</span>
+                        <span className="w-6 sm:w-7 text-right">4s</span>
+                        <span className="w-6 sm:w-7 text-right">6s</span>
+                      </div>
+                    </div>
+
+                    {/* Striker Row (Highlighted in Crimson/Rose) */}
+                    <div className="flex items-center justify-between py-1 px-0.5">
+                      <span className="font-bold text-[#F43F5E] truncate pr-2">
+                        {striker ? `${striker.name} *` : <span className="text-slate-500 italic">Select striker</span>}
+                      </span>
+                      <div className="flex items-center gap-2 sm:gap-3 text-right font-bold text-white tabular-nums">
+                        <span className="w-6 sm:w-7 text-right">{striker?.runs ?? 0}</span>
+                        <span className="w-6 sm:w-7 text-right">{striker?.balls ?? 0}</span>
+                        <span className="w-6 sm:w-7 text-right">{striker?.fours ?? 0}</span>
+                        <span className="w-6 sm:w-7 text-right">{striker?.sixes ?? 0}</span>
+                      </div>
+                    </div>
+
+                    {/* Non-Striker Row */}
+                    <div className="flex items-center justify-between py-1 px-0.5">
+                      <span className="font-medium text-slate-200 truncate pr-2">
+                        {nonStriker ? nonStriker.name : <span className="text-slate-500 italic">Select non-striker</span>}
+                      </span>
+                      <div className="flex items-center gap-2 sm:gap-3 text-right font-bold text-white tabular-nums">
+                        <span className="w-6 sm:w-7 text-right">{nonStriker?.runs ?? 0}</span>
+                        <span className="w-6 sm:w-7 text-right">{nonStriker?.balls ?? 0}</span>
+                        <span className="w-6 sm:w-7 text-right">{nonStriker?.fours ?? 0}</span>
+                        <span className="w-6 sm:w-7 text-right">{nonStriker?.sixes ?? 0}</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Striker Row (Highlighted in Crimson/Rose) */}
-                  <div className="flex items-center justify-between py-1 px-0.5">
-                    <span className="font-bold text-[#F43F5E] truncate pr-2">
-                      {striker ? `${striker.name} *` : <span className="text-slate-500 italic">Select striker</span>}
-                    </span>
-                    <div className="flex items-center gap-2 sm:gap-3 text-right font-bold text-white tabular-nums">
-                      <span className="w-6 sm:w-7 text-right">{striker?.runs ?? 0}</span>
-                      <span className="w-6 sm:w-7 text-right">{striker?.balls ?? 0}</span>
-                      <span className="w-6 sm:w-7 text-right">{striker?.fours ?? 0}</span>
-                      <span className="w-6 sm:w-7 text-right">{striker?.sixes ?? 0}</span>
+                  <div>
+                    {/* Divider */}
+                    <div className="border-t border-[#172136] my-1.5" />
+
+                    {/* Bowler Header */}
+                    <div className="flex items-center justify-between text-slate-400 font-medium mb-1.5 px-0.5">
+                      <span>Bowler</span>
+                      <div className="flex items-center gap-2 sm:gap-3 text-right tabular-nums">
+                        <span className="w-6 sm:w-7 text-right">O</span>
+                        <span className="w-6 sm:w-7 text-right">R</span>
+                        <span className="w-6 sm:w-7 text-right">W</span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Non-Striker Row */}
-                  <div className="flex items-center justify-between py-1 px-0.5">
-                    <span className="font-medium text-slate-200 truncate pr-2">
-                      {nonStriker ? nonStriker.name : <span className="text-slate-500 italic">Select non-striker</span>}
-                    </span>
-                    <div className="flex items-center gap-2 sm:gap-3 text-right font-bold text-white tabular-nums">
-                      <span className="w-6 sm:w-7 text-right">{nonStriker?.runs ?? 0}</span>
-                      <span className="w-6 sm:w-7 text-right">{nonStriker?.balls ?? 0}</span>
-                      <span className="w-6 sm:w-7 text-right">{nonStriker?.fours ?? 0}</span>
-                      <span className="w-6 sm:w-7 text-right">{nonStriker?.sixes ?? 0}</span>
-                    </div>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="border-t border-[#172136] my-1 sm:my-1.5" />
-
-                  {/* Bowler Header */}
-                  <div className="flex items-center justify-between text-slate-400 font-medium mb-1 px-0.5">
-                    <span>Bowler</span>
-                    <div className="flex items-center gap-2 sm:gap-3 text-right tabular-nums">
-                      <span className="w-6 sm:w-7 text-right">O</span>
-                      <span className="w-6 sm:w-7 text-right">R</span>
-                      <span className="w-6 sm:w-7 text-right">W</span>
-                    </div>
-                  </div>
-
-                  {/* Bowler Row */}
-                  <div className="flex items-center justify-between py-1 px-0.5">
-                    <span className="font-medium text-slate-200 truncate pr-2">
-                      {bowlerName !== '—' ? bowlerName : <span className="text-slate-500 italic">Select bowler</span>}
-                    </span>
-                    <div className="flex items-center gap-2 sm:gap-3 text-right font-bold text-white tabular-nums">
-                      <span className="w-6 sm:w-7 text-right">{bowlerOvers}</span>
-                      <span className="w-6 sm:w-7 text-right">{bowlerRuns}</span>
-                      <span className="w-6 sm:w-7 text-right">{bowlerWickets}</span>
+                    {/* Bowler Row */}
+                    <div className="flex items-center justify-between py-1 px-0.5">
+                      <span className="font-medium text-slate-200 truncate pr-2">
+                        {bowlerName !== '—' ? bowlerName : <span className="text-slate-500 italic">Select bowler</span>}
+                      </span>
+                      <div className="flex items-center gap-2 sm:gap-3 text-right font-bold text-white tabular-nums">
+                        <span className="w-6 sm:w-7 text-right">{bowlerOvers}</span>
+                        <span className="w-6 sm:w-7 text-right">{bowlerRuns}</span>
+                        <span className="w-6 sm:w-7 text-right">{bowlerWickets}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -570,7 +574,7 @@ export function ScoringConsole({
                     type="button"
                     disabled={busy || m.status !== 'LIVE' || !live.strikerId || !live.nonStrikerId}
                     onClick={() => void action('SWAP_STRIKE', undefined, 'Strike swapped')}
-                    className="h-9 sm:h-10 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-98 disabled:opacity-40"
+                    className="h-10 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-98 disabled:opacity-40"
                   >
                     <ArrowLeftRight className="w-3.5 h-3.5 text-slate-400" />
                     <span>Change striker</span>
@@ -579,16 +583,16 @@ export function ScoringConsole({
                     type="button"
                     disabled={busy || m.status !== 'LIVE'}
                     onClick={() => setBowlerDialogOpen(true)}
-                    className="h-9 sm:h-10 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-98 disabled:opacity-40"
+                    className="h-10 rounded-xl bg-[#0D1526] hover:bg-slate-800 border border-[#172136] text-slate-200 text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-98 disabled:opacity-40"
                   >
                     <span>Change bowler</span>
                   </button>
                 </div>
 
-                {/* CARD 5: KEYPAD (Balanced height, minimized slightly to avoid tall stretching) */}
-                <div className="flex-1 flex flex-col gap-1.5 min-h-0 pt-0.5 justify-end">
+                {/* CARD 5: KEYPAD */}
+                <div className="flex-[1.6] flex flex-col gap-1.5 min-h-0 pt-0.5">
                   {/* Row 1: 0, 1, 2, 3 */}
-                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[38px] max-h-[56px]">
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[42px] max-h-[70px]">
                     {[0, 1, 2, 3].map((r) => (
                       <button
                         key={r}
@@ -603,7 +607,7 @@ export function ScoringConsole({
                   </div>
 
                   {/* Row 2: 4, 6, Wicket, Undo */}
-                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[38px] max-h-[56px]">
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[42px] max-h-[70px]">
                     <button
                       type="button"
                       disabled={scoringBlocked}
@@ -640,7 +644,7 @@ export function ScoringConsole({
                   </div>
 
                   {/* Row 3: Wide, No ball, Bye, Leg bye */}
-                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[38px] max-h-[52px]">
+                  <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[40px] max-h-[66px]">
                     <button
                       type="button"
                       disabled={scoringBlocked}
@@ -680,7 +684,7 @@ export function ScoringConsole({
                   </div>
 
                   {/* Row 4: End over & Next ball */}
-                  <div className="grid grid-cols-12 gap-1.5 flex-1 min-h-[40px] max-h-[56px]">
+                  <div className="grid grid-cols-12 gap-1.5 flex-1 min-h-[42px] max-h-[70px]">
                     <button
                       type="button"
                       disabled={busy || m.status !== 'LIVE'}
