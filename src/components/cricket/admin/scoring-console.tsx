@@ -828,7 +828,7 @@ export function ScoringConsole({
                 </div>
 
                 {/* DESKTOP 2-COLUMN MAIN COCKPIT */}
-                <div className="grid grid-cols-12 gap-5 flex-1 min-h-0 items-start">
+                <div className="grid grid-cols-12 gap-5 flex-1 min-h-0 items-stretch">
                   {/* LEFT COLUMN: SCOREBOARD, BATTERS & BOWLER, THIS OVER */}
                   <div className="col-span-7 flex flex-col gap-3.5 min-h-0">
                     {/* Scoreboard Hero Card */}
@@ -876,74 +876,78 @@ export function ScoringConsole({
                     </div>
 
                     {/* Batters & Bowler Table Card */}
-                    <div className="bg-[#0D1526] border border-[#172136] rounded-2xl p-4 xl:p-5 shadow-sm text-sm shrink-0">
-                      {/* Batters Header */}
-                      <div className="flex items-center justify-between text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 px-1">
-                        <span>Batting</span>
-                        <div className="flex items-center gap-4 text-right tabular-nums">
-                          <span className="w-8 text-right">R</span>
-                          <span className="w-8 text-right">B</span>
-                          <span className="w-8 text-right">4s</span>
-                          <span className="w-8 text-right">6s</span>
-                          <span className="w-12 text-right">SR</span>
+                    <div className="bg-[#0D1526] border border-[#172136] rounded-2xl p-4 xl:p-5 shadow-sm text-sm flex-1 min-h-0 flex flex-col justify-between">
+                      <div>
+                        {/* Batters Header */}
+                        <div className="flex items-center justify-between text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 px-1">
+                          <span>Batting</span>
+                          <div className="flex items-center gap-4 text-right tabular-nums">
+                            <span className="w-8 text-right">R</span>
+                            <span className="w-8 text-right">B</span>
+                            <span className="w-8 text-right">4s</span>
+                            <span className="w-8 text-right">6s</span>
+                            <span className="w-12 text-right">SR</span>
+                          </div>
+                        </div>
+
+                        {/* Striker Row */}
+                        <div className="flex items-center justify-between py-2 px-2 rounded-xl bg-slate-900/60 border border-transparent">
+                          <span className="font-bold text-[#F43F5E] truncate pr-2 flex items-center gap-1.5">
+                            <span>{striker ? striker.name : 'Select striker'}</span>
+                            <span className="text-rose-400 font-black">*</span>
+                          </span>
+                          <div className="flex items-center gap-4 text-right font-bold text-white tabular-nums">
+                            <span className="w-8 text-right">{striker?.runs ?? 0}</span>
+                            <span className="w-8 text-right text-slate-300 font-medium">{striker?.balls ?? 0}</span>
+                            <span className="w-8 text-right text-slate-300 font-medium">{striker?.fours ?? 0}</span>
+                            <span className="w-8 text-right text-slate-300 font-medium">{striker?.sixes ?? 0}</span>
+                            <span className="w-12 text-right text-slate-300 font-medium">{striker?.strikeRate?.toFixed(1) ?? '0.0'}</span>
+                          </div>
+                        </div>
+
+                        {/* Non-Striker Row */}
+                        <div className="flex items-center justify-between py-2 px-2 mt-1 rounded-xl">
+                          <span className="font-medium text-slate-200 truncate pr-2">
+                            {nonStriker ? nonStriker.name : 'Select non-striker'}
+                          </span>
+                          <div className="flex items-center gap-4 text-right font-bold text-white tabular-nums">
+                            <span className="w-8 text-right">{nonStriker?.runs ?? 0}</span>
+                            <span className="w-8 text-right text-slate-300 font-medium">{nonStriker?.balls ?? 0}</span>
+                            <span className="w-8 text-right text-slate-300 font-medium">{nonStriker?.fours ?? 0}</span>
+                            <span className="w-8 text-right text-slate-300 font-medium">{nonStriker?.sixes ?? 0}</span>
+                            <span className="w-12 text-right text-slate-300 font-medium">{nonStriker?.strikeRate?.toFixed(1) ?? '0.0'}</span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Striker Row */}
-                      <div className="flex items-center justify-between py-1.5 px-2 rounded-xl bg-slate-900/60 border border-transparent">
-                        <span className="font-bold text-[#F43F5E] truncate pr-2 flex items-center gap-1.5">
-                          <span>{striker ? striker.name : 'Select striker'}</span>
-                          <span className="text-rose-400 font-black">*</span>
-                        </span>
-                        <div className="flex items-center gap-4 text-right font-bold text-white tabular-nums">
-                          <span className="w-8 text-right">{striker?.runs ?? 0}</span>
-                          <span className="w-8 text-right text-slate-300 font-medium">{striker?.balls ?? 0}</span>
-                          <span className="w-8 text-right text-slate-300 font-medium">{striker?.fours ?? 0}</span>
-                          <span className="w-8 text-right text-slate-300 font-medium">{striker?.sixes ?? 0}</span>
-                          <span className="w-12 text-right text-slate-300 font-medium">{striker?.strikeRate?.toFixed(1) ?? '0.0'}</span>
+                      <div>
+                        {/* Divider */}
+                        <div className="border-t border-[#172136] my-2.5" />
+
+                        {/* Bowler Header */}
+                        <div className="flex items-center justify-between text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 px-1">
+                          <span>Bowling</span>
+                          <div className="flex items-center gap-4 text-right tabular-nums">
+                            <span className="w-8 text-right">O</span>
+                            <span className="w-8 text-right">M</span>
+                            <span className="w-8 text-right">R</span>
+                            <span className="w-8 text-right">W</span>
+                            <span className="w-12 text-right">ECON</span>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Non-Striker Row */}
-                      <div className="flex items-center justify-between py-1.5 px-2 mt-1 rounded-xl">
-                        <span className="font-medium text-slate-200 truncate pr-2">
-                          {nonStriker ? nonStriker.name : 'Select non-striker'}
-                        </span>
-                        <div className="flex items-center gap-4 text-right font-bold text-white tabular-nums">
-                          <span className="w-8 text-right">{nonStriker?.runs ?? 0}</span>
-                          <span className="w-8 text-right text-slate-300 font-medium">{nonStriker?.balls ?? 0}</span>
-                          <span className="w-8 text-right text-slate-300 font-medium">{nonStriker?.fours ?? 0}</span>
-                          <span className="w-8 text-right text-slate-300 font-medium">{nonStriker?.sixes ?? 0}</span>
-                          <span className="w-12 text-right text-slate-300 font-medium">{nonStriker?.strikeRate?.toFixed(1) ?? '0.0'}</span>
-                        </div>
-                      </div>
-
-                      {/* Divider */}
-                      <div className="border-t border-[#172136] my-2.5" />
-
-                      {/* Bowler Header */}
-                      <div className="flex items-center justify-between text-slate-400 font-semibold text-xs uppercase tracking-wider mb-2 px-1">
-                        <span>Bowling</span>
-                        <div className="flex items-center gap-4 text-right tabular-nums">
-                          <span className="w-8 text-right">O</span>
-                          <span className="w-8 text-right">M</span>
-                          <span className="w-8 text-right">R</span>
-                          <span className="w-8 text-right">W</span>
-                          <span className="w-12 text-right">ECON</span>
-                        </div>
-                      </div>
-
-                      {/* Bowler Row */}
-                      <div className="flex items-center justify-between py-1.5 px-2 rounded-xl">
-                        <span className="font-medium text-slate-200 truncate pr-2">
-                          {bowlerName !== '—' ? bowlerName : 'Select bowler'}
-                        </span>
-                        <div className="flex items-center gap-4 text-right font-bold text-white tabular-nums">
-                          <span className="w-8 text-right">{bowlerOvers}</span>
-                          <span className="w-8 text-right text-slate-300 font-medium">{bowlerCard?.maidens ?? 0}</span>
-                          <span className="w-8 text-right">{bowlerRuns}</span>
-                          <span className="w-8 text-right text-rose-400 font-black">{bowlerWickets}</span>
-                          <span className="w-12 text-right text-slate-300 font-medium">{bowlerCard?.economy?.toFixed(2) ?? '0.00'}</span>
+                        {/* Bowler Row */}
+                        <div className="flex items-center justify-between py-2 px-2 rounded-xl">
+                          <span className="font-medium text-slate-200 truncate pr-2">
+                            {bowlerName !== '—' ? bowlerName : 'Select bowler'}
+                          </span>
+                          <div className="flex items-center gap-4 text-right font-bold text-white tabular-nums">
+                            <span className="w-8 text-right">{bowlerOvers}</span>
+                            <span className="w-8 text-right text-slate-300 font-medium">{bowlerCard?.maidens ?? 0}</span>
+                            <span className="w-8 text-right">{bowlerRuns}</span>
+                            <span className="w-8 text-right text-rose-400 font-black">{bowlerWickets}</span>
+                            <span className="w-12 text-right text-slate-300 font-medium">{bowlerCard?.economy?.toFixed(2) ?? '0.00'}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -975,7 +979,7 @@ export function ScoringConsole({
                   </div>
 
                   {/* RIGHT COLUMN: ACTIONS, RECORD BALL KEYPAD */}
-                  <div className="col-span-5 flex flex-col justify-between gap-3 min-h-0">
+                  <div className="col-span-5 flex flex-col gap-3.5 min-h-0">
                     {/* Quick Action Buttons */}
                     <div className="grid grid-cols-2 gap-3 shrink-0">
                       <button
@@ -998,8 +1002,8 @@ export function ScoringConsole({
                     </div>
 
                     {/* Keypad Console Card */}
-                    <div className="bg-[#0D1526] border border-[#172136] rounded-2xl p-4 xl:p-5 shadow-sm space-y-3 flex-1 flex flex-col justify-between">
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider pb-0.5">
+                    <div className="bg-[#0D1526] border border-[#172136] rounded-2xl p-4 xl:p-5 shadow-sm flex-1 min-h-0 flex flex-col justify-between gap-3">
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 pb-0.5">
                         <span>Record Delivery</span>
                         {scoringBlocked && m.status === 'LIVE' && (
                           <span className="text-amber-400 font-bold lowercase">
@@ -1009,14 +1013,14 @@ export function ScoringConsole({
                       </div>
 
                       {/* Row 1: 0, 1, 2, 3 */}
-                      <div className="grid grid-cols-4 gap-2.5">
+                      <div className="grid grid-cols-4 gap-2.5 flex-1 min-h-[48px]">
                         {[0, 1, 2, 3].map((r) => (
                           <button
                             key={r}
                             type="button"
                             disabled={scoringBlocked}
                             onClick={() => void record({ runsOffBat: r, extraType: null, extraRuns: 0 })}
-                            className="h-12 xl:h-14 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] hover:border-slate-600 text-white text-2xl font-black flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                            className="h-full rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] hover:border-slate-600 text-white text-2xl font-black flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                           >
                             {r}
                           </button>
@@ -1024,12 +1028,12 @@ export function ScoringConsole({
                       </div>
 
                       {/* Row 2: 4, 6, Wicket, Undo */}
-                      <div className="grid grid-cols-4 gap-2.5">
+                      <div className="grid grid-cols-4 gap-2.5 flex-1 min-h-[48px]">
                         <button
                           type="button"
                           disabled={scoringBlocked}
                           onClick={() => void record({ runsOffBat: 4, extraType: null, extraRuns: 0 })}
-                          className="h-12 xl:h-14 rounded-xl bg-[#4A0E18] hover:bg-[#5E0E1D] border border-[#6B1424]/70 text-white text-2xl font-black flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                          className="h-full rounded-xl bg-[#4A0E18] hover:bg-[#5E0E1D] border border-[#6B1424]/70 text-white text-2xl font-black flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                         >
                           4
                         </button>
@@ -1037,7 +1041,7 @@ export function ScoringConsole({
                           type="button"
                           disabled={scoringBlocked}
                           onClick={() => void record({ runsOffBat: 6, extraType: null, extraRuns: 0 })}
-                          className="h-12 xl:h-14 rounded-xl bg-[#4A0E18] hover:bg-[#5E0E1D] border border-[#6B1424]/70 text-white text-2xl font-black flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                          className="h-full rounded-xl bg-[#4A0E18] hover:bg-[#5E0E1D] border border-[#6B1424]/70 text-white text-2xl font-black flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                         >
                           6
                         </button>
@@ -1045,7 +1049,7 @@ export function ScoringConsole({
                           type="button"
                           disabled={scoringBlocked}
                           onClick={() => setWicketDialog('NORMAL')}
-                          className="h-12 xl:h-14 rounded-xl bg-[#28060D] hover:bg-[#380912] border border-[#4C0D18]/80 text-[#EF4444] font-black text-base flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                          className="h-full rounded-xl bg-[#28060D] hover:bg-[#380912] border border-[#4C0D18]/80 text-[#EF4444] font-black text-base flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                         >
                           Wicket
                         </button>
@@ -1053,7 +1057,7 @@ export function ScoringConsole({
                           type="button"
                           disabled={busy || ballsBowled === 0}
                           onClick={() => setUndoOpen(true)}
-                          className="h-12 xl:h-14 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] text-slate-300 font-semibold text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                          className="h-full rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] text-slate-300 font-semibold text-sm flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
                         >
                           <Undo2 className="w-4 h-4 text-slate-400" />
                           <span>Undo</span>
@@ -1061,12 +1065,12 @@ export function ScoringConsole({
                       </div>
 
                       {/* Row 3: Wide, No ball, Bye, Leg bye */}
-                      <div className="grid grid-cols-4 gap-2.5">
+                      <div className="grid grid-cols-4 gap-2.5 flex-1 min-h-[48px]">
                         <button
                           type="button"
                           disabled={scoringBlocked}
                           onClick={() => setExtraDialog('WIDE')}
-                          className="h-11 xl:h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                          className="h-full rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
                         >
                           <span className="text-sm font-bold text-slate-200">Wide</span>
                           <span className="text-[10px] font-semibold text-slate-400">Wd</span>
@@ -1075,7 +1079,7 @@ export function ScoringConsole({
                           type="button"
                           disabled={scoringBlocked}
                           onClick={() => setExtraDialog('NO_BALL')}
-                          className="h-11 xl:h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                          className="h-full rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
                         >
                           <span className="text-sm font-bold text-slate-200">No ball</span>
                           <span className="text-[10px] font-semibold text-slate-400">Nb</span>
@@ -1084,7 +1088,7 @@ export function ScoringConsole({
                           type="button"
                           disabled={scoringBlocked}
                           onClick={() => setExtraDialog('BYE')}
-                          className="h-11 xl:h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                          className="h-full rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
                         >
                           <span className="text-sm font-bold text-slate-200">Bye</span>
                           <span className="text-[10px] font-semibold text-slate-400">B</span>
@@ -1093,7 +1097,7 @@ export function ScoringConsole({
                           type="button"
                           disabled={scoringBlocked}
                           onClick={() => setExtraDialog('LEG_BYE')}
-                          className="h-11 xl:h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                          className="h-full rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
                         >
                           <span className="text-sm font-bold text-slate-200">Leg bye</span>
                           <span className="text-[10px] font-semibold text-slate-400">LB</span>
@@ -1101,12 +1105,12 @@ export function ScoringConsole({
                       </div>
 
                       {/* Row 4: End Over & Next Ball */}
-                      <div className="grid grid-cols-12 gap-2.5 pt-1">
+                      <div className="grid grid-cols-12 gap-2.5 flex-1 min-h-[48px] pt-1">
                         <button
                           type="button"
                           disabled={busy || m.status !== 'LIVE'}
                           onClick={() => setBowlerDialogOpen(true)}
-                          className="col-span-5 h-12 rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] text-slate-200 font-bold text-sm flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
+                          className="col-span-5 h-full rounded-xl bg-[#070B14] hover:bg-slate-800 border border-[#172136] text-slate-200 font-bold text-sm flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-xs"
                         >
                           End over
                         </button>
@@ -1120,7 +1124,7 @@ export function ScoringConsole({
                               void record({ runsOffBat: 0, extraType: null, extraRuns: 0 })
                             }
                           }}
-                          className="col-span-7 h-12 rounded-xl bg-[#5B0E1D] hover:bg-[#6E1224] border border-[#7A1426]/70 text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98 disabled:opacity-40 shadow-xs"
+                          className="col-span-7 h-full rounded-xl bg-[#5B0E1D] hover:bg-[#6E1224] border border-[#7A1426]/70 text-white font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98 disabled:opacity-40 shadow-xs"
                         >
                           <span>{live.overComplete ? 'Pick Next Bowler' : 'Next ball (dot)'}</span>
                           <ArrowRight className="w-4 h-4" />
