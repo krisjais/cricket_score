@@ -33,6 +33,7 @@ import {
   Image as ImageIcon,
   UserCheck,
   Shield,
+  Loader2,
 } from 'lucide-react'
 import { api, ROLE_LABEL } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
@@ -572,6 +573,74 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
   )
 }
 
+async function compressLogoFile(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Please choose a valid image file (PNG, JPG, WebP, or SVG).')
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('Logo file must be smaller than 10 MB.')
+  }
+
+  // Keep SVGs as pure vector data URLs
+  if (file.type === 'image/svg+xml') {
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => reject(new Error('Failed to read SVG file'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // Downscale and compress raster images smoothly to max 320x320 to keep network payload ultra light
+  if (typeof document !== 'undefined') {
+    const objectUrl = URL.createObjectURL(file)
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image()
+        el.onload = () => resolve(el)
+        el.onerror = () => reject(new Error('Could not decode the selected image file.'))
+        el.src = objectUrl
+      })
+
+      const maxDim = 320
+      const origW = img.width || maxDim
+      const origH = img.height || maxDim
+      const scale = Math.min(1, maxDim / Math.max(origW, origH))
+      const targetW = Math.max(1, Math.round(origW * scale))
+      const targetH = Math.max(1, Math.round(origH * scale))
+
+      const canvas = document.createElement('canvas')
+      canvas.width = targetW
+      canvas.height = targetH
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, targetW, targetH)
+        let encoded = canvas.toDataURL('image/webp', 0.88)
+        if (!encoded.startsWith('data:image/webp')) {
+          encoded = canvas.toDataURL('image/png')
+        }
+        if (encoded.startsWith('data:image/')) {
+          return encoded
+        }
+      }
+    } catch (e) {
+      console.warn('Canvas logo compression failed, falling back to direct reader:', e)
+    } finally {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }
+
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result)
+      else reject(new Error('Could not read image file.'))
+    }
+    reader.onerror = () => reject(new Error('Could not read image file.'))
+    reader.readAsDataURL(file)
+  })
+}
+
 function TeamFormDialog({
   team,
   onClose,
@@ -585,22 +654,22 @@ function TeamFormDialog({
   const [shortName, setShortName] = useState(team?.shortName ?? '')
   const [logoUrl, setLogoUrl] = useState<string | null>(team?.logoUrl ?? null)
   const [captain, setCaptain] = useState(team?.captain ?? '')
+  const [compressingLogo, setCompressingLogo] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Logo file must be smaller than 2MB')
-      return
+    setCompressingLogo(true)
+    try {
+      const optimized = await compressLogoFile(file)
+      setLogoUrl(optimized)
+    } catch (err: any) {
+      alert(err?.message || 'Failed to process logo image')
+    } finally {
+      setCompressingLogo(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      if (typeof event.target?.result === 'string') {
-        setLogoUrl(event.target.result)
-      }
-    }
-    reader.readAsDataURL(file)
   }
 
   return (
@@ -656,14 +725,25 @@ function TeamFormDialog({
                 />
                 <button
                   type="button"
+                  disabled={compressingLogo}
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-3.5 py-2 rounded-xl bg-white border border-[#E5E7EB] hover:bg-[#F3F4F6] text-xs font-bold text-[#7A1426] shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+                  className="px-3.5 py-2 rounded-xl bg-white border border-[#E5E7EB] hover:bg-[#F3F4F6] text-xs font-bold text-[#7A1426] shadow-2xs transition-all flex items-center gap-2 cursor-pointer active:scale-98 disabled:opacity-60"
                 >
-                  <Upload className="w-3.5 h-3.5 text-[#7A1426]" />
-                  <span>{logoUrl ? 'Change Logo Image' : 'Upload Team Logo'}</span>
+                  {compressingLogo ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#7A1426]" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5 text-[#7A1426]" />
+                  )}
+                  <span>
+                    {compressingLogo
+                      ? 'Optimizing image...'
+                      : logoUrl
+                      ? 'Change Logo Image'
+                      : 'Upload Team Logo'}
+                  </span>
                 </button>
                 <p className="text-[11px] text-[#6b7280]">
-                  Upload PNG, JPG, or WebP image (max 2MB).
+                  Upload PNG, JPG, or WebP image (auto-compressed for crisp web display).
                 </p>
               </div>
             </div>
@@ -710,7 +790,7 @@ function TeamFormDialog({
           </Button>
           <Button
             className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer active:scale-98"
-            disabled={!name.trim() || !shortName.trim()}
+            disabled={!name.trim() || !shortName.trim() || compressingLogo}
             onClick={() =>
               onSubmit({
                 name: name.trim(),

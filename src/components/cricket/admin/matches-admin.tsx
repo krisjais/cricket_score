@@ -480,11 +480,11 @@ function MatchFormDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
+            <div className="space-y-2 min-w-0">
               <Label>Season (optional)</Label>
               <Select value={seasonId} onValueChange={setSeasonId}>
-                <SelectTrigger aria-label="Season"><SelectValue placeholder="Active season" /></SelectTrigger>
+                <SelectTrigger aria-label="Season" className="w-full min-w-0"><SelectValue placeholder="Active season" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__DEFAULT__">Default / Active Season</SelectItem>
                   {seasons.map((s) => (
@@ -493,10 +493,10 @@ function MatchFormDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label>Tournament (optional)</Label>
               <Select value={tournamentId} onValueChange={setTournamentId}>
-                <SelectTrigger aria-label="Tournament"><SelectValue placeholder="Default tournament" /></SelectTrigger>
+                <SelectTrigger aria-label="Tournament" className="w-full min-w-0"><SelectValue placeholder="Default tournament" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__DEFAULT__">Default Tournament</SelectItem>
                   {tournaments.map((t) => (

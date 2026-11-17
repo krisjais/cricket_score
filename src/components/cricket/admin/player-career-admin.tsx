@@ -14,6 +14,7 @@ import {
   UserCheck,
   Users,
   X,
+  Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ApiError, api } from '@/lib/client'
@@ -262,6 +263,51 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
       await loadReferenceData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create tournament')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleDeleteSeason(s: SeasonDto) {
+    if (!confirm(`Are you sure you want to delete season "${s.name}"? This action cannot be undone.`)) {
+      return
+    }
+    setBusy(true)
+    try {
+      await api(`/api/seasons/${s.id}`, { method: 'DELETE' })
+      toast.success(`Season "${s.name}" deleted`)
+      await loadReferenceData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete season')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleDeleteTournament(t: TournamentDto) {
+    if (!confirm(`Are you sure you want to delete tournament "${t.name}"?`)) {
+      return
+    }
+    setBusy(true)
+    try {
+      await api(`/api/tournaments/${t.id}`, { method: 'DELETE' })
+      toast.success(`Tournament "${t.name}" deleted`)
+      await loadReferenceData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete tournament')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleCleanupTestSeasons() {
+    setBusy(true)
+    try {
+      const res = await api<{ purgedCount: number }>('/api/seasons/cleanup-test-seasons', { method: 'POST' })
+      toast.success(`Removed ${res.purgedCount} test season(s)`)
+      await loadReferenceData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to clean test seasons')
     } finally {
       setBusy(false)
     }
@@ -674,22 +720,65 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                 </Button>
               </form>
 
+              {/* Test Seasons Cleanup Banner */}
+              {seasons.filter((s) => s.name.startsWith('Test Season') || s.name.startsWith('NPL Season 2025')).length > 0 && (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span className="font-semibold text-xs">
+                      {seasons.filter((s) => s.name.startsWith('Test Season') || s.name.startsWith('NPL Season 2025')).length} test season(s) detected from test runs.
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={busy}
+                    onClick={handleCleanupTestSeasons}
+                    className="h-8 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs cursor-pointer shadow-xs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Clean Up Test Seasons
+                  </Button>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 {seasons.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between rounded-xl border border-[#E5E7EB] px-3 py-2">
-                    <div>
-                      <span className="font-bold text-[#111827]">{s.name}</span>
-                      <span className="ml-2 text-gray-500 font-mono">{s.code}</span>
+                  <div key={s.id} className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-white p-3 hover:border-gray-300 transition-colors">
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[#111827] truncate">{s.name}</span>
+                        {s.isDefault && (
+                          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-gray-500 font-mono text-[11px]">{s.code} · Year {s.year}</span>
                     </div>
-                    <select
-                      value={s.status}
-                      onChange={(e) => handleSeasonStatus(s, e.target.value as SeasonDto['status'])}
-                      className="rounded-lg border border-[#E5E7EB] px-2 py-1 text-[11px] font-bold"
-                    >
-                      <option value="UPCOMING">UPCOMING</option>
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="COMPLETED">COMPLETED</option>
-                    </select>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <select
+                        value={s.status}
+                        onChange={(e) => handleSeasonStatus(s, e.target.value as SeasonDto['status'])}
+                        className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-2 py-1 text-[11px] font-bold text-[#111827] cursor-pointer"
+                      >
+                        <option value="UPCOMING">UPCOMING</option>
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="COMPLETED">COMPLETED</option>
+                      </select>
+                      {!s.isDefault && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={busy}
+                          onClick={() => handleDeleteSeason(s)}
+                          className="h-7 w-7 p-0 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer"
+                          title={`Delete season ${s.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -726,11 +815,41 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                   Add Event
                 </Button>
               </form>
-              {tournaments.length > 0 && (
-                <div className="text-[11px] text-gray-500">
-                  Active tournaments: {tournaments.map((t) => t.name).join(', ')}
+              <div className="pt-2 space-y-2">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                  Active Tournament Events ({tournaments.length})
                 </div>
-              )}
+                {tournaments.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">No tournaments created yet.</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                    {tournaments.map((t) => {
+                      const parentSeason = seasons.find((s) => s.id === t.seasonId)
+                      return (
+                        <div key={t.id} className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-gray-50/60 px-3 py-2 text-xs">
+                          <div className="min-w-0 pr-2">
+                            <div className="font-bold text-[#111827] truncate">{t.name}</div>
+                            <div className="text-[10px] text-gray-500">
+                              {t.format} · Season: {parentSeason?.name ?? t.seasonId}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => handleDeleteTournament(t)}
+                            className="h-7 w-7 p-0 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer shrink-0"
+                            title={`Delete tournament ${t.name}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
