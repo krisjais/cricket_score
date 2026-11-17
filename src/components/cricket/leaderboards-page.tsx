@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react'
 import { Award, BadgeCheck, BarChart3, Shield, Trophy } from 'lucide-react'
 import { api } from '@/lib/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 import { SeasonDto, TournamentDto } from './player/player-types'
 
 type LeaderboardGroup = 'batting' | 'bowling' | 'fielding' | 'overall'
@@ -212,61 +219,61 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
             </div>
 
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <select
-                aria-label="Filter scope"
-                value={scope}
-                onChange={(e) => setScope(e.target.value as typeof scope)}
-                className="w-full sm:w-auto min-w-0 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 sm:py-1.5 text-xs font-bold text-[#111827] focus:border-[#7A1426] focus:outline-none"
-              >
-                <option value="ALL_TIME">All-Time Career</option>
-                <option value="SEASON">Specific Season</option>
-                <option value="TOURNAMENT">Specific Tournament</option>
-                <option value="TEAM">Specific Team</option>
-              </select>
+              <Select value={scope} onValueChange={(val) => setScope(val as typeof scope)}>
+                <SelectTrigger className="w-full sm:w-auto min-w-[150px] rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-xs font-bold text-[#111827] h-9">
+                  <SelectValue placeholder="Scope" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL_TIME">All-Time Career</SelectItem>
+                  <SelectItem value="SEASON">Specific Season</SelectItem>
+                  <SelectItem value="TOURNAMENT">Specific Tournament</SelectItem>
+                  <SelectItem value="TEAM">Specific Team</SelectItem>
+                </SelectContent>
+              </Select>
 
               {scope === 'SEASON' && (
-                <select
-                  aria-label="Select season"
-                  value={seasonId}
-                  onChange={(e) => setSeasonId(e.target.value)}
-                  className="w-full sm:w-auto min-w-0 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 sm:py-1.5 text-xs font-bold text-[#111827]"
-                >
-                  {seasons.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.year})
-                    </option>
-                  ))}
-                </select>
+                <Select value={seasonId} onValueChange={setSeasonId}>
+                  <SelectTrigger className="w-full sm:w-auto min-w-[150px] rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-xs font-bold text-[#111827] h-9">
+                    <SelectValue placeholder="Select season" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seasons.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} ({s.year})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
 
               {scope === 'TOURNAMENT' && (
-                <select
-                  aria-label="Select tournament"
-                  value={tournamentId}
-                  onChange={(e) => setTournamentId(e.target.value)}
-                  className="w-full sm:w-auto min-w-0 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 sm:py-1.5 text-xs font-bold text-[#111827]"
-                >
-                  {tournaments.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={tournamentId} onValueChange={setTournamentId}>
+                  <SelectTrigger className="w-full sm:w-auto min-w-[150px] rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-xs font-bold text-[#111827] h-9">
+                    <SelectValue placeholder="Select tournament" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tournaments.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
 
               {scope === 'TEAM' && (
-                <select
-                  aria-label="Select team"
-                  value={teamId}
-                  onChange={(e) => setTeamId(e.target.value)}
-                  className="w-full sm:w-auto min-w-0 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 sm:py-1.5 text-xs font-bold text-[#111827]"
-                >
-                  {teams.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={teamId} onValueChange={setTeamId}>
+                  <SelectTrigger className="w-full sm:w-auto min-w-[150px] rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-xs font-bold text-[#111827] h-9">
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
           </div>

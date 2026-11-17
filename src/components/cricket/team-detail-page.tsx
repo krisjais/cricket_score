@@ -5,6 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 import { ChevronLeft, Trophy, Users, UserCheck, Shield } from 'lucide-react'
 import { api, ROLE_LABEL } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
@@ -166,19 +173,19 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
                 <label htmlFor="team-season-filter" className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                   Season Roster
                 </label>
-                <select
-                  id="team-season-filter"
-                  value={seasonId}
-                  onChange={(e) => setSeasonId(e.target.value)}
-                  className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#111827]"
-                >
-                  <option value="">Current Squad & All-Time</option>
-                  {team.seasons.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.year})
-                    </option>
-                  ))}
-                </select>
+                <Select value={seasonId || 'ALL'} onValueChange={(val) => setSeasonId(val === 'ALL' ? '' : val)}>
+                  <SelectTrigger className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] h-9 min-w-[200px]">
+                    <SelectValue placeholder="Current Squad & All-Time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Current Squad & All-Time</SelectItem>
+                    {team.seasons.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name} ({s.year})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>

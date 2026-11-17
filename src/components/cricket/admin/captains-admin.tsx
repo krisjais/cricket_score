@@ -33,6 +33,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -647,48 +654,51 @@ export function CaptainsAdmin() {
           <div className="grid grid-cols-1 gap-2.5 rounded-2xl border border-gray-200 bg-white p-3 shadow-2xs sm:grid-cols-4">
             <div>
               <Label className="text-[10px] font-bold uppercase text-gray-400">Season</Label>
-              <select
-                value={selectedSeason}
-                onChange={(e) => setSelectedSeason(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7A1426]"
-              >
-                <option value="all">All Seasons</option>
-                {seasons.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.year}) {s.status === 'COMPLETED' ? '• Done' : '• Active'}
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedSeason} onValueChange={setSelectedSeason}>
+                <SelectTrigger className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 h-9">
+                  <SelectValue placeholder="All Seasons" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Seasons</SelectItem>
+                  {seasons.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} ({s.year}) {s.status === 'COMPLETED' ? '• Done' : '• Active'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label className="text-[10px] font-bold uppercase text-gray-400">Team</Label>
-              <select
-                value={selectedTeam}
-                onChange={(e) => setSelectedTeam(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7A1426]"
-              >
-                <option value="all">All Teams</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.shortName})
-                  </option>
-                ))}
-              </select>
+              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                <SelectTrigger className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 h-9">
+                  <SelectValue placeholder="All Teams" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  {teams.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name} ({t.shortName})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label className="text-[10px] font-bold uppercase text-gray-400">Status</Label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7A1426]"
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active Only</option>
-                <option value="completed">Completed (Expired)</option>
-                <option value="revoked">Revoked</option>
-              </select>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 h-9">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active Only</SelectItem>
+                  <SelectItem value="completed">Completed (Expired)</SelectItem>
+                  <SelectItem value="revoked">Revoked</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -1047,40 +1057,48 @@ export function CaptainsAdmin() {
           <form onSubmit={handleAssignSubmit} className="space-y-4 pt-2">
             <div>
               <Label className="text-xs font-bold text-gray-700">1. Active Season</Label>
-              <select
+              <Select
                 value={assignSeasonId}
-                onChange={(e) => {
-                  setAssignSeasonId(e.target.value)
+                onValueChange={(val) => {
+                  setAssignSeasonId(val)
                   setAssignPlayerId('')
                   setPlayerSearchQuery('')
                 }}
-                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7A1426]"
               >
-                {seasons.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.year}) {s.status === 'COMPLETED' ? '• COMPLETED' : ''}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 h-9">
+                  <SelectValue placeholder="Select season" />
+                </SelectTrigger>
+                <SelectContent>
+                  {seasons.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} ({s.year}) {s.status === 'COMPLETED' ? '• COMPLETED' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label className="text-xs font-bold text-gray-700">2. Team</Label>
-              <select
+              <Select
                 value={assignTeamId}
-                onChange={(e) => {
-                  setAssignTeamId(e.target.value)
+                onValueChange={(val) => {
+                  setAssignTeamId(val)
                   setAssignPlayerId('')
                   setPlayerSearchQuery('')
                 }}
-                className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#7A1426]"
               >
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.shortName})
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 h-9">
+                  <SelectValue placeholder="Select team" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teams.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name} ({t.shortName})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Current Active Captain Alert */}

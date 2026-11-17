@@ -27,6 +27,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 import { SeasonDto, TournamentDto, fmtDate, formatCricketLabel } from '../player/player-types'
 
 interface SearchPlayerRow {
@@ -706,15 +713,16 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                   placeholder="Code (e.g. S2027)"
                   className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
                 />
-                <select
-                  value={seasonStatus}
-                  onChange={(e) => setSeasonStatus(e.target.value as typeof seasonStatus)}
-                  className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
-                >
-                  <option value="UPCOMING">UPCOMING</option>
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="COMPLETED">COMPLETED</option>
-                </select>
+                <Select value={seasonStatus} onValueChange={(val) => setSeasonStatus(val as typeof seasonStatus)}>
+                  <SelectTrigger className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-xs">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="UPCOMING">UPCOMING</SelectItem>
+                    <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                    <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button type="submit" disabled={busy} className="col-span-2 rounded-xl bg-[#121826] text-white text-xs font-bold cursor-pointer">
                   Create Season
                 </Button>
@@ -756,15 +764,19 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                       <span className="text-gray-500 font-mono text-[11px]">{s.code} · Year {s.year}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <select
+                      <Select
                         value={s.status}
-                        onChange={(e) => handleSeasonStatus(s, e.target.value as SeasonDto['status'])}
-                        className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-2 py-1 text-[11px] font-bold text-[#111827] cursor-pointer"
+                        onValueChange={(val) => handleSeasonStatus(s, val as SeasonDto['status'])}
                       >
-                        <option value="UPCOMING">UPCOMING</option>
-                        <option value="ACTIVE">ACTIVE</option>
-                        <option value="COMPLETED">COMPLETED</option>
-                      </select>
+                        <SelectTrigger className="rounded-lg border border-[#E5E7EB] bg-gray-50 px-2 py-1 text-[11px] font-bold text-[#111827] h-8 w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="UPCOMING">UPCOMING</SelectItem>
+                          <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                          <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                        </SelectContent>
+                      </Select>
                       {!s.isDefault && (
                         <Button
                           type="button"
@@ -792,25 +804,27 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                   placeholder="New tournament name"
                   className="col-span-2 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
                 />
-                <select
-                  value={tournFormat}
-                  onChange={(e) => setTournFormat(e.target.value)}
-                  className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-2 py-2"
-                >
-                  <option value="T20">T20</option>
-                  <option value="T10">T10</option>
-                  <option value="ODI">ODI</option>
-                  <option value="CUSTOM">CUSTOM</option>
-                </select>
-                <select
-                  value={tournSeasonId}
-                  onChange={(e) => setTournSeasonId(e.target.value)}
-                  className="col-span-2 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
-                >
-                  {seasons.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+                <Select value={tournFormat} onValueChange={setTournFormat}>
+                  <SelectTrigger className="rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-xs">
+                    <SelectValue placeholder="Format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="T20">T20</SelectItem>
+                    <SelectItem value="T10">T10</SelectItem>
+                    <SelectItem value="ODI">ODI</SelectItem>
+                    <SelectItem value="CUSTOM">CUSTOM</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={tournSeasonId} onValueChange={setTournSeasonId}>
+                  <SelectTrigger className="col-span-2 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-xs">
+                    <SelectValue placeholder="Select Season" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seasons.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Button type="submit" disabled={busy || !tournSeasonId} className="rounded-xl bg-[#7A1426] text-white text-xs font-bold cursor-pointer">
                   Add Event
                 </Button>
@@ -925,37 +939,35 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
               <form onSubmit={handleMergePlayers} className="space-y-3 text-xs">
                 <div>
                   <label className="font-bold block mb-1">Duplicate Source Player (will be marked MERGED)</label>
-                  <select
-                    required
-                    value={mergeSourceId}
-                    onChange={(e) => setMergeSourceId(e.target.value)}
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
-                  >
-                    <option value="">Select duplicate record...</option>
-                    {searchRows.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} ({p.team?.shortName ?? 'Free Agent'}) · {p.matches}M
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={mergeSourceId} onValueChange={setMergeSourceId}>
+                    <SelectTrigger className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-xs">
+                      <SelectValue placeholder="Select duplicate record..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {searchRows.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} ({p.team?.shortName ?? 'Free Agent'}) · {p.matches}M
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Surviving Target Player</label>
-                  <select
-                    required
-                    value={mergeTargetId}
-                    onChange={(e) => setMergeTargetId(e.target.value)}
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
-                  >
-                    <option value="">Select surviving profile...</option>
-                    {searchRows
-                      .filter((p) => p.id !== mergeSourceId)
-                      .map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} ({p.team?.shortName ?? 'Free Agent'}) · {p.matches}M
-                        </option>
-                      ))}
-                  </select>
+                  <Select value={mergeTargetId} onValueChange={setMergeTargetId}>
+                    <SelectTrigger className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-xs">
+                      <SelectValue placeholder="Select surviving profile..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {searchRows
+                        .filter((p) => p.id !== mergeSourceId)
+                        .map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name} ({p.team?.shortName ?? 'Free Agent'}) · {p.matches}M
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="font-bold block mb-1">Verification Reason</label>

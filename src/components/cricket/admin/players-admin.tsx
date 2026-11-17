@@ -227,45 +227,48 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
           />
         </div>
 
-        {/* Team Filter */}
+        {/* Team, Role & Division Filters */}
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={teamFilter}
-            onChange={(e) => setTeamFilter(e.target.value)}
-            className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#7A1426] cursor-pointer"
-          >
-            <option value="ALL">All Franchises ({players?.length ?? 0})</option>
-            <option value="UNASSIGNED">Unassigned / Free Agents ({unassignedCount})</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} ({t.shortName})
-              </option>
-            ))}
-          </select>
+          <Select value={teamFilter} onValueChange={setTeamFilter}>
+            <SelectTrigger className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] h-9">
+              <SelectValue placeholder="All Franchises" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Franchises ({players?.length ?? 0})</SelectItem>
+              <SelectItem value="UNASSIGNED">Unassigned / Free Agents ({unassignedCount})</SelectItem>
+              {teams.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name} ({t.shortName})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Role Filter */}
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#7A1426] cursor-pointer"
-          >
-            <option value="ALL">All Roles</option>
-            <option value="BATTER">Batters</option>
-            <option value="BOWLER">Bowlers</option>
-            <option value="ALL_ROUNDER">All-Rounders</option>
-            <option value="WICKETKEEPER">Wicketkeepers</option>
-          </select>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] h-9">
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Roles</SelectItem>
+              <SelectItem value="BATTER">Batters</SelectItem>
+              <SelectItem value="BOWLER">Bowlers</SelectItem>
+              <SelectItem value="ALL_ROUNDER">All-Rounders</SelectItem>
+              <SelectItem value="WICKETKEEPER">Wicketkeepers</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Division / Gender Filter */}
-          <select
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
-            className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] focus:outline-none focus:border-[#7A1426] cursor-pointer"
-          >
-            <option value="ALL">All Divisions</option>
-            <option value="MALE">Men&apos;s Division</option>
-            <option value="FEMALE">Women&apos;s Division</option>
-          </select>
+          <Select value={genderFilter} onValueChange={setGenderFilter}>
+            <SelectTrigger className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-3 py-2 text-xs font-bold text-[#111827] h-9">
+              <SelectValue placeholder="All Divisions" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Divisions</SelectItem>
+              <SelectItem value="MALE">Men&apos;s Division</SelectItem>
+              <SelectItem value="FEMALE">Women&apos;s Division</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

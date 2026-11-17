@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react'
 import { api, type MatchSummary, type MatchStatePayload } from '@/lib/client'
 import { ScrollText, RefreshCw, AlertCircle } from 'lucide-react'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 
 interface AdminLogViewProps {
   matches: MatchSummary[]
@@ -34,47 +41,54 @@ export function AdminLogView({ matches, selectedMatchId }: AdminLogViewProps) {
   }, [matchId])
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 min-h-full bg-[#f8f6f0]">
+    <div className="p-4 sm:p-6 lg:p-8 min-h-full bg-[#F4F5F7]">
       {/* Title */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold font-serif text-[#111827] flex items-center gap-2.5">
-            <span className="p-1.5 rounded-xl bg-[#0d3a24]/10 text-[#0d3a24]">
-              <ScrollText className="w-6 h-6" />
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-rose-50 text-[#7A1426] border border-rose-100">
+              <ScrollText className="w-5 h-5" />
             </span>
-            <span>Match Event Log & Audit</span>
+            <span>Match Event Log &amp; Audit</span>
           </h1>
-          <p className="text-xs text-[#6b7280] mt-1 font-medium">
+          <p className="text-xs text-gray-500 mt-1 font-medium">
             Chronological delivery-by-delivery event stream for accurate scoring audit
           </p>
         </div>
 
         {/* Match Selector */}
         <div className="flex items-center gap-2">
-          <select
-            value={matchId}
-            onChange={(e) => setMatchId(e.target.value)}
-            className="bg-white border border-[#e8e2d5] text-xs font-bold text-[#111827] px-3.5 py-2.5 rounded-xl focus:border-[#0d3a24] focus:outline-none shadow-xs cursor-pointer"
-          >
-            {matches.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.teamA.shortName} vs {m.teamB.shortName} ({m.format}) — {m.status}
-              </option>
-            ))}
-          </select>
+          {matches.length > 0 ? (
+            <Select value={matchId} onValueChange={(val) => setMatchId(val)}>
+              <SelectTrigger className="bg-white border-gray-200 text-xs font-bold text-gray-900 min-w-[260px] h-10 rounded-xl shadow-xs focus:ring-2 focus:ring-[#7A1426]/20">
+                <SelectValue placeholder="Select a match" />
+              </SelectTrigger>
+              <SelectContent>
+                {matches.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.teamA.shortName} vs {m.teamB.shortName} ({m.format}) — {m.status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="text-xs text-gray-500 bg-white border border-gray-200 px-3 py-2 rounded-xl">
+              No matches available
+            </div>
+          )}
           <button
             onClick={() => loadMatch(matchId)}
-            className="p-2.5 bg-white border border-[#e8e2d5] text-[#0d3a24] hover:bg-[#f4efe6] rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="h-10 w-10 flex items-center justify-center bg-white border border-gray-200 text-gray-700 hover:text-[#7A1426] hover:bg-gray-50 rounded-xl shadow-xs transition-colors cursor-pointer"
             title="Refresh log"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#7A1426]' : ''}`} />
           </button>
         </div>
       </div>
 
       {!payload || !payload.match || !Array.isArray(payload.innings) ? (
-        <div className="bg-white border border-[#e8e2d5] rounded-3xl p-12 text-center text-[#6b7280]">
-          <AlertCircle className="w-8 h-8 mx-auto text-[#9ca3af] mb-2" />
+        <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center text-gray-500 shadow-xs">
+          <AlertCircle className="w-8 h-8 mx-auto text-gray-400 mb-2" />
           <p className="text-sm font-semibold">Select a match to view delivery events</p>
         </div>
       ) : (
@@ -87,28 +101,28 @@ export function AdminLogView({ matches, selectedMatchId }: AdminLogViewProps) {
             const items = inn.commentary ?? []
 
             return (
-              <div key={inn.inningsId} className="bg-white border border-[#e8e2d5] rounded-3xl p-6 shadow-xs">
-                <div className="flex items-center justify-between pb-4 border-b border-[#e8e2d5] mb-4">
+              <div key={inn.inningsId} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
+                <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
                   <div>
-                    <h2 className="font-serif font-bold text-base text-[#0d3a24]">
+                    <h2 className="font-bold text-base text-gray-900">
                       Innings {inn.number}: {battingTeamName} Batting
                     </h2>
-                    <p className="text-xs text-[#6b7280]">
-                      {inn.runs}/{inn.wickets} in {inn.oversDisplay} overs • Extras: {inn.extras.total} (wd {inn.extras.wides}, nb {inn.extras.noBalls}, b {inn.extras.byes}, lb {inn.extras.legByes})
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {inn.runs}/{inn.wickets} in {inn.oversDisplay} overs &bull; Extras: {inn.extras.total} (wd {inn.extras.wides}, nb {inn.extras.noBalls}, b {inn.extras.byes}, lb {inn.extras.legByes})
                     </p>
                   </div>
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#f4efe6] text-[#0d3a24] border border-[#e8e2d5]">
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
                     {inn.totalDeliveries} deliveries
                   </span>
                 </div>
 
                 {items.length === 0 ? (
-                  <p className="text-xs text-[#9ca3af] italic py-6 text-center">No deliveries recorded in this innings yet.</p>
+                  <p className="text-xs text-gray-400 italic py-6 text-center">No deliveries recorded in this innings yet.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-[#e8e2d5] text-[#9ca3af] uppercase font-bold tracking-wider">
+                        <tr className="border-b border-gray-100 text-gray-400 uppercase font-bold tracking-wider">
                           <th className="pb-2.5 pl-2">Seq</th>
                           <th className="pb-2.5">Over</th>
                           <th className="pb-2.5">Description</th>
@@ -116,34 +130,34 @@ export function AdminLogView({ matches, selectedMatchId }: AdminLogViewProps) {
                           <th className="pb-2.5">Event</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#e8e2d5]/60 font-mono">
+                      <tbody className="divide-y divide-gray-100 font-mono">
                         {items.map((b) => (
-                          <tr key={`${inn.inningsId}-${b.sequence}`} className="hover:bg-[#faf8f5]">
-                            <td className="py-2.5 pl-2 text-[#9ca3af]">#{b.sequence}</td>
-                            <td className="py-2.5 font-bold text-[#111827]">{b.overDisplay}</td>
-                            <td className="py-2.5 font-sans font-medium text-[#111827]">{b.text}</td>
-                            <td className="py-2.5 font-bold">{b.runs}</td>
+                          <tr key={`${inn.inningsId}-${b.sequence}`} className="hover:bg-gray-50/70 transition-colors">
+                            <td className="py-2.5 pl-2 text-gray-400">#{b.sequence}</td>
+                            <td className="py-2.5 font-bold text-gray-900">{b.overDisplay}</td>
+                            <td className="py-2.5 font-sans font-medium text-gray-800">{b.text}</td>
+                            <td className="py-2.5 font-bold text-gray-900">{b.runs}</td>
                             <td className="py-2.5 font-sans">
                               {b.kind === 'W' ? (
-                                <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-black uppercase">
+                                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black uppercase">
                                   Wicket
                                 </span>
                               ) : b.kind === '6' ? (
-                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black">
+                                <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 text-[10px] font-black">
                                   SIX
                                 </span>
                               ) : b.kind === '4' ? (
-                                <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 text-[10px] font-black">
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
                                   FOUR
                                 </span>
                               ) : b.kind === 'extra' ? (
-                                <span className="px-2 py-0.5 rounded-full bg-[#f4efe6] text-[#c59b27] text-[10px] font-black uppercase">
+                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black uppercase">
                                   Extra
                                 </span>
                               ) : b.kind === 'dot' ? (
-                                <span className="text-[#9ca3af]">Dot ball</span>
+                                <span className="text-gray-400">Dot ball</span>
                               ) : (
-                                <span className="text-[#111827]">{b.runs} run(s)</span>
+                                <span className="text-gray-700 font-semibold">{b.runs} run(s)</span>
                               )}
                             </td>
                           </tr>

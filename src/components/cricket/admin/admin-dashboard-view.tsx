@@ -14,6 +14,13 @@ import {
   Trophy,
   ShieldCheck,
 } from 'lucide-react'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select'
 import { LiveBadge } from '@/components/cricket/ui-bits'
 import type { AdminTab } from './admin-sidebar'
 import { cn } from '@/lib/utils'
@@ -124,21 +131,18 @@ export function AdminDashboardView({
 
         <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
           {/* Season Selector */}
-          <div className="relative flex items-center">
-            <div className="absolute left-3 pointer-events-none text-[#7A1426]">
-              <Trophy className="w-3.5 h-3.5" />
-            </div>
-            <select
-              value={season}
-              onChange={(e) => setSeason(e.target.value)}
-              aria-label="Select Season"
-              className="h-10 appearance-none bg-white hover:bg-gray-50/80 border border-gray-200 rounded-full pl-8 pr-8 text-xs font-bold text-[#111827] shadow-2xs focus:outline-none focus:border-[#7A1426] cursor-pointer transition-colors"
-            >
-              <option value="APL 2026">APL 2026</option>
-              <option value="Season 8">Season 8</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-gray-400 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" />
-          </div>
+          <Select value={season} onValueChange={setSeason}>
+            <SelectTrigger className="h-10 bg-white hover:bg-gray-50/80 border border-gray-200 rounded-full px-3.5 text-xs font-bold text-[#111827] shadow-2xs focus:ring-2 focus:ring-[#7A1426]/20">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-3.5 h-3.5 text-[#7A1426]" />
+                <SelectValue placeholder="Select Season" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="APL 2026">APL 2026</SelectItem>
+              <SelectItem value="Season 8">Season 8</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Notification Bell */}
           <div className="relative">

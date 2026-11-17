@@ -377,18 +377,18 @@ export function ScoringConsole({
                 <div className="flex items-center justify-between gap-1 px-0.5 shrink-0">
                   <div className="flex items-center gap-1 min-w-0">
                     {matches.length > 1 ? (
-                      <select
-                        value={m.id}
-                        onChange={(e) => onSelectMatch?.(e.target.value)}
-                        className="bg-white text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1 outline-none cursor-pointer truncate max-w-[160px] shadow-xs"
-                        title="Switch match"
-                      >
-                        {matches.map((item) => (
-                          <option key={item.id} value={item.id} className="bg-white text-gray-900">
-                            {item.teamA.shortName} vs {item.teamB.shortName} · {item.totalOvers} Ov · Inn {current?.number ?? 1}
-                          </option>
-                        ))}
-                      </select>
+                      <Select value={m.id} onValueChange={(val) => onSelectMatch?.(val)}>
+                        <SelectTrigger className="bg-white text-xs font-bold text-gray-900 border border-gray-200 rounded-lg px-2 py-1 max-w-[170px] h-8 shadow-xs">
+                          <SelectValue placeholder="Switch match" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {matches.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.teamA.shortName} vs {item.teamB.shortName} · {item.totalOvers} Ov · Inn {current?.number ?? 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <span className="text-xs font-bold text-gray-900 truncate">
                         {m.teamA.shortName} vs {m.teamB.shortName} · {m.totalOvers} Ov · Inn {current.number}
@@ -735,18 +735,20 @@ export function ScoringConsole({
                     </div>
 
                     {matches.length > 1 && (
-                      <select
-                        value={m.id}
-                        onChange={(e) => onSelectMatch?.(e.target.value)}
-                        className="ml-3 bg-white text-xs font-bold text-gray-800 border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-gray-300 shadow-xs"
-                        title="Switch match"
-                      >
-                        {matches.map((item) => (
-                          <option key={item.id} value={item.id} className="bg-white text-gray-900">
-                            Switch: {item.teamA.shortName} vs {item.teamB.shortName} ({item.status})
-                          </option>
-                        ))}
-                      </select>
+                      <div className="ml-3">
+                        <Select value={m.id} onValueChange={(val) => onSelectMatch?.(val)}>
+                          <SelectTrigger className="bg-white text-xs font-bold text-gray-800 border border-gray-200 rounded-lg px-2.5 py-1.5 h-8 shadow-xs min-w-[200px]">
+                            <SelectValue placeholder="Switch match" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {matches.map((item) => (
+                              <SelectItem key={item.id} value={item.id}>
+                                Switch: {item.teamA.shortName} vs {item.teamB.shortName} ({item.status})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
                   </div>
 
