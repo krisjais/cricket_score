@@ -517,7 +517,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
               Delete Player “{deletePlayer?.name}”?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-[#6b7280]">
-              This permanently removes the player from the tournament registry. Players with deliveries in live matches cannot be removed.
+              This permanently removes the player from the tournament registry and frees their registered email and mobile number so they can create a new account if needed. Players with deliveries in live matches cannot be removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 pt-2">
