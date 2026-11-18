@@ -48,8 +48,8 @@ export function NplLogo({
         <img
           src="/apl-logo-s9.png"
           alt={resolvedAlt}
-          width={400}
-          height={478}
+          width={415}
+          height={575}
           decoding="async"
           loading={lazy ? 'lazy' : undefined}
           fetchPriority={priority ? 'high' : undefined}
