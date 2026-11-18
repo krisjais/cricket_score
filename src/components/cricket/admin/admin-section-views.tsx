@@ -1,8 +1,8 @@
 'use client'
 
-import { CalendarClock, Trophy, UserCog, Play, ShieldCheck, CheckCircle2 } from 'lucide-react'
+import { CalendarClock, Trophy, Play, CheckCircle2 } from 'lucide-react'
 import { StatusBadge, TeamLogo } from '@/components/cricket/ui-bits'
-import type { AdminSession, MatchSummary } from '@/lib/client'
+import type { MatchSummary } from '@/lib/client'
 import type { AdminTab } from '@/components/cricket/admin/admin-sidebar'
 
 export function ScheduleAdminView({
@@ -81,50 +81,6 @@ export function ScheduleAdminView({
             ))}
           </div>
         )}
-      </div>
-    </div>
-  )
-}
-
-export function OfficialsAdminView({ session }: { session: AdminSession }) {
-  return (
-    <div className="p-4 sm:p-6 lg:p-8 min-h-full bg-[#F4F5F7] pb-8 space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] flex items-center gap-2.5 tracking-tight">
-          <span className="p-2 rounded-xl bg-[#7A1426]/10 text-[#7A1426]">
-            <UserCog className="w-5 h-5" />
-          </span>
-          <span>Officials &amp; Scorer Access</span>
-        </h1>
-        <p className="text-xs text-gray-500 mt-1 font-medium">
-          Active scorer &amp; administrator authentication details
-        </p>
-      </div>
-
-      <div className="max-w-2xl bg-white rounded-2xl border border-gray-200 shadow-xs p-6 space-y-4">
-        <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
-          <div className="w-12 h-12 rounded-2xl bg-[#121826] text-white flex items-center justify-center text-lg font-extrabold uppercase">
-            {(session.username || 'A')[0]}
-          </div>
-          <div>
-            <div className="text-base font-bold text-[#111827] capitalize">{session.username || 'Admin'}</div>
-            <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Head Scorer &amp; Super Admin (Authenticated JWT Session)</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-4 text-xs">
-          <div className="rounded-xl bg-gray-50 border border-gray-200 p-4">
-            <div className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">Permissions</div>
-            <div className="font-bold text-[#111827] mt-1">Full Scoring, Teams, Players &amp; Match Control</div>
-          </div>
-          <div className="rounded-xl bg-gray-50 border border-gray-200 p-4">
-            <div className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">Real-Time Engine</div>
-            <div className="font-bold text-emerald-700 mt-1">MongoDB Persistent + Socket.IO Live Broadcast</div>
-          </div>
-        </div>
       </div>
     </div>
   )

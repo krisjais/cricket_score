@@ -8,7 +8,6 @@ import { AdminLogView } from '@/components/cricket/admin/admin-log-view'
 import { AdminResetView } from '@/components/cricket/admin/admin-reset-view'
 import {
   ScheduleAdminView,
-  OfficialsAdminView,
   ResultsAdminView,
 } from '@/components/cricket/admin/admin-section-views'
 import { MatchesAdmin } from '@/components/cricket/admin/matches-admin'
@@ -189,8 +188,6 @@ export function AdminPage({
             <CaptainsAdmin />
           </div>
         )}
-
-        {tab === 'officials' && <OfficialsAdminView session={session} />}
 
         {tab === 'results' && (
           <ResultsAdminView

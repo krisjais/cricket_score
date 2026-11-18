@@ -4,22 +4,18 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   BadgeCheck,
   CalendarRange,
-  Check,
-  GitMerge,
   History,
   Loader2,
   RefreshCcw,
   Search,
   ShieldAlert,
-  UserCheck,
   Users,
-  X,
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ApiError, api } from '@/lib/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -51,27 +47,6 @@ interface SearchPlayerRow {
   wickets: number
 }
 
-interface ClaimRow {
-  id: string
-  targetPlayerId: string
-  verificationMethod: string
-  otpVerified: boolean
-  evidenceNotes: string | null
-  status: string
-  createdAt: string
-  claimantUser: { id: string; name: string; email: string | null; mobile: string | null } | null
-  claimantPlayer: { id: string; playerCode: string | null; name: string } | null
-  targetPlayer: {
-    id: string
-    playerCode: string | null
-    name: string
-    team: { name: string; shortName: string } | null
-    matches: number
-    runs: number
-    wickets: number
-  } | null
-}
-
 interface AuditLogRow {
   id: string
   action: string
@@ -84,13 +59,12 @@ interface AuditLogRow {
 }
 
 export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?: () => Promise<void> | void }) {
-  const [subTab, setSubTab] = useState<'directory' | 'seasons' | 'claims' | 'audit'>('directory')
+  const [subTab, setSubTab] = useState<'directory' | 'seasons' | 'audit'>('directory')
 
   const [query, setQuery] = useState('')
   const [searchRows, setSearchRows] = useState<SearchPlayerRow[]>([])
   const [seasons, setSeasons] = useState<SeasonDto[]>([])
   const [tournaments, setTournaments] = useState<TournamentDto[]>([])
-  const [claims, setClaims] = useState<ClaimRow[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([])
   const [busy, setBusy] = useState(false)
 
@@ -107,11 +81,6 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
   const [tournName, setTournName] = useState('')
   const [tournSeasonId, setTournSeasonId] = useState('')
   const [tournFormat, setTournFormat] = useState('T20')
-
-  // Duplicate merge state
-  const [mergeSourceId, setMergeSourceId] = useState('')
-  const [mergeTargetId, setMergeTargetId] = useState('')
-  const [mergeReason, setMergeReason] = useState('')
 
   const loadDirectory = useCallback(async (qStr = query) => {
     const res = await api<SearchPlayerRow[]>(`/api/players/search?q=${encodeURIComponent(qStr.trim())}&limit=50`)
@@ -130,12 +99,8 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
     }
   }, [])
 
-  const loadClaimsAndAudit = useCallback(async () => {
-    const [c, a] = await Promise.all([
-      api<ClaimRow[]>('/api/admin/claims?status=ALL').catch(() => []),
-      api<AuditLogRow[]>('/api/admin/audit-logs?limit=60').catch(() => []),
-    ])
-    setClaims(c)
+  const loadAuditLogs = useCallback(async () => {
+    const a = await api<AuditLogRow[]>('/api/admin/audit-logs?limit=60').catch(() => [])
     setAuditLogs(a)
   }, [])
 
@@ -155,14 +120,12 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
         setTournSeasonId((prev) => prev || s[0].id)
       }
     })
-    Promise.all([
-      api<ClaimRow[]>('/api/admin/claims?status=ALL').catch(() => []),
-      api<AuditLogRow[]>('/api/admin/audit-logs?limit=60').catch(() => []),
-    ]).then(([c, a]) => {
-      if (!alive) return
-      setClaims(c)
-      setAuditLogs(a)
-    })
+    api<AuditLogRow[]>('/api/admin/audit-logs?limit=60')
+      .catch(() => [])
+      .then((a) => {
+        if (!alive) return
+        setAuditLogs(a)
+      })
     return () => {
       alive = false
     }
@@ -320,49 +283,6 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
     }
   }
 
-  async function handleResolveClaim(id: string, decision: 'APPROVE' | 'REJECT') {
-    setBusy(true)
-    try {
-      await api(`/api/admin/claims/${id}/resolve`, {
-        method: 'POST',
-        json: { decision, reason: `${decision} from Admin Panel` },
-      })
-      toast.success(decision === 'APPROVE' ? 'Claim approved & records merged' : 'Claim rejected')
-      await Promise.all([loadClaimsAndAudit(), loadDirectory()])
-      await onPlayersChanged?.()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to resolve claim')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function handleMergePlayers(e: React.FormEvent) {
-    e.preventDefault()
-    if (!mergeSourceId || !mergeTargetId) return
-    setBusy(true)
-    try {
-      await api('/api/players/merge', {
-        method: 'POST',
-        json: {
-          sourcePlayerId: mergeSourceId,
-          targetPlayerId: mergeTargetId,
-          reason: mergeReason.trim() || 'Admin duplicate profile merge',
-        },
-      })
-      toast.success('Duplicate profiles merged & stats recalculated')
-      setMergeSourceId('')
-      setMergeTargetId('')
-      setMergeReason('')
-      await Promise.all([loadDirectory(), loadClaimsAndAudit()])
-      await onPlayersChanged?.()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Merge failed')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   async function handleRecalculate(playerId?: string) {
     setBusy(true)
     try {
@@ -373,7 +293,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
       toast.success(`Recalculated ${res.playersRecalculated} player(s) across ${res.verifiedMatchesCount} verified matches`)
       await Promise.all([
         loadDirectory(),
-        loadClaimsAndAudit(),
+        loadAuditLogs(),
         playerId && inspectedCareer?.player?.id === playerId ? inspectCareer(playerId) : Promise.resolve(),
       ])
     } catch (err) {
@@ -388,8 +308,6 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
     }
   }
 
-  const pendingClaimsCount = claims.filter((c) => c.status === 'PENDING').length
-
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white border border-[#E5E7EB] p-2">
@@ -398,7 +316,6 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
             [
               ['directory', 'ID Registry & Verification', Users],
               ['seasons', 'Seasons & Tournaments', CalendarRange],
-              ['claims', `Claims (${pendingClaimsCount} Pending) & Merge`, UserCheck],
               ['audit', 'Stats Audit Logs', History],
             ] as const
           ).map(([k, label, Icon]) => (
@@ -864,130 +781,6 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {subTab === 'claims' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <Card className="rounded-3xl border border-[#E5E7EB] bg-white">
-            <CardHeader>
-              <CardTitle className="text-sm font-extrabold text-[#111827] flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-[#7A1426]" />
-                Profile Claim Requests
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-xs">
-              {claims.length === 0 ? (
-                <p className="text-gray-400 py-4">No player claim requests yet.</p>
-              ) : (
-                claims.map((c) => (
-                  <div key={c.id} className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-3.5 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-extrabold text-[#111827]">
-                        {c.claimantUser?.name ?? 'User'} → {c.targetPlayer?.name ?? 'Unclaimed'}
-                      </span>
-                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold bg-white border border-[#E5E7EB]">
-                        {c.status}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-gray-600">
-                      Target stats: {c.targetPlayer?.matches ?? 0}M, {c.targetPlayer?.runs ?? 0}R, {c.targetPlayer?.wickets ?? 0}W
-                    </div>
-                    {c.evidenceNotes && <div className="text-[11px] italic text-gray-600">&ldquo;{c.evidenceNotes}&rdquo;</div>}
-                    {c.status === 'PENDING' && (
-                      <div className="flex gap-2 pt-1">
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={busy}
-                          onClick={() => handleResolveClaim(c.id, 'APPROVE')}
-                          className="h-7 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold cursor-pointer"
-                        >
-                          <Check className="w-3 h-3 mr-1" /> Approve &amp; Merge
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={busy}
-                          onClick={() => handleResolveClaim(c.id, 'REJECT')}
-                          className="h-7 rounded-lg text-rose-700 border-rose-200 text-[11px] font-bold cursor-pointer"
-                        >
-                          <X className="w-3 h-3 mr-1" /> Reject
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-3xl border border-[#E5E7EB] bg-white">
-            <CardHeader>
-              <CardTitle className="text-sm font-extrabold text-[#111827] flex items-center gap-2">
-                <GitMerge className="w-4 h-4 text-[#7A1426]" />
-                Merge Duplicate Player Profiles
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Reassigns all ball-by-ball events, innings, awards, and non-conflicting season memberships from the duplicate record into the surviving target profile inside a transaction.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleMergePlayers} className="space-y-3 text-xs">
-                <div>
-                  <label className="font-bold block mb-1">Duplicate Source Player (will be marked MERGED)</label>
-                  <Select value={mergeSourceId} onValueChange={setMergeSourceId}>
-                    <SelectTrigger className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-xs">
-                      <SelectValue placeholder="Select duplicate record..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {searchRows.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name} ({p.team?.shortName ?? 'Free Agent'}) · {p.matches}M
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="font-bold block mb-1">Surviving Target Player</label>
-                  <Select value={mergeTargetId} onValueChange={setMergeTargetId}>
-                    <SelectTrigger className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2 text-xs">
-                      <SelectValue placeholder="Select surviving profile..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {searchRows
-                        .filter((p) => p.id !== mergeSourceId)
-                        .map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name} ({p.team?.shortName ?? 'Free Agent'}) · {p.matches}M
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="font-bold block mb-1">Verification Reason</label>
-                  <input
-                    type="text"
-                    required
-                    value={mergeReason}
-                    onChange={(e) => setMergeReason(e.target.value)}
-                    placeholder="e.g. Verified same player across offline temp record and self-signup"
-                    className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={busy || !mergeSourceId || !mergeTargetId || mergeSourceId === mergeTargetId}
-                  className="rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold cursor-pointer"
-                >
-                  Merge Profiles &amp; Recalculate
-                </Button>
-              </form>
             </CardContent>
           </Card>
         </div>
