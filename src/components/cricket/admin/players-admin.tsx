@@ -51,6 +51,7 @@ import {
 } from 'lucide-react'
 import { api, ROLE_LABEL } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
+import { PlayerAvatarField } from '@/components/cricket/player/player-avatar-field'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -616,7 +617,7 @@ function PlayerFormDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-serif font-bold text-[#111827]">
             {player ? 'Edit Player Details' : 'Add New Player'}
@@ -696,17 +697,17 @@ function PlayerFormDialog({
             </p>
           </div>
 
-          {/* Photo URL */}
-          <div className="space-y-2">
-            <Label htmlFor="player-photo" className="text-xs font-bold text-[#111827]">Photo URL (optional)</Label>
-            <Input
-              id="player-photo"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="e.g. https://res.cloudinary.com/...jpg"
-              className="rounded-xl border-[#E5E7EB] text-xs font-medium focus-visible:ring-[#7A1426]"
-            />
-          </div>
+          {/* Player Photo (Local Upload or URL) */}
+          <PlayerAvatarField
+            id="player-photo"
+            label="Player Photo (optional)"
+            value={avatarUrl}
+            onChange={setAvatarUrl}
+            playerName={name}
+            layout="stacked"
+            showPreviewEmpty
+            inputClassName="w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-xs font-medium text-[#111827] placeholder:text-gray-400 focus:border-[#7A1426] focus:ring-2 focus:ring-[#7A1426]/15 focus:outline-none"
+          />
         </div>
 
         <DialogFooter className="gap-2 pt-2">
@@ -750,7 +751,7 @@ function AssignTeamDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white border border-[#E5E7EB] rounded-3xl p-6 shadow-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-serif font-bold text-[#111827]">
             Put Player in a Team
