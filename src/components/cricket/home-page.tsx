@@ -325,42 +325,6 @@ export function HomePage({
             </button>
           </div>
         </div>
-
-        {/* Live Pulse Bar */}
-        <div className="relative z-10 border-t border-gray-200/80 bg-white/70 backdrop-blur-xs px-6 py-3.5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-          <div>
-            <div className="text-lg sm:text-xl font-black text-[#111827] tabular-nums">
-              {totalMatchesCount > 0 ? totalMatchesCount : '12+'}
-            </div>
-            <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-              Fixtures Tracked
-            </div>
-          </div>
-          <div>
-            <div className="text-lg sm:text-xl font-black text-[#7A1426] tabular-nums">
-              {teams.length > 0 ? teams.length : '24'}
-            </div>
-            <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-              Clubs Enrolled
-            </div>
-          </div>
-          <div>
-            <div className="text-lg sm:text-xl font-black text-[#111827] tabular-nums">
-              {totalRuns > 0 ? totalRuns : 'Active'}
-            </div>
-            <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-              Runs Scored
-            </div>
-          </div>
-          <div>
-            <div className="text-lg sm:text-xl font-black text-[#111827] tabular-nums">
-              {totalWickets > 0 ? totalWickets : 'Active'}
-            </div>
-            <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-              Wickets Taken
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* ===================== LIVE MATCHES HUB ===================== */}

@@ -107,35 +107,46 @@ export function AppShell() {
 
   const navListRef = useRef<HTMLDivElement>(null)
   const navPillRef = useRef<HTMLSpanElement>(null)
+  const desktopUnderlineRef = useRef<HTMLSpanElement>(null)
   const navBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const prevNavKeyRef = useRef<string | null>(null)
   const activeNavKeyRef = useRef<string | null>(activeNavKey)
   const sheenTimerRef = useRef<number | null>(null)
 
-  const syncMobilePill = useCallback((key: string | null, triggerSheen: boolean) => {
+  const syncNavIndicator = useCallback((key: string | null, triggerSheen: boolean) => {
     const container = navListRef.current
     const pill = navPillRef.current
-    if (!container || !pill) return
+    const desktopUnderline = desktopUnderlineRef.current
+    if (!container) return
 
     const activeBtn = key ? navBtnRefs.current[key] : null
     if (!activeBtn || activeBtn.offsetWidth === 0) {
       delete container.dataset.pillReady
+      if (desktopUnderline) desktopUnderline.style.opacity = '0'
       return
     }
 
-    pill.style.width = `${activeBtn.offsetWidth}px`
-    pill.style.height = `${activeBtn.offsetHeight}px`
-    pill.style.transform = `translate3d(${activeBtn.offsetLeft}px, ${activeBtn.offsetTop}px, 0)`
-    container.dataset.pillReady = 'true'
+    if (pill) {
+      pill.style.width = `${activeBtn.offsetWidth}px`
+      pill.style.height = `${activeBtn.offsetHeight}px`
+      pill.style.transform = `translate3d(${activeBtn.offsetLeft}px, ${activeBtn.offsetTop}px, 0)`
+      container.dataset.pillReady = 'true'
 
-    if (triggerSheen) {
-      pill.dataset.moving = 'false'
-      void pill.offsetWidth
-      pill.dataset.moving = 'true'
-      if (sheenTimerRef.current) window.clearTimeout(sheenTimerRef.current)
-      sheenTimerRef.current = window.setTimeout(() => {
-        if (navPillRef.current) delete navPillRef.current.dataset.moving
-      }, 600)
+      if (triggerSheen) {
+        pill.dataset.moving = 'false'
+        void pill.offsetWidth
+        pill.dataset.moving = 'true'
+        if (sheenTimerRef.current) window.clearTimeout(sheenTimerRef.current)
+        sheenTimerRef.current = window.setTimeout(() => {
+          if (navPillRef.current) delete navPillRef.current.dataset.moving
+        }, 600)
+      }
+    }
+
+    if (desktopUnderline) {
+      desktopUnderline.style.width = `${activeBtn.offsetWidth}px`
+      desktopUnderline.style.transform = `translate3d(${activeBtn.offsetLeft}px, 0, 0)`
+      desktopUnderline.style.opacity = '1'
     }
   }, [])
 
@@ -144,20 +155,20 @@ export function AppShell() {
     if (!isShellActive) return
     const changed = prevNavKeyRef.current !== null && prevNavKeyRef.current !== activeNavKey
     prevNavKeyRef.current = activeNavKey
-    syncMobilePill(activeNavKey, changed)
-  }, [activeNavKey, isPlayerSignedIn, isShellActive, syncMobilePill])
+    syncNavIndicator(activeNavKey, changed)
+  }, [activeNavKey, isPlayerSignedIn, isShellActive, syncNavIndicator])
 
   useEffect(() => {
     if (!isShellActive) return
     const container = navListRef.current
     if (!container || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => syncMobilePill(activeNavKeyRef.current, false))
+    const observer = new ResizeObserver(() => syncNavIndicator(activeNavKeyRef.current, false))
     observer.observe(container)
     return () => {
       observer.disconnect()
       if (sheenTimerRef.current) window.clearTimeout(sheenTimerRef.current)
     }
-  }, [isShellActive, syncMobilePill])
+  }, [isShellActive, syncNavIndicator])
 
   const renderPage = () => {
     if (playerSession.loading && (!seg[0] || seg[0] === 'player')) {
@@ -349,6 +360,13 @@ export function AppShell() {
                 <span className="mobile-nav-sheen pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-transparent via-white/45 to-transparent" />
               </span>
 
+              {/* Animated sliding maroon underline on desktop */}
+              <span
+                ref={desktopUnderlineRef}
+                aria-hidden="true"
+                className="nav-desktop-sliding-indicator hidden md:block pointer-events-none absolute -bottom-[18px] left-0 h-[3px] bg-[#7A1426] rounded-t-full shadow-[0_-1px_6px_rgba(122,20,38,0.35)] opacity-0"
+              />
+
               {navItems.map((item, idx) => {
                 const active = isActiveNavItem(item.key)
                 const Icon = item.icon
@@ -363,19 +381,21 @@ export function AppShell() {
                     aria-current={active ? 'page' : undefined}
                     style={{ ['--nav-idx' as string]: idx }}
                     className={cn(
-                      'mobile-nav-item relative z-10 inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold transition-colors duration-200 cursor-pointer active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]',
-                      'md:rounded-none md:px-0 md:py-1 md:text-sm md:bg-transparent md:shadow-none md:active:scale-100',
+                      'mobile-nav-item group relative z-10 inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold cursor-pointer active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]',
+                      'md:rounded-lg md:px-2 md:py-1 md:text-sm md:bg-transparent md:shadow-none transition-all duration-200',
                       active
-                        ? 'text-white font-bold md:text-[#7A1426]'
-                        : 'text-gray-600 hover:bg-gray-100/80 hover:text-[#111827] md:hover:bg-transparent'
+                        ? 'text-white font-bold md:text-[#7A1426] md:font-extrabold'
+                        : 'text-gray-600 hover:text-[#7A1426] hover:bg-gray-100/80 md:hover:bg-[#7A1426]/[0.05] md:hover:-translate-y-0.5'
                     )}
                   >
                     <Icon className="mobile-nav-icon w-3.5 h-3.5 shrink-0 md:hidden transition-transform duration-200" aria-hidden="true" />
-                    <span>{item.label}</span>
-                    {active && (
+                    <span className="relative z-10 transition-transform duration-200 group-hover:scale-[1.03]">{item.label}</span>
+                    
+                    {/* Hover animated underline for non-active items */}
+                    {!active && (
                       <span
                         aria-hidden="true"
-                        className="nav-desktop-underline hidden md:block absolute -bottom-[18px] left-0 right-0 h-[3px] bg-[#7A1426] rounded-t-full"
+                        className="hidden md:block pointer-events-none absolute -bottom-[18px] left-1 right-1 h-[2px] bg-gray-300 scale-x-0 group-hover:scale-x-100 transition-transform duration-200 ease-out origin-center rounded-full"
                       />
                     )}
                   </button>
@@ -412,10 +432,10 @@ export function AppShell() {
                 onClick={() => navigate('/awards')}
                 aria-current={activeKey === 'awards' ? 'page' : undefined}
                 className={cn(
-                  'hidden md:inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]',
+                  'hidden md:inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition-all duration-200 cursor-pointer active:scale-95 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A1426]',
                   activeKey === 'awards'
-                    ? 'bg-[#7A1426]/10 border-[#7A1426]/30 text-[#7A1426]'
-                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                    ? 'bg-[#7A1426]/10 border-[#7A1426]/30 text-[#7A1426] shadow-xs'
+                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-[#7A1426]/5 hover:border-[#7A1426]/30 hover:text-[#7A1426]'
                 )}
                 title="Men & Women Tournament Awards"
               >
