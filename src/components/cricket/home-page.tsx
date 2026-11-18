@@ -19,7 +19,6 @@ import {
   BarChart3,
   Flame,
   UserCheck,
-  Zap,
 } from 'lucide-react'
 import { MatchCard } from '@/components/cricket/match-card'
 import { AplLogo } from '@/components/cricket/apl-logo'
@@ -354,12 +353,11 @@ export function HomePage({
             </div>
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-black text-emerald-600 flex items-center justify-center gap-1">
-              <Zap className="w-4 h-4 text-amber-500" />
-              <span>Socket.IO</span>
+            <div className="text-lg sm:text-xl font-black text-[#111827] tabular-nums">
+              {totalWickets > 0 ? totalWickets : 'Active'}
             </div>
             <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-              Live Real-Time Engine
+              Wickets Taken
             </div>
           </div>
         </div>
@@ -924,7 +922,7 @@ export function HomePage({
               </div>
             ) : (
               <div className="space-y-3 py-2 text-center">
-                <Zap className="w-8 h-8 text-[#7A1426] mx-auto" />
+                <Sparkles className="w-8 h-8 text-[#7A1426] mx-auto" />
                 <div className="text-xs font-bold text-[#111827]">Boundary &amp; Sixes Tracker</div>
                 <p className="text-[11px] text-gray-500">Every maximum is recorded and verified in match telemetry.</p>
               </div>
@@ -1071,57 +1069,6 @@ export function HomePage({
               </span>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ===================== PLAYER CAREER PORTAL CALLOUT BANNER ===================== */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0B1120] p-7 sm:p-10 text-white shadow-xl border border-white/10">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-20 -top-20 w-80 h-80 rounded-full bg-[#7A1426]/30 blur-3xl"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-amber-500/10 blur-3xl"
-        />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2.5 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-amber-300 text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Official Player &amp; Captain Hub</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
-              Playing in Alliance Premier League Season 9?
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed font-medium">
-              Claim your verified player badge, track career run tallies, review batting wagon wheels, download match certificates, and submit captain team sheets in Captain&apos;s Corner.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => navigate('/player/login')}
-              className="bg-[#7A1426] hover:bg-[#991B1B] text-white font-extrabold text-xs sm:text-sm px-5 py-3 rounded-2xl shadow-md transition-all cursor-pointer active:scale-98"
-            >
-              Player Login
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/player/register')}
-              className="bg-white hover:bg-gray-100 text-[#111827] font-extrabold text-xs sm:text-sm px-5 py-3 rounded-2xl shadow-md transition-all cursor-pointer active:scale-98"
-            >
-              Register Profile
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/player/dashboard?tab=captains')}
-              className="bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm px-4 py-3 rounded-2xl transition-all cursor-pointer"
-            >
-              Captain&apos;s Corner
-            </button>
-          </div>
         </div>
       </section>
     </div>

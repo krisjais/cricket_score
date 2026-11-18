@@ -189,7 +189,7 @@ export function AdminDashboardView({
                     {liveCount > 0 ? (
                       <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-100 space-y-2">
                         <p className="text-gray-700 font-medium leading-relaxed">
-                          <b className="text-[#7A1426]">{liveCount} live match{liveCount === 1 ? '' : 'es'}</b> currently broadcasting on Socket.IO.
+                          <b className="text-[#7A1426]">{liveCount} live match{liveCount === 1 ? '' : 'es'}</b> currently broadcasting live.
                         </p>
                         <button
                           type="button"
