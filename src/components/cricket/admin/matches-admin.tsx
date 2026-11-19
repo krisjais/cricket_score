@@ -413,16 +413,12 @@ function MatchFormDialog({
   const [maxOversPerBowler, setMaxOversPerBowler] = useState<string>(
     initial?.maxOversPerBowler !== undefined && initial?.maxOversPerBowler !== null
       ? String(initial.maxOversPerBowler)
-      : (initial?.totalOvers ?? 16) <= 5
-      ? '2'
-      : ''
+      : '1'
   )
-  const [bowlerRule, setBowlerRule] = useState<'ONE_MAX' | 'ALL_MAX' | 'STRICT_ONE'>(() => {
-    if (initial?.maxOversPerBowler === 1) return 'STRICT_ONE'
-    if (initial?.maxBowlersWithMaxOvers === 1) return 'ONE_MAX'
+  const [bowlerRule, setBowlerRule] = useState<'STRICT_ONE' | 'ONE_MAX' | 'ALL_MAX'>(() => {
+    if (initial?.maxBowlersWithMaxOvers === 1 && (initial?.maxOversPerBowler ?? 1) >= 2) return 'ONE_MAX'
     if (initial?.maxBowlersWithMaxOvers === null && (initial?.maxOversPerBowler ?? 0) > 1) return 'ALL_MAX'
-    if ((initial?.totalOvers ?? 16) <= 5) return 'ONE_MAX'
-    return 'ALL_MAX'
+    return 'STRICT_ONE'
   })
   const [seasonId, setSeasonId] = useState(initial?.seasonId ?? '__DEFAULT__')
   const [tournamentId, setTournamentId] = useState(initial?.tournamentId ?? '__DEFAULT__')
@@ -524,9 +520,9 @@ function MatchFormDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ONE_MAX">1 bowler can bowl max (others 1 ov)</SelectItem>
+                    <SelectItem value="STRICT_ONE">Strict: 1 over per bowler (Default)</SelectItem>
+                    <SelectItem value="ONE_MAX">Allow 1 bowler to bowl 2 overs (others 1 ov)</SelectItem>
                     <SelectItem value="ALL_MAX">All bowlers up to max overs</SelectItem>
-                    <SelectItem value="STRICT_ONE">Strict (1 over per bowler max)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
