@@ -52,10 +52,7 @@ interface TeamRow {
 }
 
 const FORMATS = [
-  { key: 'T10', overs: 10 },
-  { key: 'T20', overs: 20 },
-  { key: 'ODI', overs: 50 },
-  { key: 'CUSTOM', overs: 0 },
+  { key: 'CUSTOM', overs: 0, label: 'Custom overs' },
 ]
 
 export function MatchesAdmin({
@@ -429,7 +426,7 @@ function MatchFormDialog({
 }) {
   const [teamAId, setTeamAId] = useState(initial?.teamA.id ?? '')
   const [teamBId, setTeamBId] = useState(initial?.teamB.id ?? '')
-  const [format, setFormat] = useState(initial?.format ?? 'T20')
+  const [format, setFormat] = useState(initial?.format ?? 'CUSTOM')
   const [overs, setOvers] = useState(String(initial?.totalOvers ?? 16))
   const [maxOversPerBowler, setMaxOversPerBowler] = useState<string>(
     initial?.maxOversPerBowler !== undefined && initial?.maxOversPerBowler !== null
@@ -557,20 +554,12 @@ function MatchFormDialog({
               <Label>Format</Label>
               <Select
                 value={format}
-                onValueChange={(v) => {
-                  setFormat(v)
-                  const f = FORMATS.find((x) => x.key === v)
-                  if (f && f.overs > 0) setOvers(String(f.overs))
-                }}
+                onValueChange={(v) => setFormat(v)}
                 disabled={!editable}
               >
-                <SelectTrigger aria-label="Format"><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Format"><SelectValue placeholder="Custom overs" /></SelectTrigger>
                 <SelectContent>
-                  {FORMATS.map((f) => (
-                    <SelectItem key={f.key} value={f.key}>
-                      {f.key === 'CUSTOM' ? 'Custom overs' : f.key}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="CUSTOM">Custom overs</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -580,9 +569,10 @@ function MatchFormDialog({
                 type="number"
                 min={1}
                 max={50}
-                value={format === 'CUSTOM' ? overs : String(FORMATS.find((f) => f.key === format)?.overs ?? overs)}
+                value={overs}
                 onChange={(e) => setOvers(e.target.value)}
-                disabled={!editable || format !== 'CUSTOM'}
+                disabled={!editable}
+                placeholder="e.g. 16"
               />
             </div>
           </div>
@@ -842,13 +832,14 @@ function MatchFormDialog({
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button
             className="bg-[#7A1426] hover:bg-[#5E0E1D]"
-            disabled={!teamAId || !teamBId || teamAId === teamBId || (format === 'CUSTOM' && (!Number(overs) || Number(overs) < 1))}
+            disabled={!teamAId || !teamBId || teamAId === teamBId || !Number(overs) || Number(overs) < 1}
             onClick={() => {
               const effectiveMax =
                 bowlerRule === 'STRICT_ONE'
                   ? 1
                   : Number(maxOversPerBowler) || (Number(overs) <= 5 ? 2 : undefined)
               const effectiveQuota = bowlerRule === 'ONE_MAX' ? 1 : null
+              const totalOversVal = Number(overs) > 0 ? Number(overs) : 16
               const mainUmpirePayload: MatchUmpire | null = mainUmpireName.trim()
                 ? {
                     name: mainUmpireName.trim(),
@@ -869,8 +860,8 @@ function MatchFormDialog({
               onSubmit({
                 teamAId,
                 teamBId,
-                format,
-                totalOvers: format === 'CUSTOM' ? Number(overs) : undefined,
+                format: 'CUSTOM',
+                totalOvers: totalOversVal,
                 maxOversPerBowler: effectiveMax,
                 maxBowlersWithMaxOvers: effectiveQuota,
                 mainUmpire: mainUmpirePayload,
