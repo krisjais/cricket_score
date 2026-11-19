@@ -240,7 +240,7 @@ export function MatchesAdmin({
                 <Button size="sm" variant="ghost" onClick={() => handleScore(m.id)}>
                   <Eye className="h-3.5 w-3.5" aria-hidden /> Open
                 </Button>
-                {['SCHEDULED', 'TOSS_DONE'].includes(m.status) && (
+                {!['COMPLETED', 'ABANDONED'].includes(m.status) && (
                   <Button size="sm" variant="ghost" onClick={() => setEditMatch(m)}>
                     <Pencil className="h-3.5 w-3.5" aria-hidden /> Edit
                   </Button>
@@ -399,6 +399,8 @@ function MatchFormDialog({
     teamBId: string
     format: string
     totalOvers?: number
+    maxOversPerBowler?: number
+    maxBowlersWithMaxOvers?: number | null
     seasonId?: string
     tournamentId?: string
     venue?: string
@@ -408,6 +410,20 @@ function MatchFormDialog({
   const [teamBId, setTeamBId] = useState(initial?.teamB.id ?? '')
   const [format, setFormat] = useState(initial?.format ?? 'T20')
   const [overs, setOvers] = useState(String(initial?.totalOvers ?? 16))
+  const [maxOversPerBowler, setMaxOversPerBowler] = useState<string>(
+    initial?.maxOversPerBowler !== undefined && initial?.maxOversPerBowler !== null
+      ? String(initial.maxOversPerBowler)
+      : (initial?.totalOvers ?? 16) <= 5
+      ? '2'
+      : ''
+  )
+  const [bowlerRule, setBowlerRule] = useState<'ONE_MAX' | 'ALL_MAX' | 'STRICT_ONE'>(() => {
+    if (initial?.maxOversPerBowler === 1) return 'STRICT_ONE'
+    if (initial?.maxBowlersWithMaxOvers === 1) return 'ONE_MAX'
+    if (initial?.maxBowlersWithMaxOvers === null && (initial?.maxOversPerBowler ?? 0) > 1) return 'ALL_MAX'
+    if ((initial?.totalOvers ?? 16) <= 5) return 'ONE_MAX'
+    return 'ALL_MAX'
+  })
   const [seasonId, setSeasonId] = useState(initial?.seasonId ?? '__DEFAULT__')
   const [tournamentId, setTournamentId] = useState(initial?.tournamentId ?? '__DEFAULT__')
   const [venue, setVenue] = useState(initial?.venue ?? '')
@@ -480,6 +496,64 @@ function MatchFormDialog({
             </div>
           </div>
 
+          {/* Bowler Over Limits & Rules */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-3 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <Label className="font-bold text-xs text-gray-900">Bowler Limit Rules</Label>
+              <span className="text-[10px] text-[#7A1426] font-semibold bg-[#7A1426]/10 px-2 py-0.5 rounded-full">
+                {bowlerRule === 'ONE_MAX'
+                  ? `1 bowler can bowl ${maxOversPerBowler || 2} ov (others 1 ov)`
+                  : bowlerRule === 'STRICT_ONE'
+                  ? 'Strict 1 over / bowler'
+                  : `Up to ${maxOversPerBowler || (Number(overs) <= 5 ? 2 : Math.max(1, Math.ceil(Number(overs) / 5)))} ov / bowler`}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-[11px] text-gray-600">Quota Rule</Label>
+                <Select
+                  value={bowlerRule}
+                  onValueChange={(v: 'ONE_MAX' | 'ALL_MAX' | 'STRICT_ONE') => {
+                    setBowlerRule(v)
+                    if (v === 'STRICT_ONE') setMaxOversPerBowler('1')
+                    else if (!maxOversPerBowler || maxOversPerBowler === '1') setMaxOversPerBowler('2')
+                  }}
+                >
+                  <SelectTrigger aria-label="Quota Rule" className="bg-white text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ONE_MAX">1 bowler can bowl max (others 1 ov)</SelectItem>
+                    <SelectItem value="ALL_MAX">All bowlers up to max overs</SelectItem>
+                    <SelectItem value="STRICT_ONE">Strict (1 over per bowler max)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[11px] text-gray-600">Max Overs / Bowler</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={bowlerRule === 'STRICT_ONE' ? '1' : maxOversPerBowler}
+                  onChange={(e) => setMaxOversPerBowler(e.target.value)}
+                  disabled={bowlerRule === 'STRICT_ONE'}
+                  placeholder={Number(overs) <= 5 ? '2' : String(Math.max(1, Math.ceil(Number(overs) / 5)))}
+                  className="bg-white text-xs"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-gray-500 leading-relaxed">
+              {bowlerRule === 'ONE_MAX'
+                ? 'Standard turf cricket rule: only ONE bowler in the innings can bowl 2 overs. All other bowlers bowl a maximum of 1 over.'
+                : bowlerRule === 'ALL_MAX'
+                ? 'Any bowler may bowl up to the configured max overs (non-consecutive overs rule applies).'
+                : 'Every bowler is restricted to a maximum of 1 over.'}
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
             <div className="space-y-2 min-w-0">
               <Label>Season (optional)</Label>
@@ -521,17 +595,24 @@ function MatchFormDialog({
           <Button
             className="bg-[#7A1426] hover:bg-[#5E0E1D]"
             disabled={!teamAId || !teamBId || teamAId === teamBId || (format === 'CUSTOM' && (!Number(overs) || Number(overs) < 1))}
-            onClick={() =>
+            onClick={() => {
+              const effectiveMax =
+                bowlerRule === 'STRICT_ONE'
+                  ? 1
+                  : Number(maxOversPerBowler) || (Number(overs) <= 5 ? 2 : undefined)
+              const effectiveQuota = bowlerRule === 'ONE_MAX' ? 1 : null
               onSubmit({
                 teamAId,
                 teamBId,
                 format,
                 totalOvers: format === 'CUSTOM' ? Number(overs) : undefined,
+                maxOversPerBowler: effectiveMax,
+                maxBowlersWithMaxOvers: effectiveQuota,
                 ...(seasonId !== '__DEFAULT__' ? { seasonId } : {}),
                 ...(tournamentId !== '__DEFAULT__' ? { tournamentId } : {}),
                 ...(venue.trim() ? { venue: venue.trim() } : {}),
               })
-            }
+            }}
           >
             {initial ? 'Save changes' : 'Create match'}
           </Button>

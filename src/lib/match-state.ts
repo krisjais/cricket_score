@@ -56,6 +56,8 @@ export interface MatchSummary {
   id: string
   format: string
   totalOvers: number
+  maxOversPerBowler?: number | null
+  maxBowlersWithMaxOvers?: number | null
   venue: string | null
   status: string
   seasonId?: string | null

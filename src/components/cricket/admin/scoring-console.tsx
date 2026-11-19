@@ -103,6 +103,10 @@ export function ScoringConsole({
   const [extraDialog, setExtraDialog] = useState<ExtraType | null>(null)
   const [undoOpen, setUndoOpen] = useState(false)
   const [confirmAction, setConfirmAction] = useState<'END_INNINGS' | 'ABANDON' | null>(null)
+  const [showRuleEdit, setShowRuleEdit] = useState(false)
+  const [ruleMaxOvers, setRuleMaxOvers] = useState<string>('2')
+  const [ruleQuotaMode, setRuleQuotaMode] = useState<'ONE_MAX' | 'ALL_MAX' | 'STRICT_ONE'>('ONE_MAX')
+  const [ruleSaving, setRuleSaving] = useState(false)
 
   const m = payload?.match
   const summary = matches.find((x) => x.id === matchId)
@@ -114,6 +118,24 @@ export function ScoringConsole({
   const ballsBowled = current?.totalDeliveries ?? 0
   const scoringBlocked =
     !live || busy || !!live.needsNewBatsman || live.overComplete || m?.status !== 'LIVE'
+
+  useEffect(() => {
+    if (m) {
+      if (m.maxOversPerBowler === 1) {
+        setRuleQuotaMode('STRICT_ONE')
+        setRuleMaxOvers('1')
+      } else if (m.maxBowlersWithMaxOvers === 1) {
+        setRuleQuotaMode('ONE_MAX')
+        setRuleMaxOvers(String(m.maxOversPerBowler ?? (m.totalOvers <= 5 ? 2 : Math.max(1, Math.ceil(m.totalOvers / 5)))))
+      } else if (m.maxBowlersWithMaxOvers === null && (m.maxOversPerBowler ?? 0) > 1) {
+        setRuleQuotaMode('ALL_MAX')
+        setRuleMaxOvers(String(m.maxOversPerBowler))
+      } else {
+        setRuleQuotaMode(m.totalOvers <= 5 ? 'ONE_MAX' : 'ALL_MAX')
+        setRuleMaxOvers(String(m.maxOversPerBowler ?? (m.totalOvers <= 5 ? 2 : Math.max(1, Math.ceil(m.totalOvers / 5)))))
+      }
+    }
+  }, [m?.id, m?.maxOversPerBowler, m?.maxBowlersWithMaxOvers, m?.totalOvers])
 
   const call = async (
     path: string,
@@ -1219,6 +1241,96 @@ export function ScoringConsole({
                 Choose a bowler from the fielding team to deliver the over.
               </DialogDescription>
             </DialogHeader>
+
+            {/* Bowler Rule Badge & Inline Quick Editor */}
+            {m && (
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-200/90 text-xs space-y-2 mt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="font-bold text-gray-700">Bowler Limit:</span>{' '}
+                    <span className="text-[#7A1426] font-extrabold">
+                      {m.maxBowlersWithMaxOvers === 1
+                        ? `1 bowler can bowl ${m.maxOversPerBowler ?? 2} overs (others 1 ov)`
+                        : m.maxOversPerBowler === 1
+                        ? 'Strict 1 over / bowler'
+                        : `Any bowler up to ${m.maxOversPerBowler ?? (m.totalOvers <= 5 ? 2 : Math.max(1, Math.ceil(m.totalOvers / 5)))} overs`}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowRuleEdit(!showRuleEdit)}
+                    className="text-xs font-bold text-[#7A1426] hover:text-[#5E0E1D] underline cursor-pointer shrink-0"
+                  >
+                    {showRuleEdit ? 'Close' : 'Edit Rule'}
+                  </button>
+                </div>
+
+                {showRuleEdit && (
+                  <div className="pt-2.5 border-t border-gray-200 space-y-2.5 animate-in fade-in duration-150">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[11px] font-medium text-gray-600 block mb-1">Quota Mode</label>
+                        <select
+                          value={ruleQuotaMode}
+                          onChange={(e) => {
+                            const val = e.target.value as 'ONE_MAX' | 'ALL_MAX' | 'STRICT_ONE'
+                            setRuleQuotaMode(val)
+                            if (val === 'STRICT_ONE') setRuleMaxOvers('1')
+                            else if (!ruleMaxOvers || ruleMaxOvers === '1') setRuleMaxOvers('2')
+                          }}
+                          className="w-full text-xs px-2 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold focus:outline-none focus:ring-1 focus:ring-[#7A1426]"
+                        >
+                          <option value="ONE_MAX">1 bowler can bowl max (others 1 ov)</option>
+                          <option value="ALL_MAX">All bowlers up to max overs</option>
+                          <option value="STRICT_ONE">Strict (1 over per bowler max)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-medium text-gray-600 block mb-1">Max Overs / Bowler</label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={ruleQuotaMode === 'STRICT_ONE' ? '1' : ruleMaxOvers}
+                          onChange={(e) => setRuleMaxOvers(e.target.value)}
+                          disabled={ruleQuotaMode === 'STRICT_ONE'}
+                          placeholder={m.totalOvers <= 5 ? '2' : String(Math.max(1, Math.ceil(m.totalOvers / 5)))}
+                          className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold focus:outline-none focus:ring-1 focus:ring-[#7A1426] disabled:bg-gray-100 disabled:text-gray-400"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={ruleSaving}
+                      onClick={async () => {
+                        setRuleSaving(true)
+                        try {
+                          const targetMax = ruleQuotaMode === 'STRICT_ONE' ? 1 : Number(ruleMaxOvers) || 2
+                          const targetQuota = ruleQuotaMode === 'ONE_MAX' ? 1 : null
+                          await api(`/api/matches/${m.id}`, {
+                            method: 'PATCH',
+                            json: {
+                              maxOversPerBowler: targetMax,
+                              maxBowlersWithMaxOvers: targetQuota,
+                            },
+                          })
+                          setShowRuleEdit(false)
+                          toast({ title: 'Bowler over limit updated' })
+                        } catch (err: any) {
+                          toast({ title: 'Failed to update rule', description: err.message, variant: 'destructive' })
+                        } finally {
+                          setRuleSaving(false)
+                        }
+                      }}
+                      className="w-full py-1.5 px-3 rounded-lg bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold text-xs shadow-xs cursor-pointer transition-colors"
+                    >
+                      {ruleSaving ? 'Saving...' : 'Apply Rule'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid gap-2 max-h-[320px] overflow-y-auto py-2">
               {live.bowlers.map((b) => (
                 <button
