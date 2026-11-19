@@ -436,9 +436,8 @@ function MatchFormDialog({
       ? String(initial.maxOversPerBowler)
       : '1'
   )
-  const [bowlerRule, setBowlerRule] = useState<'STRICT_ONE' | 'ONE_MAX' | 'ALL_MAX'>(() => {
+  const [bowlerRule, setBowlerRule] = useState<'STRICT_ONE' | 'ONE_MAX'>(() => {
     if (initial?.maxBowlersWithMaxOvers === 1 && (initial?.maxOversPerBowler ?? 1) >= 2) return 'ONE_MAX'
-    if (initial?.maxBowlersWithMaxOvers === null && (initial?.maxOversPerBowler ?? 0) > 1) return 'ALL_MAX'
     return 'STRICT_ONE'
   })
   const [seasonId, setSeasonId] = useState(initial?.seasonId ?? '__DEFAULT__')
@@ -595,9 +594,7 @@ function MatchFormDialog({
               <span className="text-[10px] text-[#7A1426] font-semibold bg-[#7A1426]/10 px-2 py-0.5 rounded-full">
                 {bowlerRule === 'ONE_MAX'
                   ? `1 bowler can bowl ${maxOversPerBowler || 2} ov (others 1 ov)`
-                  : bowlerRule === 'STRICT_ONE'
-                  ? 'Strict 1 over / bowler'
-                  : `Up to ${maxOversPerBowler || (Number(overs) <= 5 ? 2 : Math.max(1, Math.ceil(Number(overs) / 5)))} ov / bowler`}
+                  : 'Strict 1 over / bowler'}
               </span>
             </div>
 
@@ -606,7 +603,7 @@ function MatchFormDialog({
                 <Label className="text-[11px] text-gray-600">Quota Rule</Label>
                 <Select
                   value={bowlerRule}
-                  onValueChange={(v: 'ONE_MAX' | 'ALL_MAX' | 'STRICT_ONE') => {
+                  onValueChange={(v: 'ONE_MAX' | 'STRICT_ONE') => {
                     setBowlerRule(v)
                     if (v === 'STRICT_ONE') setMaxOversPerBowler('1')
                     else if (!maxOversPerBowler || maxOversPerBowler === '1') setMaxOversPerBowler('2')
@@ -618,7 +615,6 @@ function MatchFormDialog({
                   <SelectContent>
                     <SelectItem value="STRICT_ONE">Strict: 1 over per bowler (Default)</SelectItem>
                     <SelectItem value="ONE_MAX">Allow 1 bowler to bowl 2 overs (others 1 ov)</SelectItem>
-                    <SelectItem value="ALL_MAX">All bowlers up to max overs</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -632,7 +628,7 @@ function MatchFormDialog({
                   value={bowlerRule === 'STRICT_ONE' ? '1' : maxOversPerBowler}
                   onChange={(e) => setMaxOversPerBowler(e.target.value)}
                   disabled={bowlerRule === 'STRICT_ONE'}
-                  placeholder={Number(overs) <= 5 ? '2' : String(Math.max(1, Math.ceil(Number(overs) / 5)))}
+                  placeholder="2"
                   className="bg-white text-xs"
                 />
               </div>
@@ -640,9 +636,7 @@ function MatchFormDialog({
             <p className="text-[10px] text-gray-500 leading-relaxed">
               {bowlerRule === 'ONE_MAX'
                 ? 'Standard turf cricket rule: only ONE bowler in the innings can bowl 2 overs. All other bowlers bowl a maximum of 1 over.'
-                : bowlerRule === 'ALL_MAX'
-                ? 'Any bowler may bowl up to the configured max overs (non-consecutive overs rule applies).'
-                : 'Every bowler is restricted to a maximum of 1 over.'}
+                : 'Strict rule: every bowler is restricted to a maximum of 1 over.'}
             </p>
           </div>
 

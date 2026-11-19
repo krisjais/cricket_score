@@ -107,7 +107,7 @@ export function ScoringConsole({
   const [confirmAction, setConfirmAction] = useState<'END_INNINGS' | 'ABANDON' | null>(null)
   const [showRuleEdit, setShowRuleEdit] = useState(false)
   const [ruleMaxOvers, setRuleMaxOvers] = useState<string>('2')
-  const [ruleQuotaMode, setRuleQuotaMode] = useState<'ONE_MAX' | 'ALL_MAX' | 'STRICT_ONE'>('ONE_MAX')
+  const [ruleQuotaMode, setRuleQuotaMode] = useState<'ONE_MAX' | 'STRICT_ONE'>('STRICT_ONE')
   const [ruleSaving, setRuleSaving] = useState(false)
 
   const [showUmpireEdit, setShowUmpireEdit] = useState(false)
@@ -159,21 +159,15 @@ export function ScoringConsole({
 
   useEffect(() => {
     if (m) {
-      if (m.maxOversPerBowler === 1) {
+      if (m.maxBowlersWithMaxOvers === 1 && (m.maxOversPerBowler ?? 1) >= 2) {
+        setRuleQuotaMode('ONE_MAX')
+        setRuleMaxOvers(String(m.maxOversPerBowler ?? 2))
+      } else {
         setRuleQuotaMode('STRICT_ONE')
         setRuleMaxOvers('1')
-      } else if (m.maxBowlersWithMaxOvers === 1) {
-        setRuleQuotaMode('ONE_MAX')
-        setRuleMaxOvers(String(m.maxOversPerBowler ?? (m.totalOvers <= 5 ? 2 : Math.max(1, Math.ceil(m.totalOvers / 5)))))
-      } else if (m.maxBowlersWithMaxOvers === null && (m.maxOversPerBowler ?? 0) > 1) {
-        setRuleQuotaMode('ALL_MAX')
-        setRuleMaxOvers(String(m.maxOversPerBowler))
-      } else {
-        setRuleQuotaMode(m.totalOvers <= 5 ? 'ONE_MAX' : 'ALL_MAX')
-        setRuleMaxOvers(String(m.maxOversPerBowler ?? (m.totalOvers <= 5 ? 2 : Math.max(1, Math.ceil(m.totalOvers / 5)))))
       }
     }
-  }, [m?.id, m?.maxOversPerBowler, m?.maxBowlersWithMaxOvers, m?.totalOvers])
+  }, [m?.id, m?.maxOversPerBowler, m?.maxBowlersWithMaxOvers])
 
   const call = async (
     path: string,
