@@ -628,6 +628,24 @@ export function MatchPage({
                   <dt className="font-bold text-gray-500 uppercase tracking-wider">Status</dt>
                   <dd className="font-bold text-[#7A1426] mt-0.5">{m.status.replace('_', ' ')}</dd>
                 </div>
+                {(m.mainUmpire || m.legUmpire) && (
+                  <>
+                    <div>
+                      <dt className="font-bold text-gray-500 uppercase tracking-wider">Main Umpire</dt>
+                      <dd className="font-semibold text-[#111827] mt-0.5">
+                        {m.mainUmpire?.name || '—'}
+                        {m.mainUmpire?.teamName ? ` (${m.mainUmpire.teamName})` : ''}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-bold text-gray-500 uppercase tracking-wider">Leg Umpire</dt>
+                      <dd className="font-semibold text-[#111827] mt-0.5">
+                        {m.legUmpire?.name || '—'}
+                        {m.legUmpire?.teamName ? ` (${m.legUmpire.teamName})` : ''}
+                      </dd>
+                    </div>
+                  </>
+                )}
                 {m.resultText && (
                   <div className="sm:col-span-2 pt-2 border-t border-gray-100">
                     <dt className="font-bold text-gray-500 uppercase tracking-wider">Official Result</dt>

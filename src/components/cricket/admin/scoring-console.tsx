@@ -19,7 +19,9 @@ import {
   RotateCcw,
   ScrollText,
   ShieldAlert,
+  ShieldCheck,
   Undo2,
+  UserCheck,
   ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -107,6 +109,42 @@ export function ScoringConsole({
   const [ruleMaxOvers, setRuleMaxOvers] = useState<string>('2')
   const [ruleQuotaMode, setRuleQuotaMode] = useState<'ONE_MAX' | 'ALL_MAX' | 'STRICT_ONE'>('ONE_MAX')
   const [ruleSaving, setRuleSaving] = useState(false)
+
+  const [showUmpireEdit, setShowUmpireEdit] = useState(false)
+  const [umpireSaving, setUmpireSaving] = useState(false)
+  const [scorerTeams, setScorerTeams] = useState<any[]>([])
+
+  useEffect(() => {
+    if (showUmpireEdit && scorerTeams.length === 0) {
+      api<any[]>('/api/teams').then((res) => setScorerTeams(res)).catch(() => {})
+    }
+  }, [showUmpireEdit, scorerTeams.length])
+
+  const handleSwapUmpires = async () => {
+    if (!payload?.match) return
+    const curMatch = payload.match
+    const curInnings = Array.isArray(payload.innings)
+      ? payload.innings.find((i) => i.number === curMatch.currentInnings)
+      : null
+    const curMain = curInnings?.mainUmpire || curMatch.mainUmpire
+    const curLeg = curInnings?.legUmpire || curMatch.legUmpire
+    if (!curMain && !curLeg) return
+    setUmpireSaving(true)
+    try {
+      await api(`/api/matches/${curMatch.id}`, {
+        method: 'PATCH',
+        json: {
+          mainUmpire: curLeg,
+          legUmpire: curMain,
+        },
+      })
+      toast({ title: 'Umpires switched (Main ↔ Leg)' })
+    } catch (err: any) {
+      toast({ title: 'Failed to switch umpires', description: err.message, variant: 'destructive' })
+    } finally {
+      setUmpireSaving(false)
+    }
+  }
 
   const m = payload?.match
   const summary = matches.find((x) => x.id === matchId)
@@ -500,6 +538,22 @@ export function ScoringConsole({
                       )}
                     </div>
                   </div>
+                  {(current.mainUmpire || m.mainUmpire || current.legUmpire || m.legUmpire) && (
+                    <div className="flex items-center justify-between pt-1.5 mt-2 border-t border-gray-100 text-[10px] text-gray-600">
+                      <span className="truncate">
+                        Umpires: <b className="text-gray-900">{current.mainUmpire?.name || m.mainUmpire?.name || '—'}</b> (Main) · <b className="text-gray-900">{current.legUmpire?.name || m.legUmpire?.name || '—'}</b> (Leg)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleSwapUmpires}
+                        disabled={umpireSaving}
+                        className="text-[#7A1426] font-bold underline shrink-0 ml-1.5 flex items-center gap-0.5"
+                      >
+                        <ArrowLeftRight className="h-2.5 w-2.5" />
+                        Swap
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* CARD 2: BATTERS & BOWLER TABLE */}
@@ -753,6 +807,24 @@ export function ScoringConsole({
                         <span className="text-xs text-gray-500 font-medium">
                           • {m.venue}
                         </span>
+                      )}
+                      {(current.mainUmpire || m.mainUmpire || current.legUmpire || m.legUmpire) && (
+                        <div className="flex items-center gap-1.5 text-xs text-gray-700 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-lg">
+                          <ShieldCheck className="h-3.5 w-3.5 text-[#7A1426]" />
+                          <span>
+                            Umpires: <b>{current.mainUmpire?.name || m.mainUmpire?.name || '—'}</b> (Main) · <b>{current.legUmpire?.name || m.legUmpire?.name || '—'}</b> (Leg)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleSwapUmpires}
+                            disabled={umpireSaving}
+                            className="ml-1 text-[11px] font-bold text-[#7A1426] hover:text-[#5E0E1D] underline flex items-center gap-0.5 cursor-pointer"
+                            title="Swap Main and Leg Umpire"
+                          >
+                            <ArrowLeftRight className="h-3 w-3" />
+                            Swap
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -1220,6 +1292,7 @@ export function ScoringConsole({
       {startOpen && summary && (
         <StartInningsDialog
           match={summary}
+          matches={matches}
           onClose={() => setStartOpen(false)}
           onSubmit={async (data) => {
             const done = await call(

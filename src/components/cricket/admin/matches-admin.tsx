@@ -31,16 +31,24 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Pencil, Trash2, Coins, Play, PauseCircle, Flag, Eye, ShieldCheck } from 'lucide-react'
-import { api, FORMAT_LABEL, type MatchSummary } from '@/lib/client'
+import { Plus, Pencil, Trash2, Coins, Play, PauseCircle, Flag, Eye, ShieldCheck, ArrowLeftRight, UserCheck } from 'lucide-react'
+import { api, FORMAT_LABEL, type MatchSummary, type MatchUmpire } from '@/lib/client'
 import type { SeasonDto, TournamentDto } from '@/components/cricket/player/player-types'
 import { StatusBadge, TeamLogo } from '@/components/cricket/ui-bits'
 import { useToast } from '@/hooks/use-toast'
+
+interface TeamPlayer {
+  id: string
+  name: string
+  role?: string
+  jerseyNumber?: number | null
+}
 
 interface TeamRow {
   id: string
   name: string
   shortName: string
+  players?: TeamPlayer[]
 }
 
 const FORMATS = [
@@ -161,6 +169,11 @@ export function MatchesAdmin({
                       : m.venue || 'No venue set'}
                     {m.resultText ? ` — ${m.resultText}` : ''}
                   </p>
+                  {(m.mainUmpire || m.legUmpire) && (
+                    <p className="truncate text-[11px] text-gray-500 font-medium mt-0.5">
+                      Umpires: <span className="text-gray-800 font-semibold">{m.mainUmpire?.name || '—'} (Main)</span> · <span className="text-gray-800 font-semibold">{m.legUmpire?.name || '—'} (Leg)</span>
+                    </p>
+                  )}
                 </div>
                 <TeamLogo name={m.teamB.name} shortName={m.teamB.shortName} color={m.teamB.color} logoUrl={m.teamB.logoUrl} />
               </div>
@@ -268,6 +281,7 @@ export function MatchesAdmin({
       {createOpen && (
         <MatchFormDialog
           teams={teams}
+          matches={matches}
           seasons={seasons}
           tournaments={tournaments}
           onClose={() => setCreateOpen(false)}
@@ -280,6 +294,7 @@ export function MatchesAdmin({
       {editMatch && (
         <MatchFormDialog
           teams={teams}
+          matches={matches}
           seasons={seasons}
           tournaments={tournaments}
           initial={editMatch}
@@ -313,6 +328,8 @@ export function MatchesAdmin({
       {startMatch && (
         <StartInningsDialog
           match={startMatch}
+          teams={teams}
+          matches={matches}
           onClose={() => setStartMatch(null)}
           onSubmit={async (data) => {
             const done = await act(() => api(`/api/matches/${startMatch.id}/start`, { method: 'POST', json: data }), startMatch.status === 'INNINGS_BREAK' ? 'Innings 2 started' : 'Match started')
@@ -383,6 +400,7 @@ export function MatchesAdmin({
 
 function MatchFormDialog({
   teams,
+  matches = [],
   seasons,
   tournaments,
   initial,
@@ -390,6 +408,7 @@ function MatchFormDialog({
   onSubmit,
 }: {
   teams: TeamRow[]
+  matches?: MatchSummary[]
   seasons: SeasonDto[]
   tournaments: TournamentDto[]
   initial?: MatchSummary
@@ -401,6 +420,8 @@ function MatchFormDialog({
     totalOvers?: number
     maxOversPerBowler?: number
     maxBowlersWithMaxOvers?: number | null
+    mainUmpire?: MatchUmpire | null
+    legUmpire?: MatchUmpire | null
     seasonId?: string
     tournamentId?: string
     venue?: string
@@ -425,9 +446,84 @@ function MatchFormDialog({
   const [venue, setVenue] = useState(initial?.venue ?? '')
   const editable = !initial || ['SCHEDULED', 'TOSS_DONE'].includes(initial.status)
 
+  // Umpires state
+  const [mainUmpireTeamId, setMainUmpireTeamId] = useState(initial?.mainUmpire?.teamId ?? '')
+  const [mainUmpirePlayerId, setMainUmpirePlayerId] = useState(initial?.mainUmpire?.playerId ?? '')
+  const [mainUmpireName, setMainUmpireName] = useState(initial?.mainUmpire?.name ?? '')
+
+  const [legUmpireTeamId, setLegUmpireTeamId] = useState(initial?.legUmpire?.teamId ?? '')
+  const [legUmpirePlayerId, setLegUmpirePlayerId] = useState(initial?.legUmpire?.playerId ?? '')
+  const [legUmpireName, setLegUmpireName] = useState(initial?.legUmpire?.name ?? '')
+
+  // Exclude teams that are currently LIVE or PAUSED in other matches
+  const effectiveLiveTeamIds = useMemo(() => {
+    const set = new Set<string>()
+    for (const m of matches) {
+      if (m.id !== initial?.id && (m.status === 'LIVE' || m.status === 'PAUSED')) {
+        set.add(m.teamA.id)
+        set.add(m.teamB.id)
+      }
+    }
+    return set
+  }, [matches, initial?.id])
+
+  // Reset umpire if user picked playing teams as umpire's team
+  useEffect(() => {
+    if (mainUmpireTeamId && (mainUmpireTeamId === teamAId || mainUmpireTeamId === teamBId)) {
+      setMainUmpireTeamId('')
+      setMainUmpirePlayerId('')
+      setMainUmpireName('')
+    }
+  }, [teamAId, teamBId, mainUmpireTeamId])
+
+  useEffect(() => {
+    if (legUmpireTeamId && (legUmpireTeamId === teamAId || legUmpireTeamId === teamBId)) {
+      setLegUmpireTeamId('')
+      setLegUmpirePlayerId('')
+      setLegUmpireName('')
+    }
+  }, [teamAId, teamBId, legUmpireTeamId])
+
+  const eligibleTeamsForMain = useMemo(() => {
+    return teams.filter(
+      (t) =>
+        t.id !== teamAId &&
+        t.id !== teamBId &&
+        !effectiveLiveTeamIds.has(t.id) &&
+        (!legUmpireTeamId || t.id !== legUmpireTeamId)
+    )
+  }, [teams, teamAId, teamBId, effectiveLiveTeamIds, legUmpireTeamId])
+
+  const eligibleTeamsForLeg = useMemo(() => {
+    return teams.filter(
+      (t) =>
+        t.id !== teamAId &&
+        t.id !== teamBId &&
+        !effectiveLiveTeamIds.has(t.id) &&
+        (!mainUmpireTeamId || t.id !== mainUmpireTeamId)
+    )
+  }, [teams, teamAId, teamBId, effectiveLiveTeamIds, mainUmpireTeamId])
+
+  const mainTeamObj = teams.find((t) => t.id === mainUmpireTeamId)
+  const legTeamObj = teams.find((t) => t.id === legUmpireTeamId)
+
+  const swapRoles = () => {
+    const tempTeam = mainUmpireTeamId
+    const tempPlayer = mainUmpirePlayerId
+    const tempName = mainUmpireName
+
+    setMainUmpireTeamId(legUmpireTeamId)
+    setMainUmpirePlayerId(legUmpirePlayerId)
+    setMainUmpireName(legUmpireName)
+
+    setLegUmpireTeamId(tempTeam)
+    setLegUmpirePlayerId(tempPlayer)
+    setLegUmpireName(tempName)
+  }
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initial ? 'Edit match' : 'Create match'}</DialogTitle>
           <DialogDescription>
@@ -550,6 +646,168 @@ function MatchFormDialog({
             </p>
           </div>
 
+          {/* Match Officials / Umpires Section */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-[#7A1426]" />
+                <Label className="font-bold text-xs text-gray-900">Match Officials (Umpires)</Label>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={swapRoles}
+                disabled={!mainUmpireName && !legUmpireName}
+                className="h-6 text-[10px] font-bold text-[#7A1426] border-[#7A1426]/30 hover:bg-[#7A1426]/10 px-2 flex items-center gap-1 rounded-md"
+              >
+                <ArrowLeftRight className="h-2.5 w-2.5" />
+                Switch Roles (Main ↔ Leg)
+              </Button>
+            </div>
+            <p className="text-[10px] text-gray-500 leading-tight">
+              Select 2 umpires from different neutral teams (cannot be from playing teams or teams in a live match).
+            </p>
+
+            {/* 1) Main Umpire */}
+            <div className="p-2.5 rounded-lg bg-white border border-gray-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-800 flex items-center gap-1">
+                  <span className="w-4 h-4 rounded-full bg-[#7A1426] text-white flex items-center justify-center text-[10px] font-black">1</span>
+                  Main Umpire
+                </span>
+                {mainTeamObj && (
+                  <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                    {mainTeamObj.name}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-gray-500">From Neutral Team</Label>
+                  <Select
+                    value={mainUmpireTeamId}
+                    onValueChange={(val) => {
+                      setMainUmpireTeamId(val)
+                      setMainUmpirePlayerId('')
+                      const t = teams.find((x) => x.id === val)
+                      if (t?.players && t.players.length > 0) {
+                        setMainUmpirePlayerId(t.players[0].id)
+                        setMainUmpireName(t.players[0].name)
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="text-xs bg-white h-8"><SelectValue placeholder="Select neutral team" /></SelectTrigger>
+                    <SelectContent>
+                      {eligibleTeamsForMain.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-gray-500">Umpire / Player Name</Label>
+                  {mainTeamObj?.players && mainTeamObj.players.length > 0 ? (
+                    <Select
+                      value={mainUmpirePlayerId}
+                      onValueChange={(pId) => {
+                        setMainUmpirePlayerId(pId)
+                        const p = mainTeamObj.players?.find((x) => x.id === pId)
+                        if (p) setMainUmpireName(p.name)
+                      }}
+                    >
+                      <SelectTrigger className="text-xs bg-white h-8"><SelectValue placeholder="Select official / player" /></SelectTrigger>
+                      <SelectContent>
+                        {mainTeamObj.players.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.jerseyNumber !== null && p.jerseyNumber !== undefined ? `#${p.jerseyNumber} ` : ''}{p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      value={mainUmpireName}
+                      onChange={(e) => setMainUmpireName(e.target.value)}
+                      placeholder="Official full name"
+                      className="text-xs bg-white h-8"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 2) Leg Umpire */}
+            <div className="p-2.5 rounded-lg bg-white border border-gray-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-800 flex items-center gap-1">
+                  <span className="w-4 h-4 rounded-full bg-gray-700 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                  Leg Umpire
+                </span>
+                {legTeamObj && (
+                  <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                    {legTeamObj.name}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-gray-500">From Neutral Team</Label>
+                  <Select
+                    value={legUmpireTeamId}
+                    onValueChange={(val) => {
+                      setLegUmpireTeamId(val)
+                      setLegUmpirePlayerId('')
+                      const t = teams.find((x) => x.id === val)
+                      if (t?.players && t.players.length > 0) {
+                        setLegUmpirePlayerId(t.players[0].id)
+                        setLegUmpireName(t.players[0].name)
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="text-xs bg-white h-8"><SelectValue placeholder="Select neutral team" /></SelectTrigger>
+                    <SelectContent>
+                      {eligibleTeamsForLeg.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-gray-500">Umpire / Player Name</Label>
+                  {legTeamObj?.players && legTeamObj.players.length > 0 ? (
+                    <Select
+                      value={legUmpirePlayerId}
+                      onValueChange={(pId) => {
+                        setLegUmpirePlayerId(pId)
+                        const p = legTeamObj.players?.find((x) => x.id === pId)
+                        if (p) setLegUmpireName(p.name)
+                      }}
+                    >
+                      <SelectTrigger className="text-xs bg-white h-8"><SelectValue placeholder="Select official / player" /></SelectTrigger>
+                      <SelectContent>
+                        {legTeamObj.players.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.jerseyNumber !== null && p.jerseyNumber !== undefined ? `#${p.jerseyNumber} ` : ''}{p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      value={legUmpireName}
+                      onChange={(e) => setLegUmpireName(e.target.value)}
+                      placeholder="Official full name"
+                      className="text-xs bg-white h-8"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0">
             <div className="space-y-2 min-w-0">
               <Label>Season (optional)</Label>
@@ -597,6 +855,23 @@ function MatchFormDialog({
                   ? 1
                   : Number(maxOversPerBowler) || (Number(overs) <= 5 ? 2 : undefined)
               const effectiveQuota = bowlerRule === 'ONE_MAX' ? 1 : null
+              const mainUmpirePayload: MatchUmpire | null = mainUmpireName.trim()
+                ? {
+                    name: mainUmpireName.trim(),
+                    teamId: mainUmpireTeamId || null,
+                    teamName: mainTeamObj?.name ?? null,
+                    playerId: mainUmpirePlayerId || null,
+                  }
+                : null
+              const legUmpirePayload: MatchUmpire | null = legUmpireName.trim()
+                ? {
+                    name: legUmpireName.trim(),
+                    teamId: legUmpireTeamId || null,
+                    teamName: legTeamObj?.name ?? null,
+                    playerId: legUmpirePlayerId || null,
+                  }
+                : null
+
               onSubmit({
                 teamAId,
                 teamBId,
@@ -604,6 +879,8 @@ function MatchFormDialog({
                 totalOvers: format === 'CUSTOM' ? Number(overs) : undefined,
                 maxOversPerBowler: effectiveMax,
                 maxBowlersWithMaxOvers: effectiveQuota,
+                mainUmpire: mainUmpirePayload,
+                legUmpire: legUmpirePayload,
                 ...(seasonId !== '__DEFAULT__' ? { seasonId } : {}),
                 ...(tournamentId !== '__DEFAULT__' ? { tournamentId } : {}),
                 ...(venue.trim() ? { venue: venue.trim() } : {}),
@@ -682,26 +959,116 @@ export function TossDialog({
 }
 
 // ---------------------------------------------------------------------------
-// Start innings dialog (openers + bowler)
+// Start innings dialog (openers + bowler + umpires)
 // ---------------------------------------------------------------------------
 
 export function StartInningsDialog({
   match,
+  teams,
+  matches = [],
   onClose,
   onSubmit,
 }: {
   match: MatchSummary
+  teams?: TeamRow[]
+  matches?: MatchSummary[]
   onClose: () => void
-  onSubmit: (data: { strikerId: string; nonStrikerId: string; bowlerId: string }) => void
+  onSubmit: (data: {
+    strikerId: string
+    nonStrikerId: string
+    bowlerId: string
+    mainUmpire?: MatchUmpire | null
+    legUmpire?: MatchUmpire | null
+  }) => void
 }) {
   const [squads, setSquads] = useState<{
     batting: { id: string; name: string; role: string; jerseyNumber: number | null }[]
     bowling: { id: string; name: string; role: string; jerseyNumber: number | null }[]
   } | null>(null)
+  const [allTeams, setAllTeams] = useState<TeamRow[]>(teams ?? [])
   const [strikerId, setStrikerId] = useState('')
   const [nonStrikerId, setNonStrikerId] = useState('')
   const [bowlerId, setBowlerId] = useState('')
   const isSecond = match.status === 'INNINGS_BREAK'
+
+  useEffect(() => {
+    if (!teams || teams.length === 0) {
+      api<TeamRow[]>('/api/teams').then((t) => setAllTeams(t)).catch(() => {})
+    }
+  }, [teams])
+
+  const effectiveTeams = teams && teams.length > 0 ? teams : allTeams
+
+  // Umpires state: for innings 2, automatically swap roles from innings 1!
+  const [mainUmpireTeamId, setMainUmpireTeamId] = useState(() =>
+    isSecond ? (match.legUmpire?.teamId ?? '') : (match.mainUmpire?.teamId ?? '')
+  )
+  const [mainUmpirePlayerId, setMainUmpirePlayerId] = useState(() =>
+    isSecond ? (match.legUmpire?.playerId ?? '') : (match.mainUmpire?.playerId ?? '')
+  )
+  const [mainUmpireName, setMainUmpireName] = useState(() =>
+    isSecond ? (match.legUmpire?.name ?? '') : (match.mainUmpire?.name ?? '')
+  )
+
+  const [legUmpireTeamId, setLegUmpireTeamId] = useState(() =>
+    isSecond ? (match.mainUmpire?.teamId ?? '') : (match.legUmpire?.teamId ?? '')
+  )
+  const [legUmpirePlayerId, setLegUmpirePlayerId] = useState(() =>
+    isSecond ? (match.mainUmpire?.playerId ?? '') : (match.legUmpire?.playerId ?? '')
+  )
+  const [legUmpireName, setLegUmpireName] = useState(() =>
+    isSecond ? (match.mainUmpire?.name ?? '') : (match.legUmpire?.name ?? '')
+  )
+
+  // Live teams exclusion
+  const effectiveLiveTeamIds = useMemo(() => {
+    const set = new Set<string>()
+    for (const m of matches) {
+      if (m.id !== match.id && (m.status === 'LIVE' || m.status === 'PAUSED')) {
+        set.add(m.teamA.id)
+        set.add(m.teamB.id)
+      }
+    }
+    return set
+  }, [matches, match.id])
+
+  const eligibleTeamsForMain = useMemo(() => {
+    return effectiveTeams.filter(
+      (t) =>
+        t.id !== match.teamA.id &&
+        t.id !== match.teamB.id &&
+        !effectiveLiveTeamIds.has(t.id) &&
+        (!legUmpireTeamId || t.id !== legUmpireTeamId)
+    )
+  }, [effectiveTeams, match.teamA.id, match.teamB.id, effectiveLiveTeamIds, legUmpireTeamId])
+
+  const eligibleTeamsForLeg = useMemo(() => {
+    return effectiveTeams.filter(
+      (t) =>
+        t.id !== match.teamA.id &&
+        t.id !== match.teamB.id &&
+        !effectiveLiveTeamIds.has(t.id) &&
+        (!mainUmpireTeamId || t.id !== mainUmpireTeamId)
+    )
+  }, [effectiveTeams, match.teamA.id, match.teamB.id, effectiveLiveTeamIds, mainUmpireTeamId])
+
+  const mainTeamObj = effectiveTeams.find((t) => t.id === mainUmpireTeamId)
+  const legTeamObj = effectiveTeams.find((t) => t.id === legUmpireTeamId)
+
+  const swapRoles = () => {
+    const tempTeam = mainUmpireTeamId
+    const tempPlayer = mainUmpirePlayerId
+    const tempName = mainUmpireName
+
+    setMainUmpireTeamId(legUmpireTeamId)
+    setMainUmpirePlayerId(legUmpirePlayerId)
+    setMainUmpireName(legUmpireName)
+
+    setLegUmpireTeamId(tempTeam)
+    setLegUmpirePlayerId(tempPlayer)
+    setLegUmpireName(tempName)
+  }
+
   const battingTeamId = useMemo(() => {
     if (!isSecond) return match.battingFirstId ?? match.teamA.id
     const inn1 = match.scores.find((s) => s.number === 1)
@@ -729,11 +1096,13 @@ export function StartInningsDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isSecond ? 'Start second innings' : 'Start match'}</DialogTitle>
           <DialogDescription>
-            Choose the two opening batters and the opening bowler.
+            {isSecond
+              ? 'Choose opening batters and bowler. Umpires automatically switch roles for Innings 2.'
+              : 'Choose the two opening batters, opening bowler, and verify match officials.'}
           </DialogDescription>
         </DialogHeader>
         {!squads ? (
@@ -779,6 +1148,176 @@ export function StartInningsDialog({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Match Officials / Umpires Section */}
+            <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-3 space-y-3 pt-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-[#7A1426]" />
+                  <Label className="font-bold text-xs text-gray-900">
+                    {isSecond ? 'Match Officials (Switched for Innings 2)' : 'Match Officials (Umpires)'}
+                  </Label>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={swapRoles}
+                  disabled={!mainUmpireName && !legUmpireName}
+                  className="h-6 text-[10px] font-bold text-[#7A1426] border-[#7A1426]/30 hover:bg-[#7A1426]/10 px-2 flex items-center gap-1 rounded-md"
+                >
+                  <ArrowLeftRight className="h-2.5 w-2.5" />
+                  Switch Roles (Main ↔ Leg)
+                </Button>
+              </div>
+
+              {isSecond && (
+                <div className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+                  <UserCheck className="h-3 w-3 text-emerald-600 shrink-0" />
+                  <span>
+                    Roles automatically switched for Innings 2. You can also reassign neutral umpires below.
+                  </span>
+                </div>
+              )}
+
+              {/* 1) Main Umpire */}
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-800 flex items-center gap-1">
+                    <span className="w-4 h-4 rounded-full bg-[#7A1426] text-white flex items-center justify-center text-[10px] font-black">1</span>
+                    Main Umpire
+                  </span>
+                  {mainTeamObj && (
+                    <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                      {mainTeamObj.name}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-gray-500">From Neutral Team</Label>
+                    <Select
+                      value={mainUmpireTeamId}
+                      onValueChange={(val) => {
+                        setMainUmpireTeamId(val)
+                        setMainUmpirePlayerId('')
+                        const t = effectiveTeams.find((x) => x.id === val)
+                        if (t?.players && t.players.length > 0) {
+                          setMainUmpirePlayerId(t.players[0].id)
+                          setMainUmpireName(t.players[0].name)
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="text-xs bg-white h-8"><SelectValue placeholder="Select neutral team" /></SelectTrigger>
+                      <SelectContent>
+                        {eligibleTeamsForMain.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-gray-500">Umpire / Player Name</Label>
+                    {mainTeamObj?.players && mainTeamObj.players.length > 0 ? (
+                      <Select
+                        value={mainUmpirePlayerId}
+                        onValueChange={(pId) => {
+                          setMainUmpirePlayerId(pId)
+                          const p = mainTeamObj.players?.find((x) => x.id === pId)
+                          if (p) setMainUmpireName(p.name)
+                        }}
+                      >
+                        <SelectTrigger className="text-xs bg-white h-8"><SelectValue placeholder="Select official / player" /></SelectTrigger>
+                        <SelectContent>
+                          {mainTeamObj.players.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.jerseyNumber !== null && p.jerseyNumber !== undefined ? `#${p.jerseyNumber} ` : ''}{p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={mainUmpireName}
+                        onChange={(e) => setMainUmpireName(e.target.value)}
+                        placeholder="Official full name"
+                        className="text-xs bg-white h-8"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* 2) Leg Umpire */}
+              <div className="p-2.5 rounded-lg bg-white border border-gray-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-800 flex items-center gap-1">
+                    <span className="w-4 h-4 rounded-full bg-gray-700 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                    Leg Umpire
+                  </span>
+                  {legTeamObj && (
+                    <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                      {legTeamObj.name}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-gray-500">From Neutral Team</Label>
+                    <Select
+                      value={legUmpireTeamId}
+                      onValueChange={(val) => {
+                        setLegUmpireTeamId(val)
+                        setLegUmpirePlayerId('')
+                        const t = effectiveTeams.find((x) => x.id === val)
+                        if (t?.players && t.players.length > 0) {
+                          setLegUmpirePlayerId(t.players[0].id)
+                          setLegUmpireName(t.players[0].name)
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="text-xs bg-white h-8"><SelectValue placeholder="Select neutral team" /></SelectTrigger>
+                      <SelectContent>
+                        {eligibleTeamsForLeg.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-gray-500">Umpire / Player Name</Label>
+                    {legTeamObj?.players && legTeamObj.players.length > 0 ? (
+                      <Select
+                        value={legUmpirePlayerId}
+                        onValueChange={(pId) => {
+                          setLegUmpirePlayerId(pId)
+                          const p = legTeamObj.players?.find((x) => x.id === pId)
+                          if (p) setLegUmpireName(p.name)
+                        }}
+                      >
+                        <SelectTrigger className="text-xs bg-white h-8"><SelectValue placeholder="Select official / player" /></SelectTrigger>
+                        <SelectContent>
+                          {legTeamObj.players.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.jerseyNumber !== null && p.jerseyNumber !== undefined ? `#${p.jerseyNumber} ` : ''}{p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={legUmpireName}
+                        onChange={(e) => setLegUmpireName(e.target.value)}
+                        placeholder="Official full name"
+                        className="text-xs bg-white h-8"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
         <DialogFooter>
@@ -786,7 +1325,32 @@ export function StartInningsDialog({
           <Button
             className="bg-[#7A1426] hover:bg-[#5E0E1D]"
             disabled={!strikerId || !nonStrikerId || !bowlerId || strikerId === nonStrikerId}
-            onClick={() => onSubmit({ strikerId, nonStrikerId, bowlerId })}
+            onClick={() => {
+              const mainUmpirePayload: MatchUmpire | null = mainUmpireName.trim()
+                ? {
+                    name: mainUmpireName.trim(),
+                    teamId: mainUmpireTeamId || null,
+                    teamName: effectiveTeams.find((t) => t.id === mainUmpireTeamId)?.name ?? null,
+                    playerId: mainUmpirePlayerId || null,
+                  }
+                : null
+              const legUmpirePayload: MatchUmpire | null = legUmpireName.trim()
+                ? {
+                    name: legUmpireName.trim(),
+                    teamId: legUmpireTeamId || null,
+                    teamName: effectiveTeams.find((t) => t.id === legUmpireTeamId)?.name ?? null,
+                    playerId: legUmpirePlayerId || null,
+                  }
+                : null
+
+              onSubmit({
+                strikerId,
+                nonStrikerId,
+                bowlerId,
+                mainUmpire: mainUmpirePayload,
+                legUmpire: legUmpirePayload,
+              })
+            }}
           >
             {isSecond ? 'Start innings 2' : 'Start match'}
           </Button>

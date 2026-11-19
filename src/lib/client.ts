@@ -6,9 +6,9 @@
  */
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { io, type Socket } from 'socket.io-client'
-import type { MatchStatePayload, MatchSummary } from '@/lib/match-state'
+import type { MatchStatePayload, MatchSummary, MatchUmpire } from '@/lib/match-state'
 
-export type { MatchStatePayload, MatchSummary }
+export type { MatchStatePayload, MatchSummary, MatchUmpire }
 
 export class ApiError extends Error {
   status: number
