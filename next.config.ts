@@ -8,8 +8,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  turbopack: {
-    root: path.resolve(__dirname),
+  productionBrowserSourceMaps: false,
+  webpack(config) {
+    // Completely disable source maps so original code and .ts/.tsx files cannot be viewed in DevTools
+    config.devtool = false;
+    return config;
   },
   async rewrites() {
     return [

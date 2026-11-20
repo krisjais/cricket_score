@@ -165,3 +165,57 @@ export function BallDotsRow({
     </div>
   )
 }
+
+export function PlayerAvatar({
+  name,
+  avatarUrl,
+  size = 'sm',
+  ringClass,
+  className,
+}: {
+  name: string
+  avatarUrl?: string | null
+  size?: 'sm' | 'md' | 'lg'
+  ringClass?: string
+  className?: string
+}) {
+  const dim =
+    size === 'lg'
+      ? 'w-12 h-12 text-sm rounded-2xl'
+      : size === 'md'
+      ? 'w-10 h-10 text-xs rounded-xl'
+      : 'w-8 h-8 text-[11px] rounded-full'
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={name}
+        className={cn('object-cover border border-gray-200 bg-white shrink-0', dim, ringClass, className)}
+      />
+    )
+  }
+
+  const initials =
+    name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || 'P'
+
+  return (
+    <div
+      className={cn(
+        'bg-[#7A1426]/8 border border-[#7A1426]/15 flex items-center justify-center font-extrabold text-[#7A1426] shrink-0',
+        dim,
+        ringClass,
+        className
+      )}
+    >
+      {initials}
+    </div>
+  )
+}
+

@@ -100,7 +100,7 @@ let socket: Socket | null = null
 export function getSocket(): Socket {
   if (!socket) {
     socket = io(SOCKET_URL, {
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 15,

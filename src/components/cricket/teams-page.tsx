@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Users, ArrowRight, Shield } from 'lucide-react'
 import { api, ROLE_LABEL } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
+import { TeamsPageSkeleton } from '@/components/cricket/skeletons'
 
 interface TeamWithPlayers {
   id: string
@@ -24,6 +25,10 @@ export function TeamsPage({ navigate }: { navigate: (to: string) => void }) {
       .then(setTeams)
       .catch((e) => setError(e.message))
   }, [])
+
+  if (!teams && !error) {
+    return <TeamsPageSkeleton />
+  }
 
   return (
     <div className="space-y-6">

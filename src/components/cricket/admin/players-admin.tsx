@@ -1,8 +1,8 @@
 'use client'
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
+import { AdminTableSkeleton } from '@/components/cricket/skeletons'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -275,11 +275,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
 
       {/* Players List Table */}
       {!players ? (
-        <div className="grid gap-3">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded-2xl bg-[#E5E7EB]/60" />
-          ))}
-        </div>
+        <AdminTableSkeleton rows={6} />
       ) : filteredPlayers.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-[#E5E7EB] bg-white p-12 text-center">
           <Users className="mx-auto mb-3 h-8 w-8 text-[#7A1426]" aria-hidden />

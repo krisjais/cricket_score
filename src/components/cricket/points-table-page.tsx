@@ -5,6 +5,7 @@ import { Trophy, Award, RefreshCcw } from 'lucide-react'
 import { api, getSocket } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
 import { AwardsPage } from '@/components/cricket/awards-page'
+import { PointsTableSkeleton } from '@/components/cricket/skeletons'
 import { cn } from '@/lib/utils'
 
 interface StandingsRow {
@@ -135,15 +136,11 @@ export function PointsTablePage({
 
       {subTab === 'AWARDS' ? (
         <AwardsPage navigate={navigate} embedded isAdmin={isAdmin} />
+      ) : !rows ? (
+        <PointsTableSkeleton />
       ) : (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          {!rows ? (
-            <div className="p-6 space-y-3">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="h-12 animate-pulse rounded-xl bg-gray-100" />
-              ))}
-            </div>
-          ) : rows.length === 0 ? (
+          {rows.length === 0 ? (
             <div className="p-12 text-center text-sm text-gray-500">
               No teams registered in the tournament yet.
             </div>

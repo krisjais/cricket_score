@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { DevtoolsBanner } from "@/components/cricket/devtools-banner";
 
 export const metadata: Metadata = {
   title: "Alliance Premier League — Live Cricket Scoring",
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased bg-background text-foreground" suppressHydrationWarning>
+        <DevtoolsBanner />
         {children}
         <Toaster />
         <SonnerToaster theme="light" position="top-right" richColors />

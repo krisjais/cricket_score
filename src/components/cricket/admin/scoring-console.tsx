@@ -53,6 +53,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { BallDot, BallDotsRow, LiveBadge, StatusBadge, TeamLogo } from '@/components/cricket/ui-bits'
+import { ScoringConsoleSkeleton } from '@/components/cricket/skeletons'
 import { StartInningsDialog, TossDialog } from '@/components/cricket/admin/matches-admin'
 import { api, fmtDate, useMatchChannel, type MatchSummary } from '@/lib/client'
 import type { MatchStatePayload } from '@/lib/match-state'
@@ -193,18 +194,99 @@ export function ScoringConsole({
     }
   }
 
-  const record = (input: BallEventInput) =>
-    call(`/api/matches/${matchId}/ball`, { method: 'POST', json: input })
+  const record = async (input: BallEventInput): Promise<boolean> => {
+    // Instantaneous optimistic update for regular scoring balls (0, 1, 2, 3, 4, 6)
+    if (payload && current && live && !input.wicketType && !input.extraType && typeof input.runsOffBat === 'number') {
+      const runs = input.runsOffBat
+      const legalBalls = current.legalBalls + 1
+      const totalRuns = current.runs + runs
+      const overComplete = (current.legalBalls % 6) + 1 >= 6
+      const rotates = runs % 2 === 1
+      const newStrikerId = rotates !== overComplete ? live.nonStrikerId : live.strikerId
+      const newNonStrikerId = rotates !== overComplete ? live.strikerId : live.nonStrikerId
+
+      const updatedBatting = current.batting.map((b) => {
+        if (b.id === live.strikerId) {
+          const bRuns = b.runs + runs
+          const bBalls = b.balls + 1
+          return {
+            ...b,
+            runs: bRuns,
+            balls: bBalls,
+            fours: b.fours + (runs === 4 ? 1 : 0),
+            sixes: b.sixes + (runs === 6 ? 1 : 0),
+            strikeRate: bBalls > 0 ? Math.round((bRuns * 1000) / bBalls) / 10 : 0,
+          }
+        }
+        return b
+      })
+
+      const updatedBowling = current.bowling.map((b) => {
+        if (b.id === live.bowlerId) {
+          const lBalls = b.legalBalls + 1
+          const rConceded = b.runsConceded + runs
+          return {
+            ...b,
+            legalBalls: lBalls,
+            runsConceded: rConceded,
+            overs: `${Math.floor(lBalls / 6)}.${lBalls % 6}`,
+            economy: lBalls > 0 ? Math.round((rConceded * 60) / lBalls) / 10 : 0,
+          }
+        }
+        return b
+      })
+
+      const newBall = {
+        label: String(runs),
+        kind: runs === 4 ? '4' : runs === 6 ? '6' : runs === 0 ? 'dot' : 'run',
+        runs,
+      }
+      const newThisOver = [...(live.thisOver || []), newBall]
+
+      const optimisticPayload: MatchStatePayload = {
+        ...payload,
+        match: {
+          ...payload.match,
+          scores: payload.match.scores.map((sc) =>
+            sc.number === current.number
+              ? { ...sc, runs: totalRuns, overs: `${Math.floor(legalBalls / 6)}.${legalBalls % 6}` }
+              : sc
+          ),
+        },
+        innings: payload.innings.map((inn) =>
+          inn.number === current.number
+            ? {
+                ...inn,
+                runs: totalRuns,
+                legalBalls,
+                oversDisplay: `${Math.floor(legalBalls / 6)}.${legalBalls % 6}`,
+                batting: updatedBatting,
+                bowling: updatedBowling,
+              }
+            : inn
+        ),
+        live: {
+          ...live,
+          strikerId: newStrikerId,
+          nonStrikerId: newNonStrikerId,
+          overComplete,
+          bowlerId: overComplete ? null : live.bowlerId,
+          lastOverBowlerId: overComplete ? live.bowlerId : live.lastOverBowlerId,
+          thisOver: overComplete ? [] : newThisOver,
+        },
+      }
+
+      setLiveState(optimisticPayload)
+    }
+
+    return call(`/api/matches/${matchId}/ball`, { method: 'POST', json: input })
+  }
 
   const action = (act: string, playerId?: string, okMsg?: string) =>
     call(`/api/matches/${matchId}/action`, { method: 'POST', json: { action: act, playerId } }, okMsg)
 
   if (!payload || !m) {
-    return (
-      <div className="h-full w-full flex items-center justify-center bg-[#F8F9FA]">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#7A1426] border-t-transparent" />
-      </div>
-    )
+    return <ScoringConsoleSkeleton />
   }
 
   const battingTeam = current ? (current.battingTeamId === m.teamA.id ? m.teamA : m.teamB) : m.teamA

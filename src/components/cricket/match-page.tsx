@@ -19,6 +19,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { AplLogo } from '@/components/cricket/apl-logo'
 import { BallDot, BallDotsRow, LiveBadge, StatusBadge, TeamLogo } from '@/components/cricket/ui-bits'
 import { ScorecardView } from '@/components/cricket/scorecard-view'
+import { MatchPageSkeleton } from '@/components/cricket/skeletons'
 import { useMatchChannel, fmtDate, api } from '@/lib/client'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -63,21 +64,7 @@ export function MatchPage({
   }
 
   if (!payload || !payload.match || !Array.isArray(payload.innings)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-14 text-center max-w-md w-full shadow-xs">
-          <p className="text-base font-bold text-[#111827]">Match not found or loading...</p>
-          <button
-            type="button"
-            onClick={() => navigate(backTo)}
-            className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>{backTo === '/matches' ? 'Back to Matches' : 'Back to Home'}</span>
-          </button>
-        </div>
-      </div>
-    )
+    return <MatchPageSkeleton />
   }
 
   const m = payload.match

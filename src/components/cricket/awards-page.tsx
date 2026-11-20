@@ -14,7 +14,8 @@ import {
   Zap,
 } from 'lucide-react'
 import { api, getSocket } from '@/lib/client'
-import { TeamLogo } from '@/components/cricket/ui-bits'
+import { TeamLogo, PlayerAvatar } from '@/components/cricket/ui-bits'
+import { AwardsPageSkeleton } from '@/components/cricket/skeletons'
 import {
   CricketBatIcon,
   CricketBallIcon,
@@ -212,6 +213,10 @@ export function AwardsPage({
       sock.off('match:update', onUpdate)
     }
   }, [loadAwards])
+
+  if (loading && !data) {
+    return <AwardsPageSkeleton />
+  }
 
   return (
     <div className="space-y-6">
@@ -1136,36 +1141,3 @@ function AwardSpotlightCard({
   )
 }
 
-function PlayerAvatar({
-  name,
-  avatarUrl,
-  size = 'sm',
-  ringClass,
-}: {
-  name: string
-  avatarUrl: string | null
-  size?: 'sm' | 'lg'
-  ringClass?: string
-}) {
-  const dim = size === 'lg' ? 'w-12 h-12 text-sm rounded-2xl' : 'w-8 h-8 text-[11px] rounded-full'
-  if (avatarUrl) {
-    return (
-      <img
-        src={avatarUrl}
-        alt={name}
-        className={cn('object-cover border border-gray-200 bg-white shrink-0', dim, ringClass)}
-      />
-    )
-  }
-  return (
-    <div
-      className={cn(
-        'bg-[#7A1426]/8 border border-[#7A1426]/15 flex items-center justify-center font-extrabold text-[#7A1426] shrink-0',
-        dim,
-        ringClass
-      )}
-    >
-      {name.slice(0, 2).toUpperCase()}
-    </div>
-  )
-}
