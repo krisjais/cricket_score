@@ -308,7 +308,151 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
         </div>
       ) : (
         <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Mobile Card List (Zero Horizontal Scrolling) */}
+          <div className="md:hidden divide-y divide-[#E5E7EB]">
+            {filteredPlayers.map((p) => {
+              const assignedTeam = teams.find((t) => t.id === p.teamId) || p.team
+              const isFemale = p.gender === 'FEMALE'
+              return (
+                <div key={p.id} className="p-4 space-y-3 hover:bg-[#F9FAFB] transition-colors">
+                  <div className="flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {p.avatarUrl ? (
+                        <img
+                          src={p.avatarUrl}
+                          alt={p.name}
+                          className="w-9 h-9 rounded-full object-cover border border-[#E5E7EB] shrink-0"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] flex items-center justify-center text-xs font-bold text-[#7A1426] shrink-0">
+                          {p.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-sm text-[#111827] truncate">{p.name}</span>
+                          {p.isVerified && (
+                            <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" aria-label="Verified profile" />
+                          )}
+                          {assignedTeam?.captain === p.name && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#7A1426]/20 border border-[#7A1426]/40 text-[#916922]">
+                              Captain
+                            </span>
+                          )}
+                        </div>
+                        {p.isClaimed === false && (
+                          <div className="mt-0.5">
+                            <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                              Unclaimed
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void act(
+                          () =>
+                            api(`/api/players/${p.id}`, {
+                              method: 'PATCH',
+                              json: { gender: isFemale ? 'MALE' : 'FEMALE' },
+                            }),
+                          `${p.name} moved to ${isFemale ? "Men's" : "Women's"} division`
+                        )
+                      }
+                      title="Click to switch Men / Women award category"
+                      className={cn(
+                        'text-[11px] font-bold px-2.5 py-1 rounded-lg border cursor-pointer transition-colors shrink-0',
+                        isFemale
+                          ? 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100'
+                          : 'bg-emerald-50 border-emerald-200 text-[#7A1426] hover:bg-emerald-100'
+                      )}
+                    >
+                      {isFemale ? 'Women' : 'Men'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                    <span className="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] text-[#7A1426]">
+                      {ROLE_LABEL[p.role] ?? p.role}
+                    </span>
+
+                    {assignedTeam ? (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#F3F4F6] border border-[#E5E7EB]">
+                        <TeamLogo
+                          name={assignedTeam.name}
+                          shortName={assignedTeam.shortName}
+                          color={assignedTeam.color}
+                          logoUrl={assignedTeam.logoUrl}
+                          size="xs"
+                        />
+                        <span className="font-bold text-xs text-[#7A1426] truncate max-w-[130px]">{assignedTeam.name}</span>
+                        <button
+                          onClick={() => setAssignDialog({ open: true, player: p })}
+                          className="ml-1 text-[10px] font-bold text-[#6b7280] hover:text-[#7A1426] hover:underline cursor-pointer"
+                          title="Change team assignment"
+                        >
+                          Change
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 font-bold text-[10px]">
+                          <UserX className="w-3 h-3 text-amber-600" />
+                          <span>Free Agent</span>
+                        </span>
+                        <button
+                          onClick={() => setAssignDialog({ open: true, player: p })}
+                          className="px-2.5 py-1 rounded-lg bg-[#7A1426] hover:bg-[#5E0E1D] text-white text-[10px] font-bold transition-all cursor-pointer shadow-2xs"
+                        >
+                          Put in Team
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-gray-100">
+                    {navigate && (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/players/${encodeURIComponent(p.id)}`)}
+                        className="p-2 rounded-xl border border-[#E5E7EB] hover:bg-[#F3F4F6] text-gray-700 transition-colors cursor-pointer"
+                        title="View Public Career Profile"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setAssignDialog({ open: true, player: p })}
+                      className="p-2 rounded-xl border border-[#E5E7EB] hover:bg-[#F3F4F6] text-[#7A1426] transition-colors cursor-pointer"
+                      title="Move / Assign to Team"
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setPlayerDialog({ open: true, player: p })}
+                      className="p-2 rounded-xl border border-[#E5E7EB] hover:bg-[#F3F4F6] text-[#7A1426] transition-colors cursor-pointer"
+                      title="Edit Player"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeletePlayer(p)}
+                      className="p-2 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Delete Player"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-[#F3F4F6] border-b border-[#E5E7EB]">
                 <tr className="font-bold text-[#7A1426] uppercase tracking-wider">

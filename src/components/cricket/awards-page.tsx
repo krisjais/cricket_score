@@ -734,8 +734,211 @@ function DivisionShowcase({
                 No recorded {tab.toLowerCase()} stats yet for {isWomen ? 'women' : 'men'} players.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <>
+                {/* Mobile Rankings Card List (Zero Horizontal Scrolling) */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {tableRows.map((p, idx) => {
+                    const primary =
+                      tab === 'BATSMEN'
+                        ? { val: p.runs, label: 'Runs' }
+                        : tab === 'BOWLERS'
+                        ? { val: p.wickets, label: 'Wkts' }
+                        : tab === 'FIELDERS'
+                        ? { val: p.catchRunOuts ?? p.catches + p.runOuts, label: 'Dismissals' }
+                        : tab === 'SIXES'
+                        ? { val: p.sixes, label: 'Sixes' }
+                        : tab === 'FOURS'
+                        ? { val: p.fours, label: 'Fours' }
+                        : { val: p.mvpPoints ?? 0, label: 'MVP Pts' }
+
+                    return (
+                      <div
+                        key={p.playerId}
+                        className={cn(
+                          'p-3.5 space-y-2.5 hover:bg-[#F9FAFB] transition-colors',
+                          idx === 0 && 'bg-[#7A1426]/[0.02]'
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span
+                              className={cn(
+                                'inline-flex items-center justify-center min-w-[26px] h-6 px-1.5 rounded-full text-xs font-black tabular-nums shrink-0',
+                                idx === 0
+                                  ? 'bg-[#7A1426] text-white'
+                                  : idx === 1
+                                  ? 'bg-gray-200 text-gray-800'
+                                  : idx === 2
+                                  ? 'bg-amber-100 text-amber-900'
+                                  : 'bg-gray-100 text-gray-600'
+                              )}
+                            >
+                              #{idx + 1}
+                            </span>
+
+                            <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl} size="sm" />
+
+                            <div className="min-w-0">
+                              <div className="font-bold text-sm text-[#111827] truncate">
+                                {!isAdmin ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => navigate(`/players/${encodeURIComponent(p.playerId)}`)}
+                                    className="hover:text-[#7A1426] hover:underline cursor-pointer text-left font-bold"
+                                  >
+                                    {p.name}
+                                  </button>
+                                ) : (
+                                  p.name
+                                )}
+                              </div>
+                              <div className="text-[10px] font-semibold text-gray-400 truncate">
+                                {ROLE_LABEL[p.role] ?? p.role} {p.team ? `• ${p.team.shortName}` : ''}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <div className="text-base font-black tabular-nums text-[#7A1426] leading-tight">
+                              {primary.val}
+                            </div>
+                            <div className="text-[9px] font-bold uppercase tracking-wider text-gray-400">
+                              {primary.label}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Secondary Stats Grid */}
+                        <div className="grid grid-cols-4 gap-1 rounded-xl bg-[#F9FAFB] border border-gray-100 px-2.5 py-1.5 text-center">
+                          {tab === 'BATSMEN' && (
+                            <>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Balls</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.ballsFaced}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">4s/6s</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.fours}/{p.sixes}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">HS</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.highestScore}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">SR</div>
+                                <div className="text-xs font-bold tabular-nums text-[#111827]">{p.strikeRate.toFixed(1)}</div>
+                              </div>
+                            </>
+                          )}
+                          {tab === 'BOWLERS' && (
+                            <>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Overs</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.overs}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Runs</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.runsConceded}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Econ</div>
+                                <div className="text-xs font-bold tabular-nums text-[#111827]">{p.economy.toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Team</div>
+                                <div className="text-xs font-semibold text-gray-700 truncate">{p.team?.shortName ?? '—'}</div>
+                              </div>
+                            </>
+                          )}
+                          {tab === 'FIELDERS' && (
+                            <>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Catches</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.catches}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Run Outs</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.runOuts}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Stumped</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.stumpings}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Team</div>
+                                <div className="text-xs font-semibold text-gray-700 truncate">{p.team?.shortName ?? '—'}</div>
+                              </div>
+                            </>
+                          )}
+                          {tab === 'MVP' && (
+                            <>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Runs</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.runs}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Wkts</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.wickets}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Fielding</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.fieldingDismissals ?? 0}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Total</div>
+                                <div className="text-xs font-bold tabular-nums text-[#7A1426]">{p.mvpPoints ?? 0}</div>
+                              </div>
+                            </>
+                          )}
+                          {tab === 'SIXES' && (
+                            <>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Runs</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.runs}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Balls</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.ballsFaced}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">4s</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.fours}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">SR</div>
+                                <div className="text-xs font-bold tabular-nums text-[#111827]">{p.strikeRate.toFixed(1)}</div>
+                              </div>
+                            </>
+                          )}
+                          {tab === 'FOURS' && (
+                            <>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Runs</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.runs}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">Balls</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.ballsFaced}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">6s</div>
+                                <div className="text-xs font-semibold tabular-nums text-gray-700">{p.sixes}</div>
+                              </div>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase text-gray-400">SR</div>
+                                <div className="text-xs font-bold tabular-nums text-[#111827]">{p.strikeRate.toFixed(1)}</div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs">
                   <thead className="bg-[#F9FAFB] border-b border-gray-200">
                     <tr className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                       <th className="pl-5 py-3 w-14">Rank</th>
@@ -981,7 +1184,8 @@ function DivisionShowcase({
                   </tbody>
                 </table>
               </div>
-            )}
+            </>
+          )}
           </div>
         </>
       )}
