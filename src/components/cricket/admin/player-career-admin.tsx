@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   Users,
   Trash2,
+  UserX,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ApiError, api } from '@/lib/client'
@@ -41,10 +42,18 @@ interface SearchPlayerRow {
   isClaimed: boolean
   isVerified: boolean
   status: 'ACTIVE' | 'SUSPENDED' | 'MERGED'
-  team: { id: string; name: string; shortName: string } | null
+  avatarUrl?: string | null
+  team: { id: string; name: string; shortName: string; color?: string; logoUrl?: string | null } | null
   matches: number
   runs: number
   wickets: number
+  careerSummary?: {
+    matches: number
+    runs: number
+    wickets: number
+    battingAverage: number | null
+    economy: number
+  }
 }
 
 interface AuditLogRow {
@@ -63,6 +72,8 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
 
   const [query, setQuery] = useState('')
   const [searchRows, setSearchRows] = useState<SearchPlayerRow[]>([])
+  const [loadingDirectory, setLoadingDirectory] = useState(true)
+  const [loadingAudit, setLoadingAudit] = useState(false)
   const [seasons, setSeasons] = useState<SeasonDto[]>([])
   const [tournaments, setTournaments] = useState<TournamentDto[]>([])
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([])
@@ -83,8 +94,22 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
   const [tournFormat, setTournFormat] = useState('T20')
 
   const loadDirectory = useCallback(async (qStr = query) => {
-    const res = await api<SearchPlayerRow[]>(`/api/players/search?q=${encodeURIComponent(qStr.trim())}&limit=50`)
-    setSearchRows(res)
+    setLoadingDirectory(true)
+    try {
+      const res = await api<any[]>(`/api/players/search?q=${encodeURIComponent(qStr.trim())}&limit=50`)
+      setSearchRows(
+        res.map((p) => ({
+          ...p,
+          matches: p.matches ?? p.careerSummary?.matches ?? 0,
+          runs: p.runs ?? p.careerSummary?.runs ?? 0,
+          wickets: p.wickets ?? p.careerSummary?.wickets ?? 0,
+        }))
+      )
+    } catch {
+      toast.error('Failed to load players registry')
+    } finally {
+      setLoadingDirectory(false)
+    }
   }, [query])
 
   const loadReferenceData = useCallback(async () => {
@@ -100,15 +125,34 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
   }, [])
 
   const loadAuditLogs = useCallback(async () => {
-    const a = await api<AuditLogRow[]>('/api/admin/audit-logs?limit=60').catch(() => [])
-    setAuditLogs(a)
+    setLoadingAudit(true)
+    try {
+      const a = await api<AuditLogRow[]>('/api/admin/audit-logs?limit=60').catch(() => [])
+      setAuditLogs(a)
+    } finally {
+      setLoadingAudit(false)
+    }
   }, [])
 
   useEffect(() => {
     let alive = true
-    api<SearchPlayerRow[]>('/api/players/search?q=&limit=50')
-      .then((res) => alive && setSearchRows(res))
+    setLoadingDirectory(true)
+    api<any[]>('/api/players/search?q=&limit=50')
+      .then((res) => {
+        if (!alive) return
+        setSearchRows(
+          res.map((p) => ({
+            ...p,
+            matches: p.matches ?? p.careerSummary?.matches ?? 0,
+            runs: p.runs ?? p.careerSummary?.runs ?? 0,
+            wickets: p.wickets ?? p.careerSummary?.wickets ?? 0,
+          }))
+        )
+      })
       .catch(() => {})
+      .finally(() => {
+        if (alive) setLoadingDirectory(false)
+      })
     Promise.all([
       api<SeasonDto[]>('/api/seasons').catch(() => []),
       api<TournamentDto[]>('/api/tournaments').catch(() => []),
@@ -322,9 +366,13 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
             <button
               key={k}
               type="button"
-              onClick={() => setSubTab(k)}
+              onClick={() => {
+                setSubTab(k)
+                if (k === 'audit') void loadAuditLogs()
+                if (k === 'directory' && searchRows.length === 0) void loadDirectory()
+              }}
               className={`px-3 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-all ${
-                subTab === k ? 'bg-[#7A1426] text-white' : 'text-gray-600 hover:bg-[#F3F4F6]'
+                subTab === k ? 'bg-[#7A1426] text-white shadow-xs' : 'text-gray-600 hover:bg-[#F3F4F6]'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -354,72 +402,133 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
             }}
             className="flex flex-wrap gap-2 bg-white p-3.5 rounded-2xl border border-[#E5E7EB]"
           >
-            <div className="relative flex-1 min-w-[220px]">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by player name..."
-                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] pl-9 pr-3 py-2 text-xs"
+                className="w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#7A1426]"
               />
             </div>
-            <Button type="submit" className="rounded-xl bg-[#121826] hover:bg-black text-white text-xs font-bold cursor-pointer">
+            <Button
+              type="submit"
+              disabled={loadingDirectory}
+              className="rounded-xl bg-[#121826] hover:bg-black text-white text-xs font-bold cursor-pointer"
+            >
+              {loadingDirectory ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
               Search Registry
             </Button>
           </form>
 
-          <Card className="rounded-3xl border border-[#E5E7EB] bg-white overflow-hidden">
-            <div className="table-wrapper" tabIndex={0} role="region" aria-label="Registered player identities">
-              <table className="w-full min-w-[760px] text-left text-xs">
-                <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
-                  <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
-                    <th className="py-3 pl-5 pr-3">Player &amp; Account</th>
-                    <th className="py-3 px-3">Current Team</th>
-                    <th className="py-3 px-3">Career</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 pl-3 pr-5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {searchRows.map((p) => (
-                    <tr key={p.id} className="hover:bg-[#F9FAFB]">
-                      <td className="py-3 pl-5 pr-3">
-                        <div className="font-bold text-[#111827] flex items-center gap-1.5">
-                          {p.name}
-                          {p.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />}
+          <Card className="rounded-3xl border border-[#E5E7EB] bg-white overflow-hidden shadow-2xs">
+            {loadingDirectory ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-gray-500">
+                <Loader2 className="w-6 h-6 animate-spin text-[#7A1426]" />
+                <span className="text-xs font-medium">Loading player registry...</span>
+              </div>
+            ) : searchRows.length === 0 ? (
+              <div className="py-12 text-center text-gray-500 text-xs">
+                No registered players found{query ? ` for "${query}"` : ''}.
+              </div>
+            ) : (
+              <>
+                {/* Mobile Card List (Zero Horizontal Scrolling) */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {searchRows.map((p) => {
+                    const matches = p.matches ?? p.careerSummary?.matches ?? 0
+                    const runs = p.runs ?? p.careerSummary?.runs ?? 0
+                    const wickets = p.wickets ?? p.careerSummary?.wickets ?? 0
+
+                    return (
+                      <div key={p.id} className="p-3.5 space-y-2.5">
+                        {/* Header: Avatar, Name, Badges, Status */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {p.avatarUrl ? (
+                              <img
+                                src={p.avatarUrl}
+                                alt={p.name}
+                                className="w-9 h-9 rounded-full object-cover border border-[#E5E7EB] shrink-0"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] flex items-center justify-center text-xs font-bold text-[#7A1426] shrink-0">
+                                {p.name.slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="font-bold text-sm text-[#111827] flex items-center gap-1.5 flex-wrap">
+                                <span className="truncate">{p.name}</span>
+                                {p.isVerified && (
+                                  <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" aria-label="Verified identity" />
+                                )}
+                              </div>
+                              <div className="text-[11px] text-gray-500 flex items-center gap-1.5 flex-wrap">
+                                <span className="font-medium text-gray-600">{formatCricketLabel(p.role)}</span>
+                                <span>•</span>
+                                <span className={p.isClaimed ? 'text-gray-500' : 'text-amber-700 font-medium'}>
+                                  {p.isClaimed ? 'Account Claimed' : 'Unclaimed / Temp'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <span
+                            className={`inline-block shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                              p.status === 'ACTIVE'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            {p.status}
+                          </span>
                         </div>
-                        <div className="text-[11px] text-gray-500">
-                          {formatCricketLabel(p.role)} • {p.isClaimed ? 'Account Claimed' : 'Unclaimed / Temp'}
+
+                        {/* Current Team & Career Stats: high contrast and very clear */}
+                        <div className="grid grid-cols-2 gap-2 bg-[#F9FAFB] p-2.5 rounded-2xl border border-gray-100 text-xs">
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">
+                              Current Team
+                            </span>
+                            <div className="truncate">
+                              {p.team?.name ? (
+                                <span className="inline-flex items-center gap-1.5 font-bold text-[#7A1426] truncate">
+                                  <span
+                                    className="w-2 h-2 rounded-full shrink-0"
+                                    style={{ backgroundColor: p.team.color || '#7A1426' }}
+                                  />
+                                  <span className="truncate">{p.team.name}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-amber-700 font-semibold text-[11px]">
+                                  <UserX className="w-3 h-3 text-amber-600 shrink-0" />
+                                  <span>Free Agent</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-0.5">
+                              Career
+                            </span>
+                            <span className="font-semibold text-gray-800 tabular-nums">
+                              {matches}M · {runs}R · {wickets}W
+                            </span>
+                          </div>
                         </div>
-                      </td>
-                      <td className="py-3 px-3 font-semibold text-gray-700">{p.team?.name ?? 'Free Agent'}</td>
-                      <td className="py-3 px-3 tabular-nums text-gray-700">
-                        {p.matches}M · {p.runs}R · {p.wickets}W
-                      </td>
-                      <td className="py-3 px-3">
-                        <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            p.status === 'ACTIVE'
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : 'bg-rose-50 text-rose-700'
-                          }`}
-                        >
-                          {p.status}
-                        </span>
-                      </td>
-                      <td className="py-3 pl-3 pr-5 text-right">
-                        <div className="inline-flex items-center gap-1.5">
+
+                        {/* Action buttons: prominent, high-contrast, touch-friendly row */}
+                        <div className="grid grid-cols-3 gap-1.5 pt-0.5">
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
                             disabled={inspectLoadingId === p.id}
                             onClick={() => inspectCareer(p.id)}
-                            className="h-7 rounded-lg text-[11px] font-bold cursor-pointer"
+                            className="h-8.5 rounded-xl text-xs font-bold border-gray-200 hover:bg-[#F3F4F6] text-gray-800 cursor-pointer shadow-2xs"
                           >
                             {inspectLoadingId === p.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
                               'Career'
                             )}
@@ -430,7 +539,11 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                             variant="outline"
                             disabled={busy}
                             onClick={() => toggleVerify(p)}
-                            className="h-7 rounded-lg text-[11px] font-bold cursor-pointer"
+                            className={`h-8.5 rounded-xl text-xs font-bold cursor-pointer shadow-2xs ${
+                              p.isVerified
+                                ? 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                                : 'border-emerald-200 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-100'
+                            }`}
                           >
                             {p.isVerified ? 'Unverify' : 'Verify'}
                           </Button>
@@ -440,17 +553,122 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                             variant="outline"
                             disabled={busy}
                             onClick={() => toggleStatus(p)}
-                            className="h-7 rounded-lg text-[11px] font-bold cursor-pointer"
+                            className={`h-8.5 rounded-xl text-xs font-bold cursor-pointer shadow-2xs ${
+                              p.status === 'SUSPENDED'
+                                ? 'border-emerald-200 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-100'
+                                : 'border-rose-200 text-rose-700 bg-rose-50/50 hover:bg-rose-100'
+                            }`}
                           >
                             {p.status === 'SUSPENDED' ? 'Activate' : 'Suspend'}
                           </Button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto" tabIndex={0} role="region" aria-label="Registered player identities">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                      <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
+                        <th className="py-3 pl-5 pr-3">Player &amp; Account</th>
+                        <th className="py-3 px-3">Current Team</th>
+                        <th className="py-3 px-3">Career</th>
+                        <th className="py-3 px-3">Status</th>
+                        <th className="py-3 pl-3 pr-5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {searchRows.map((p) => {
+                        const matches = p.matches ?? p.careerSummary?.matches ?? 0
+                        const runs = p.runs ?? p.careerSummary?.runs ?? 0
+                        const wickets = p.wickets ?? p.careerSummary?.wickets ?? 0
+
+                        return (
+                          <tr key={p.id} className="hover:bg-[#F9FAFB]">
+                            <td className="py-3 pl-5 pr-3">
+                              <div className="font-bold text-[#111827] flex items-center gap-1.5">
+                                {p.name}
+                                {p.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />}
+                              </div>
+                              <div className="text-[11px] text-gray-500">
+                                {formatCricketLabel(p.role)} • {p.isClaimed ? 'Account Claimed' : 'Unclaimed / Temp'}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 font-semibold text-gray-700">
+                              {p.team?.name ? (
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span
+                                    className="w-2 h-2 rounded-full shrink-0"
+                                    style={{ backgroundColor: p.team.color || '#7A1426' }}
+                                  />
+                                  <span>{p.team.name}</span>
+                                </span>
+                              ) : (
+                                <span className="text-amber-700 font-medium">Free Agent</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 tabular-nums text-gray-700">
+                              {matches}M · {runs}R · {wickets}W
+                            </td>
+                            <td className="py-3 px-3">
+                              <span
+                                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  p.status === 'ACTIVE'
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : 'bg-rose-50 text-rose-700'
+                                }`}
+                              >
+                                {p.status}
+                              </span>
+                            </td>
+                            <td className="py-3 pl-3 pr-5 text-right">
+                              <div className="inline-flex items-center gap-1.5">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={inspectLoadingId === p.id}
+                                  onClick={() => inspectCareer(p.id)}
+                                  className="h-7 rounded-lg text-[11px] font-bold cursor-pointer"
+                                >
+                                  {inspectLoadingId === p.id ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    'Career'
+                                  )}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={busy}
+                                  onClick={() => toggleVerify(p)}
+                                  className="h-7 rounded-lg text-[11px] font-bold cursor-pointer"
+                                >
+                                  {p.isVerified ? 'Unverify' : 'Verify'}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={busy}
+                                  onClick={() => toggleStatus(p)}
+                                  className="h-7 rounded-lg text-[11px] font-bold cursor-pointer"
+                                >
+                                  {p.status === 'SUSPENDED' ? 'Activate' : 'Suspend'}
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </Card>
 
           <Dialog
@@ -787,36 +1005,76 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
       )}
 
       {subTab === 'audit' && (
-        <Card className="rounded-3xl border border-[#E5E7EB] bg-white overflow-hidden">
+        <Card className="rounded-3xl border border-[#E5E7EB] bg-white overflow-hidden shadow-2xs">
           <CardHeader>
             <CardTitle className="text-sm font-extrabold text-[#111827]">
               Official Statistics &amp; Identity Audit Logs
             </CardTitle>
           </CardHeader>
-          <div className="table-wrapper" tabIndex={0} role="region" aria-label="Statistics audit logs">
-            <table className="w-full min-w-[680px] text-left text-xs">
-              <thead className="bg-[#F9FAFB] border-y border-[#E5E7EB]">
-                <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
-                  <th className="py-3 pl-5 pr-3">Timestamp</th>
-                  <th className="py-3 px-3">Action</th>
-                  <th className="py-3 px-3">Actor</th>
-                  <th className="py-3 pl-3 pr-5">Reason</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+          {loadingAudit ? (
+            <div className="py-12 flex flex-col items-center justify-center gap-2 text-gray-500">
+              <Loader2 className="w-6 h-6 animate-spin text-[#7A1426]" />
+              <span className="text-xs font-medium">Loading audit logs...</span>
+            </div>
+          ) : auditLogs.length === 0 ? (
+            <div className="py-12 text-center text-gray-500 text-xs">
+              No audit logs recorded yet.
+            </div>
+          ) : (
+            <>
+              {/* Mobile Audit Card List (Zero Horizontal Scrolling) */}
+              <div className="md:hidden divide-y divide-gray-100">
                 {auditLogs.map((l) => (
-                  <tr key={l.id} className="hover:bg-[#F9FAFB]">
-                    <td className="py-2.5 pl-5 pr-3 text-gray-500 whitespace-nowrap">{fmtDate(l.createdAt)}</td>
-                    <td className="py-2.5 px-3 font-mono font-bold text-[#7A1426]">{l.action}</td>
-                    <td className="py-2.5 px-3 font-semibold text-[#111827]">
-                      {l.actorName ?? l.actorType}
-                    </td>
-                    <td className="py-2.5 pl-3 pr-5 text-gray-600">{l.reason ?? '—'}</td>
-                  </tr>
+                  <div key={l.id} className="p-3.5 space-y-2 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono font-bold text-[11px] text-[#7A1426] bg-[#7A1426]/10 px-2 py-0.5 rounded-md">
+                        {l.action}
+                      </span>
+                      <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                        {fmtDate(l.createdAt)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-gray-700">
+                      <span className="text-[10px] uppercase font-bold text-gray-400">Actor:</span>
+                      <span className="font-semibold text-[#111827]">{l.actorName ?? l.actorType}</span>
+                    </div>
+                    {l.reason && (
+                      <div className="text-[11px] text-gray-600 bg-[#F9FAFB] p-2 rounded-xl border border-gray-100">
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block mb-0.5">Reason</span>
+                        <span>{l.reason}</span>
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto" tabIndex={0} role="region" aria-label="Statistics audit logs">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#F9FAFB] border-y border-[#E5E7EB]">
+                    <tr className="text-[11px] font-bold uppercase tracking-wider text-[#7A1426]">
+                      <th className="py-3 pl-5 pr-3">Timestamp</th>
+                      <th className="py-3 px-3">Action</th>
+                      <th className="py-3 px-3">Actor</th>
+                      <th className="py-3 pl-3 pr-5">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {auditLogs.map((l) => (
+                      <tr key={l.id} className="hover:bg-[#F9FAFB]">
+                        <td className="py-2.5 pl-5 pr-3 text-gray-500 whitespace-nowrap">{fmtDate(l.createdAt)}</td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-[#7A1426]">{l.action}</td>
+                        <td className="py-2.5 px-3 font-semibold text-[#111827]">
+                          {l.actorName ?? l.actorType}
+                        </td>
+                        <td className="py-2.5 pl-3 pr-5 text-gray-600">{l.reason ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </Card>
       )}
     </div>
