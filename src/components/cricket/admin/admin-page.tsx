@@ -129,6 +129,7 @@ export function AdminPage({
                 scorerSubView={scorerSubView}
                 onSelectSubView={setScorerSubView}
                 onSelectMatch={setSelectedId}
+                onExit={() => setTab('matches')}
               />
             ) : (
               <div className="m-auto bg-[#0D1526] border border-[#172136] rounded-2xl p-8 sm:p-12 text-center text-slate-400 max-w-md">

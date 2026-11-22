@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Pencil, Trash2, Coins, Play, PauseCircle, Flag, Eye, ShieldCheck, ArrowLeftRight, UserCheck } from 'lucide-react'
+import { Plus, Pencil, Trash2, Coins, Play, PauseCircle, Flag, Eye, ShieldCheck, ArrowLeftRight, UserCheck, CheckCircle2 } from 'lucide-react'
 import { api, FORMAT_LABEL, type MatchSummary, type MatchUmpire } from '@/lib/client'
 import type { SeasonDto, TournamentDto } from '@/components/cricket/player/player-types'
 import { StatusBadge, TeamLogo } from '@/components/cricket/ui-bits'
@@ -80,7 +80,7 @@ export function MatchesAdmin({
   const [editMatch, setEditMatch] = useState<MatchSummary | null>(null)
   const [verifyMatch, setVerifyMatch] = useState<MatchSummary | null>(null)
   const [deleteMatch, setDeleteMatch] = useState<MatchSummary | null>(null)
-  const [confirmEnd, setConfirmEnd] = useState<{ id: string; label: string } | null>(null)
+  const [confirmEnd, setConfirmEnd] = useState<{ id: string; label: string; action?: 'END_INNINGS' | 'END_MATCH' | 'ABANDON' } | null>(null)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -210,9 +210,18 @@ export function MatchesAdmin({
                       size="sm"
                       variant="outline"
                       disabled={busy}
-                      onClick={() => setConfirmEnd({ id: m.id, label: 'End the current innings now (declaration)?' })}
+                      onClick={() => setConfirmEnd({ id: m.id, label: 'End the current innings now (declaration)?', action: 'END_INNINGS' })}
                     >
                       <Flag className="h-3.5 w-3.5" aria-hidden /> End innings
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      className="border-[#7A1426]/30 bg-[#7A1426]/5 text-[#7A1426] hover:bg-[#7A1426] hover:text-white"
+                      onClick={() => setConfirmEnd({ id: m.id, label: 'End this match now? Scores and result will be finalized.', action: 'END_MATCH' })}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> End match
                     </Button>
                   </>
                 )}
@@ -337,7 +346,13 @@ export function MatchesAdmin({
       <AlertDialog open={!!confirmEnd} onOpenChange={(o) => !o && setConfirmEnd(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{confirmEnd?.label.includes('Abandon') ? 'Abandon match' : 'End innings'}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {confirmEnd?.action === 'END_MATCH'
+                ? 'End match'
+                : confirmEnd?.label.includes('Abandon')
+                ? 'Abandon match'
+                : 'End innings'}
+            </AlertDialogTitle>
             <AlertDialogDescription>{confirmEnd?.label}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -347,13 +362,14 @@ export function MatchesAdmin({
               onClick={async () => {
                 if (!confirmEnd) return
                 const isAbandon = confirmEnd.label.includes('Abandon')
+                const actName = confirmEnd.action ?? (isAbandon ? 'ABANDON' : 'END_INNINGS')
                 await act(
                   () =>
                     api(`/api/matches/${confirmEnd.id}/action`, {
                       method: 'POST',
-                      json: { action: isAbandon ? 'ABANDON' : 'END_INNINGS' },
+                      json: { action: actName },
                     }),
-                  isAbandon ? 'Match abandoned' : 'Innings ended'
+                  actName === 'END_MATCH' ? 'Match ended' : isAbandon ? 'Match abandoned' : 'Innings ended'
                 )
                 setConfirmEnd(null)
               }}

@@ -11,6 +11,7 @@ import {
   ArrowLeftRight,
   ArrowRight,
   Ban,
+  CheckCircle2,
   Coins,
   Flag,
   Pause,
@@ -87,6 +88,7 @@ export function ScoringConsole({
   scorerSubView = 'score',
   onSelectSubView,
   onSelectMatch,
+  onExit,
 }: {
   matchId: string
   matches: MatchSummary[]
@@ -94,6 +96,7 @@ export function ScoringConsole({
   scorerSubView?: ScorerSubView
   onSelectSubView?: (view: ScorerSubView) => void
   onSelectMatch?: (id: string) => void
+  onExit?: () => void
 }) {
   const { toast } = useToast()
   const { state: payload, setLiveState, connected } = useMatchChannel(matchId, null)
@@ -105,7 +108,7 @@ export function ScoringConsole({
   const [bowlerDialogOpen, setBowlerDialogOpen] = useState(false)
   const [extraDialog, setExtraDialog] = useState<ExtraType | null>(null)
   const [undoOpen, setUndoOpen] = useState(false)
-  const [confirmAction, setConfirmAction] = useState<'END_INNINGS' | 'ABANDON' | null>(null)
+  const [confirmAction, setConfirmAction] = useState<'END_INNINGS' | 'END_MATCH' | 'ABANDON' | null>(null)
   const [showRuleEdit, setShowRuleEdit] = useState(false)
   const [ruleMaxOvers, setRuleMaxOvers] = useState<string>('2')
   const [ruleQuotaMode, setRuleQuotaMode] = useState<'ONE_MAX' | 'STRICT_ONE'>('STRICT_ONE')
@@ -475,32 +478,70 @@ export function ScoringConsole({
               <p className="text-sm font-medium text-gray-600">
                 Innings 1 closed. Target: <b className="text-[#7A1426]">{m.target}</b>. Start the second innings.
               </p>
-              <Button
-                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer"
-                onClick={() => setStartOpen(true)}
-              >
-                <Play className="h-4 w-4 mr-1.5" /> Start Innings 2
-              </Button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                <Button
+                  className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer px-4 py-2 w-full sm:w-auto"
+                  onClick={() => setStartOpen(true)}
+                >
+                  <Play className="h-4 w-4 mr-1.5" /> Start Innings 2
+                </Button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setConfirmAction('END_MATCH')}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold text-xs sm:text-sm hover:bg-gray-100 hover:text-gray-900 active:text-gray-900 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-40 w-full sm:w-auto"
+                  title="End Match"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-[#7A1426]" />
+                  <span>End Match</span>
+                </button>
+              </div>
             </div>
           )}
 
           {(m.status === 'COMPLETED' || m.status === 'ABANDONED') && (
             <div className="m-auto max-w-md w-full p-6 bg-white border border-gray-200 rounded-2xl text-center space-y-3 shadow-sm">
-              <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                {m.status === 'COMPLETED' ? 'Match Completed' : 'Abandoned'}
-              </span>
-              <p className="text-base font-bold text-gray-900">{m.resultText ?? '—'}</p>
-              {ballsBowled > 0 && (
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200 inline-block">
+                  {m.status === 'COMPLETED' ? 'Match Completed' : 'Abandoned'}
+                </span>
+                <p className="text-base font-bold text-gray-900 mt-2">{m.resultText ?? '—'}</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
                 <Button
-                  variant="outline"
-                  size="sm"
+                  className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer px-4 py-2 text-xs sm:text-sm flex items-center justify-center w-full sm:w-auto"
                   disabled={busy}
-                  onClick={() => setUndoOpen(true)}
-                  className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-xs"
+                  onClick={async () => {
+                    try {
+                      await action('END_MATCH', undefined, 'Match ended successfully')
+                    } catch {
+                      // Already concluded
+                    }
+                    if (onExit) {
+                      onExit()
+                    } else if (onSelectSubView) {
+                      onSelectSubView('switch')
+                    } else {
+                      navigate?.('/admin?tab=matches')
+                    }
+                  }}
                 >
-                  <Undo2 className="h-3.5 w-3.5 mr-1.5" /> Undo last ball &amp; re-open
+                  <CheckCircle2 className="h-4 w-4 mr-1.5" /> End Match
                 </Button>
-              )}
+
+                {ballsBowled > 0 && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setUndoOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold text-xs sm:text-sm hover:bg-gray-100 hover:text-gray-900 active:text-gray-900 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-40 w-full sm:w-auto"
+                  >
+                    <Undo2 className="h-3.5 w-3.5 text-gray-600" />
+                    <span>Undo last ball &amp; re-open</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -568,6 +609,18 @@ export function ScoringConsole({
                     >
                       <Flag className="w-3 h-3 text-[#7A1426]" />
                       <span>End</span>
+                    </button>
+
+                    {/* End Match Button */}
+                    <button
+                      type="button"
+                      disabled={busy || (m.status !== 'LIVE' && m.status !== 'PAUSED')}
+                      onClick={() => setConfirmAction('END_MATCH')}
+                      className="px-2 py-1 rounded-lg bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-semibold flex items-center gap-1 active:scale-95 transition-all cursor-pointer disabled:opacity-40 shadow-xs"
+                      title="End Match"
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-[#7A1426]" />
+                      <span>End Match</span>
                     </button>
 
                     {/* LIVE Badge */}
@@ -958,6 +1011,18 @@ export function ScoringConsole({
                     >
                       <Flag className="w-3.5 h-3.5 text-[#7A1426]" />
                       <span>End Innings</span>
+                    </button>
+
+                    {/* End Match Button */}
+                    <button
+                      type="button"
+                      disabled={busy || (m.status !== 'LIVE' && m.status !== 'PAUSED')}
+                      onClick={() => setConfirmAction('END_MATCH')}
+                      className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer disabled:opacity-40 shadow-xs"
+                      title="End Match"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#7A1426]" />
+                      <span>End Match</span>
                     </button>
 
                     {/* Public Match Page Link */}
@@ -1582,10 +1647,16 @@ export function ScoringConsole({
         <AlertDialogContent className="bg-white border border-gray-200 text-gray-900 rounded-2xl shadow-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-gray-900">
-              {confirmAction === 'END_INNINGS' ? 'End the innings now?' : 'Abandon this match?'}
+              {confirmAction === 'END_MATCH'
+                ? 'End this match now?'
+                : confirmAction === 'END_INNINGS'
+                ? 'End the innings now?'
+                : 'Abandon this match?'}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-500">
-              {confirmAction === 'END_INNINGS'
+              {confirmAction === 'END_MATCH'
+                ? 'The match will be officially concluded and the result finalized.'
+                : confirmAction === 'END_INNINGS'
                 ? m.currentInnings === 1
                   ? 'Innings 1 will be closed and the innings break begins.'
                   : 'Innings 2 will be closed and the match result finalized.'
@@ -1601,7 +1672,15 @@ export function ScoringConsole({
               onClick={async () => {
                 const kind = confirmAction
                 setConfirmAction(null)
-                if (kind) await action(kind, undefined, kind === 'ABANDON' ? 'Match abandoned' : 'Innings ended')
+                if (kind) {
+                  const label =
+                    kind === 'END_MATCH'
+                      ? 'Match ended'
+                      : kind === 'ABANDON'
+                      ? 'Match abandoned'
+                      : 'Innings ended'
+                  await action(kind, undefined, label)
+                }
               }}
             >
               Confirm
