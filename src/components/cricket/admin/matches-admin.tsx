@@ -246,16 +246,6 @@ export function MatchesAdmin({
                     Abandon
                   </Button>
                 )}
-                {m.status === 'COMPLETED' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
-                    onClick={() => setVerifyMatch(m)}
-                  >
-                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden /> Verify &amp; Sync
-                  </Button>
-                )}
                 <Button size="sm" variant="ghost" onClick={() => handleScore(m.id)}>
                   <Eye className="h-3.5 w-3.5" aria-hidden /> Open
                 </Button>
