@@ -1,7 +1,14 @@
 'use client'
 
-import { ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface AdminPaginationProps {
   currentPage: number
@@ -67,21 +74,25 @@ export function AdminPagination({
         {onPageSizeChange && pageSizeOptions.length > 1 && (
           <div className="flex items-center gap-1.5 sm:pl-2 sm:border-l sm:border-gray-200">
             <span className="text-[11px] text-gray-400 uppercase font-semibold">Per page:</span>
-            <div className="relative inline-flex items-center">
-              <select
-                value={pageSize}
-                onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                className="appearance-none rounded-lg border border-gray-200 bg-[#F9FAFB] pl-2.5 pr-7 py-1 text-xs font-bold text-gray-800 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#7A1426] min-w-[56px]"
+            <Select
+              value={String(pageSize)}
+              onValueChange={(val) => onPageSizeChange(Number(val))}
+            >
+              <SelectTrigger
+                size="sm"
+                className="h-7 w-auto min-w-[58px] gap-1 px-2.5 py-0.5 rounded-lg border border-gray-200 bg-[#F9FAFB] text-xs font-bold text-gray-800 hover:bg-gray-50 focus-visible:ring-1 focus-visible:ring-[#7A1426] cursor-pointer shadow-none"
                 aria-label="Select number of entries per page"
               >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end" className="min-w-[4.5rem]">
                 {pageSizeOptions.map((opt) => (
-                  <option key={opt} value={opt}>
+                  <SelectItem key={opt} value={String(opt)} className="text-xs font-bold cursor-pointer">
                     {opt}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2 h-3.5 w-3.5 text-gray-400" />
-            </div>
+              </SelectContent>
+            </Select>
           </div>
         )}
       </div>
