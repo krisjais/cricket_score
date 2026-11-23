@@ -610,94 +610,187 @@ export function HomePage({
         </div>
 
         {topStandings.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-gray-50/80 text-gray-500 font-bold border-b border-gray-100">
-                <tr>
-                  <th scope="col" className="px-4 py-3 text-center w-12">#</th>
-                  <th scope="col" className="px-4 py-3">Team</th>
-                  <th scope="col" className="px-3 py-3 text-center">P</th>
-                  <th scope="col" className="px-3 py-3 text-center">W</th>
-                  <th scope="col" className="px-3 py-3 text-center">L</th>
-                  <th scope="col" className="px-3 py-3 text-center">NRR</th>
-                  <th scope="col" className="px-4 py-3 text-center">PTS</th>
-                  <th scope="col" className="px-4 py-3 text-center hidden sm:table-cell">Recent Form</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {topStandings.map((row, idx) => {
-                  const isTopTwo = idx < 2
-                  return (
-                    <tr
-                      key={row.teamId}
-                      onClick={() => navigate(`/team/${row.teamId}`)}
-                      className="hover:bg-gray-50/80 transition-colors cursor-pointer"
-                    >
-                      <td className="px-4 py-3 text-center font-bold">
+          <>
+            {/* Mobile Card List (Zero Horizontal Scrolling) */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {topStandings.map((row, idx) => {
+                const isTopTwo = idx < 2
+                return (
+                  <div
+                    key={row.teamId}
+                    onClick={() => navigate(`/team/${row.teamId}`)}
+                    className="p-3.5 space-y-2 hover:bg-gray-50/80 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <span
                           className={cn(
-                            'inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px]',
-                            isTopTwo ? 'bg-emerald-100 text-emerald-800 font-black' : 'text-gray-600'
+                            'inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold shrink-0',
+                            isTopTwo ? 'bg-emerald-100 text-emerald-800 font-black' : 'text-gray-600 bg-gray-100'
                           )}
                         >
                           {idx + 1}
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <TeamLogo
-                            name={row.name}
-                            shortName={row.shortName}
-                            color={row.color}
-                            logoUrl={row.logoUrl}
-                            size="sm"
-                          />
-                          <div>
-                            <div className="font-extrabold text-[#111827]">{row.name}</div>
-                            <div className="text-[10px] text-gray-400 font-mono">{row.shortName}</div>
-                          </div>
+                        <TeamLogo
+                          name={row.name}
+                          shortName={row.shortName}
+                          color={row.color}
+                          logoUrl={row.logoUrl}
+                          size="sm"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-extrabold text-[#111827] text-sm truncate">{row.name}</div>
+                          <div className="text-[10px] text-gray-400 font-mono">{row.shortName}</div>
                         </div>
-                      </td>
-                      <td className="px-3 py-3 text-center font-bold text-gray-700">{row.played}</td>
-                      <td className="px-3 py-3 text-center font-bold text-emerald-600">{row.won}</td>
-                      <td className="px-3 py-3 text-center font-bold text-rose-600">{row.lost}</td>
-                      <td className="px-3 py-3 text-center font-mono font-semibold">
-                        <span className={row.nrr >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
-                          {row.nrr >= 0 ? `+${row.nrr.toFixed(3)}` : row.nrr.toFixed(3)}
+                      </div>
+
+                      <div className="flex flex-col items-end shrink-0 gap-0.5">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-[#7A1426] px-2 py-0.5 text-white font-black tabular-nums text-xs">
+                          <span>{row.points}</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-white/85">PTS</span>
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-center font-black text-sm text-[#7A1426] tabular-nums">
-                        {row.points}
-                      </td>
-                      <td className="px-4 py-3 text-center hidden sm:table-cell">
-                        <div className="flex items-center justify-center gap-1">
-                          {row.recentForm && row.recentForm.length > 0 ? (
-                            row.recentForm.slice(0, 4).map((f, i) => (
-                              <span
-                                key={i}
-                                className={cn(
-                                  'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black',
-                                  f === 'W'
-                                    ? 'bg-emerald-500 text-white'
-                                    : f === 'L'
-                                    ? 'bg-rose-500 text-white'
-                                    : 'bg-gray-400 text-white'
-                                )}
-                              >
-                                {f}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-gray-400 text-[10px]">&mdash;</span>
+                        <span
+                          className={cn(
+                            'font-mono text-[11px] font-bold tabular-nums',
+                            row.nrr > 0 ? 'text-emerald-700' : row.nrr < 0 ? 'text-rose-700' : 'text-gray-500'
                           )}
+                        >
+                          NRR {row.nrr >= 0 ? `+${row.nrr.toFixed(3)}` : row.nrr.toFixed(3)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-0.5">
+                      <div className="grid grid-cols-3 gap-1.5 flex-1 rounded-xl bg-gray-50 border border-gray-100 px-3 py-1 text-center text-xs">
+                        <div>
+                          <span className="text-[9px] font-bold uppercase text-gray-400 block">P</span>
+                          <span className="font-bold tabular-nums text-gray-800">{row.played}</span>
                         </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        <div>
+                          <span className="text-[9px] font-bold uppercase text-gray-400 block">W</span>
+                          <span className="font-bold tabular-nums text-emerald-700">{row.won}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold uppercase text-gray-400 block">L</span>
+                          <span className="font-bold tabular-nums text-rose-700">{row.lost}</span>
+                        </div>
+                      </div>
+
+                      {row.recentForm && row.recentForm.length > 0 && (
+                        <div className="inline-flex items-center gap-1 shrink-0" aria-label="Recent form">
+                          {row.recentForm.slice(0, 3).map((f, i) => (
+                            <span
+                              key={i}
+                              className={cn(
+                                'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black',
+                                f === 'W'
+                                  ? 'bg-emerald-500 text-white'
+                                  : f === 'L'
+                                  ? 'bg-rose-500 text-white'
+                                  : 'bg-gray-400 text-white'
+                              )}
+                            >
+                              {f}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-gray-50/80 text-gray-500 font-bold border-b border-gray-100">
+                  <tr>
+                    <th scope="col" className="px-4 py-3 text-center w-12">#</th>
+                    <th scope="col" className="px-4 py-3">Team</th>
+                    <th scope="col" className="px-3 py-3 text-center">P</th>
+                    <th scope="col" className="px-3 py-3 text-center">W</th>
+                    <th scope="col" className="px-3 py-3 text-center">L</th>
+                    <th scope="col" className="px-3 py-3 text-center">NRR</th>
+                    <th scope="col" className="px-4 py-3 text-center">PTS</th>
+                    <th scope="col" className="px-4 py-3 text-center hidden sm:table-cell">Recent Form</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {topStandings.map((row, idx) => {
+                    const isTopTwo = idx < 2
+                    return (
+                      <tr
+                        key={row.teamId}
+                        onClick={() => navigate(`/team/${row.teamId}`)}
+                        className="hover:bg-gray-50/80 transition-colors cursor-pointer"
+                      >
+                        <td className="px-4 py-3 text-center font-bold">
+                          <span
+                            className={cn(
+                              'inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px]',
+                              isTopTwo ? 'bg-emerald-100 text-emerald-800 font-black' : 'text-gray-600'
+                            )}
+                          >
+                            {idx + 1}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <TeamLogo
+                              name={row.name}
+                              shortName={row.shortName}
+                              color={row.color}
+                              logoUrl={row.logoUrl}
+                              size="sm"
+                            />
+                            <div>
+                              <div className="font-extrabold text-[#111827]">{row.name}</div>
+                              <div className="text-[10px] text-gray-400 font-mono">{row.shortName}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center font-bold text-gray-700">{row.played}</td>
+                        <td className="px-3 py-3 text-center font-bold text-emerald-600">{row.won}</td>
+                        <td className="px-3 py-3 text-center font-bold text-rose-600">{row.lost}</td>
+                        <td className="px-3 py-3 text-center font-mono font-semibold">
+                          <span className={row.nrr >= 0 ? 'text-emerald-700' : 'text-rose-700'}>
+                            {row.nrr >= 0 ? `+${row.nrr.toFixed(3)}` : row.nrr.toFixed(3)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center font-black text-sm text-[#7A1426] tabular-nums">
+                          {row.points}
+                        </td>
+                        <td className="px-4 py-3 text-center hidden sm:table-cell">
+                          <div className="flex items-center justify-center gap-1">
+                            {row.recentForm && row.recentForm.length > 0 ? (
+                              row.recentForm.slice(0, 4).map((f, i) => (
+                                <span
+                                  key={i}
+                                  className={cn(
+                                    'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black',
+                                    f === 'W'
+                                      ? 'bg-emerald-500 text-white'
+                                      : f === 'L'
+                                      ? 'bg-rose-500 text-white'
+                                      : 'bg-gray-400 text-white'
+                                  )}
+                                >
+                                  {f}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-gray-400 text-[10px]">&mdash;</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
           <div className="p-8 text-center space-y-2">
             <Trophy className="w-8 h-8 text-gray-300 mx-auto" />
