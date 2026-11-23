@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   BadgeCheck,
   CalendarRange,
@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 import { ApiError, api } from '@/lib/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AdminPagination } from '@/components/cricket/admin/admin-pagination'
 import {
   Dialog,
   DialogContent,
@@ -79,6 +80,24 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([])
   const [busy, setBusy] = useState(false)
 
+  // Directory Pagination
+  const [directoryPage, setDirectoryPage] = useState(1)
+  const [directoryPageSize, setDirectoryPageSize] = useState(10)
+  const directoryTotalPages = Math.ceil(searchRows.length / directoryPageSize) || 1
+  const paginatedDirectoryRows = useMemo(() => {
+    const start = (directoryPage - 1) * directoryPageSize
+    return searchRows.slice(start, start + directoryPageSize)
+  }, [searchRows, directoryPage, directoryPageSize])
+
+  // Audit Logs Pagination
+  const [auditPage, setAuditPage] = useState(1)
+  const [auditPageSize, setAuditPageSize] = useState(10)
+  const auditTotalPages = Math.ceil(auditLogs.length / auditPageSize) || 1
+  const paginatedAuditLogs = useMemo(() => {
+    const start = (auditPage - 1) * auditPageSize
+    return auditLogs.slice(start, start + auditPageSize)
+  }, [auditLogs, auditPage, auditPageSize])
+
   // Career inspector modal state
   const [inspectedCareer, setInspectedCareer] = useState<any | null>(null)
   const [inspectLoadingId, setInspectLoadingId] = useState<string | null>(null)
@@ -95,8 +114,9 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
 
   const loadDirectory = useCallback(async (qStr = query) => {
     setLoadingDirectory(true)
+    setDirectoryPage(1)
     try {
-      const res = await api<any[]>(`/api/players/search?q=${encodeURIComponent(qStr.trim())}&limit=50`)
+      const res = await api<any[]>(`/api/players/search?q=${encodeURIComponent(qStr.trim())}&limit=200`)
       setSearchRows(
         res.map((p) => ({
           ...p,
@@ -137,7 +157,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
   useEffect(() => {
     let alive = true
     setLoadingDirectory(true)
-    api<any[]>('/api/players/search?q=&limit=50')
+    api<any[]>('/api/players/search?q=&limit=200')
       .then((res) => {
         if (!alive) return
         setSearchRows(
@@ -436,7 +456,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
               <>
                 {/* Mobile Card List (Zero Horizontal Scrolling) */}
                 <div className="md:hidden divide-y divide-gray-100">
-                  {searchRows.map((p) => {
+                  {paginatedDirectoryRows.map((p) => {
                     const matches = p.matches ?? p.careerSummary?.matches ?? 0
                     const runs = p.runs ?? p.careerSummary?.runs ?? 0
                     const wickets = p.wickets ?? p.careerSummary?.wickets ?? 0
@@ -580,7 +600,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {searchRows.map((p) => {
+                      {paginatedDirectoryRows.map((p) => {
                         const matches = p.matches ?? p.careerSummary?.matches ?? 0
                         const runs = p.runs ?? p.careerSummary?.runs ?? 0
                         const wickets = p.wickets ?? p.careerSummary?.wickets ?? 0
@@ -667,6 +687,19 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                     </tbody>
                   </table>
                 </div>
+
+                <AdminPagination
+                  currentPage={directoryPage}
+                  totalPages={directoryTotalPages}
+                  totalItems={searchRows.length}
+                  pageSize={directoryPageSize}
+                  onPageChange={setDirectoryPage}
+                  onPageSizeChange={(size) => {
+                    setDirectoryPageSize(size)
+                    setDirectoryPage(1)
+                  }}
+                  itemLabel="identities"
+                />
               </>
             )}
           </Card>
@@ -1024,7 +1057,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
             <>
               {/* Mobile Audit Card List (Zero Horizontal Scrolling) */}
               <div className="md:hidden divide-y divide-gray-100">
-                {auditLogs.map((l) => (
+                {paginatedAuditLogs.map((l) => (
                   <div key={l.id} className="p-3.5 space-y-2 text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-mono font-bold text-[11px] text-[#7A1426] bg-[#7A1426]/10 px-2 py-0.5 rounded-md">
@@ -1060,7 +1093,7 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {auditLogs.map((l) => (
+                    {paginatedAuditLogs.map((l) => (
                       <tr key={l.id} className="hover:bg-[#F9FAFB]">
                         <td className="py-2.5 pl-5 pr-3 text-gray-500 whitespace-nowrap">{fmtDate(l.createdAt)}</td>
                         <td className="py-2.5 px-3 font-mono font-bold text-[#7A1426]">{l.action}</td>
@@ -1073,6 +1106,19 @@ export function PlayerCareerAdminPanel({ onPlayersChanged }: { onPlayersChanged?
                   </tbody>
                 </table>
               </div>
+
+              <AdminPagination
+                currentPage={auditPage}
+                totalPages={auditTotalPages}
+                totalItems={auditLogs.length}
+                pageSize={auditPageSize}
+                onPageChange={setAuditPage}
+                onPageSizeChange={(size) => {
+                  setAuditPageSize(size)
+                  setAuditPage(1)
+                }}
+                itemLabel="logs"
+              />
             </>
           )}
         </Card>

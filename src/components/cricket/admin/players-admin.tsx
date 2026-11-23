@@ -52,6 +52,7 @@ import {
 import { api, ROLE_LABEL } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
 import { PlayerAvatarField } from '@/components/cricket/player/player-avatar-field'
+import { AdminPagination } from '@/components/cricket/admin/admin-pagination'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -159,6 +160,21 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
       return true
     })
   }, [players, teamFilter, roleFilter, genderFilter, search])
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
+  // Reset to page 1 when search or filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, teamFilter, roleFilter, genderFilter])
+
+  const totalPages = Math.ceil(filteredPlayers.length / pageSize) || 1
+  const paginatedPlayers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredPlayers.slice(start, start + pageSize)
+  }, [filteredPlayers, currentPage, pageSize])
 
   const unassignedCount = useMemo(() => {
     return players ? players.filter((p) => !p.teamId).length : 0
@@ -310,7 +326,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
         <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs overflow-hidden">
           {/* Mobile Card List (Zero Horizontal Scrolling) */}
           <div className="md:hidden divide-y divide-[#E5E7EB]">
-            {filteredPlayers.map((p) => {
+            {paginatedPlayers.map((p) => {
               const assignedTeam = teams.find((t) => t.id === p.teamId) || p.team
               const isFemale = p.gender === 'FEMALE'
               return (
@@ -464,7 +480,7 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB]">
-                {filteredPlayers.map((p) => {
+                {paginatedPlayers.map((p) => {
                   const assignedTeam = teams.find((t) => t.id === p.teamId) || p.team
                   const isFemale = p.gender === 'FEMALE'
                   return (
@@ -608,6 +624,19 @@ export function PlayersAdmin({ navigate }: { navigate?: (to: string) => void } =
               </tbody>
             </table>
           </div>
+
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredPlayers.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size)
+              setCurrentPage(1)
+            }}
+            itemLabel="players"
+          />
         </Card>
       )}
 
