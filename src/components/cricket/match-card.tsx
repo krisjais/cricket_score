@@ -11,6 +11,13 @@ export function MatchCard({ match, navigate }: { match: MatchSummary; navigate: 
   const done = match.status === 'COMPLETED'
   const batting = match.scores.find((s) => s.number === match.currentInnings)
 
+  const isWinnerA = done && match.winnerId === match.teamA.id
+  const isWinnerB = done && match.winnerId === match.teamB.id
+  const isBattingA = isLive && batting?.battingTeamId === match.teamA.id
+  const isBattingB = isLive && batting?.battingTeamId === match.teamB.id
+  const scoreA = match.scores.filter((s) => s.battingTeamId === match.teamA.id)
+  const scoreB = match.scores.filter((s) => s.battingTeamId === match.teamB.id)
+
   const teamRow = (
     team: MatchSummary['teamA'],
     other: MatchSummary['teamB'],
@@ -21,8 +28,10 @@ export function MatchCard({ match, navigate }: { match: MatchSummary; navigate: 
     const isBatting = isLive && batting?.battingTeamId === team.id
 
     return (
-      <div className={cn('flex flex-1 items-center gap-3', align === 'right' && 'flex-row-reverse text-right')}>
-        <TeamLogo name={team.name} shortName={team.shortName} color={team.color} logoUrl={team.logoUrl} size="md" />
+      <div className={cn('flex flex-1 min-w-0 items-center gap-2.5', align === 'right' && 'flex-row-reverse text-right')}>
+        <div className="shrink-0">
+          <TeamLogo name={team.name} shortName={team.shortName} color={team.color} logoUrl={team.logoUrl} size="md" />
+        </div>
         <div className="min-w-0 flex-1">
           <div className={cn('truncate text-sm flex items-center gap-1.5', align === 'right' && 'justify-end', isWinner ? 'font-extrabold text-[#7A1426]' : 'font-bold text-[#111827]')}>
             {isWinner && align === 'left' && <Trophy className="w-3.5 h-3.5 text-[#7A1426] shrink-0" />}
@@ -58,18 +67,13 @@ export function MatchCard({ match, navigate }: { match: MatchSummary; navigate: 
 
   const resultLine = () => {
     if (match.status === 'COMPLETED' && match.resultText) {
-      const winnerShort = match.winnerId
-        ? match.winnerId === match.teamA.id
-          ? match.teamA.shortName
-          : match.teamB.shortName
-        : null
       return (
-        <div className="bg-gray-50 border-t border-gray-200 px-4 py-2.5 text-xs font-semibold text-[#111827] flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
+        <div className="bg-gray-50 border-t border-gray-200 px-4 py-2.5 text-xs font-semibold text-[#111827] flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5 min-w-0">
             <Trophy className="w-3.5 h-3.5 text-[#7A1426] shrink-0" />
-            <span>{winnerShort ? `${winnerShort} won — ` : ''}{match.resultText}</span>
+            <span className="truncate">{match.resultText}</span>
           </span>
-          <span className="text-[11px] text-[#7A1426] font-bold group-hover:translate-x-0.5 transition-transform">
+          <span className="text-[11px] text-[#7A1426] font-bold shrink-0 group-hover:translate-x-0.5 transition-transform">
             Scorecard &rarr;
           </span>
         </div>
@@ -84,12 +88,12 @@ export function MatchCard({ match, navigate }: { match: MatchSummary; navigate: 
     }
     if (isLive) {
       return (
-        <div className="bg-[#7A1426]/[0.04] border-t border-[#7A1426]/15 px-4 py-2.5 text-xs font-semibold text-[#7A1426] flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <Radio className="w-3.5 h-3.5 animate-pulse" />
-            <span>Live Coverage Active</span>
+        <div className="bg-[#7A1426]/[0.04] border-t border-[#7A1426]/15 px-4 py-2.5 text-xs font-semibold text-[#7A1426] flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1.5 min-w-0">
+            <Radio className="w-3.5 h-3.5 animate-pulse shrink-0" />
+            <span className="truncate">Live Coverage Active</span>
           </span>
-          <span className="text-xs font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+          <span className="text-xs font-bold flex items-center gap-1 shrink-0 group-hover:translate-x-0.5 transition-transform">
             <span>Watch Live</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </span>
@@ -99,15 +103,15 @@ export function MatchCard({ match, navigate }: { match: MatchSummary; navigate: 
     if (match.tossWinnerId && match.tossDecision) {
       const tossTeam = match.tossWinnerId === match.teamA.id ? match.teamA : match.teamB
       return (
-        <div className="bg-gray-50 border-t border-gray-200 px-4 py-2.5 text-xs text-gray-600">
+        <div className="bg-gray-50 border-t border-gray-200 px-4 py-2.5 text-xs text-gray-600 truncate">
           {tossTeam.shortName} won toss &amp; chose to {match.tossDecision === 'BAT' ? 'bat' : 'bowl'}
         </div>
       )
     }
     return (
-      <div className="bg-gray-50 border-t border-gray-200 px-4 py-2.5 text-xs text-gray-500 flex items-center justify-between">
-        <span>{match.venue || 'Turf 01'}</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Scheduled</span>
+      <div className="bg-gray-50 border-t border-gray-200 px-4 py-2.5 text-xs text-gray-500 flex items-center justify-between gap-2">
+        <span className="truncate">{match.venue || 'Turf 01'}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 shrink-0">Scheduled</span>
       </div>
     )
   }
@@ -144,7 +148,87 @@ export function MatchCard({ match, navigate }: { match: MatchSummary; navigate: 
             <StatusBadge status={match.status} />
           </div>
 
-          <div className="flex items-center justify-between gap-3 pt-1">
+          {/* Mobile Phone View: Stacked Team Rows (Zero Overflow, Full Readability) */}
+          <div className="sm:hidden space-y-2.5 pt-1">
+            {/* Team A */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="shrink-0">
+                  <TeamLogo name={match.teamA.name} shortName={match.teamA.shortName} color={match.teamA.color} logoUrl={match.teamA.logoUrl} size="sm" />
+                </div>
+                <div className="min-w-0 flex-1 flex items-center gap-1.5">
+                  <span className={cn('truncate text-sm font-bold', isWinnerA ? 'font-extrabold text-[#7A1426]' : 'text-[#111827]')}>
+                    {match.teamA.name}
+                  </span>
+                  {isWinnerA && <Trophy className="w-3.5 h-3.5 text-[#7A1426] shrink-0" />}
+                  {isBattingA && (
+                    <span className="inline-flex items-center gap-1 bg-[#7A1426]/10 text-[#7A1426] border border-[#7A1426]/20 px-1.5 py-0.2 rounded text-[10px] font-bold shrink-0">
+                      BAT
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                {scoreA.length === 0 ? (
+                  <span className="text-gray-400 text-xs italic">Yet to bat</span>
+                ) : (
+                  scoreA.map((s) => (
+                    <span
+                      key={s.number}
+                      className={cn(
+                        'font-mono font-bold tabular-nums text-sm',
+                        isLive && s.number === match.currentInnings ? 'text-[#7A1426]' : 'text-gray-800'
+                      )}
+                    >
+                      {s.runs}/{s.wickets}
+                      <span className="ml-1 text-[11px] font-normal text-gray-500">({s.overs} ov)</span>
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Team B */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="shrink-0">
+                  <TeamLogo name={match.teamB.name} shortName={match.teamB.shortName} color={match.teamB.color} logoUrl={match.teamB.logoUrl} size="sm" />
+                </div>
+                <div className="min-w-0 flex-1 flex items-center gap-1.5">
+                  <span className={cn('truncate text-sm font-bold', isWinnerB ? 'font-extrabold text-[#7A1426]' : 'text-[#111827]')}>
+                    {match.teamB.name}
+                  </span>
+                  {isWinnerB && <Trophy className="w-3.5 h-3.5 text-[#7A1426] shrink-0" />}
+                  {isBattingB && (
+                    <span className="inline-flex items-center gap-1 bg-[#7A1426]/10 text-[#7A1426] border border-[#7A1426]/20 px-1.5 py-0.2 rounded text-[10px] font-bold shrink-0">
+                      BAT
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                {scoreB.length === 0 ? (
+                  <span className="text-gray-400 text-xs italic">Yet to bat</span>
+                ) : (
+                  scoreB.map((s) => (
+                    <span
+                      key={s.number}
+                      className={cn(
+                        'font-mono font-bold tabular-nums text-sm',
+                        isLive && s.number === match.currentInnings ? 'text-[#7A1426]' : 'text-gray-800'
+                      )}
+                    >
+                      {s.runs}/{s.wickets}
+                      <span className="ml-1 text-[11px] font-normal text-gray-500">({s.overs} ov)</span>
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop/Tablet View: Side-by-Side Teams with VS separator */}
+          <div className="hidden sm:flex items-center justify-between gap-3 pt-1">
             {teamRow(match.teamA, match.teamB, 'left')}
             <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-[10px] font-bold text-gray-500 border border-gray-200">
               VS
