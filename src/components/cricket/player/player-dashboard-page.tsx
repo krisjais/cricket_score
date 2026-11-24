@@ -223,8 +223,12 @@ export function PlayerDashboardPage({
     try {
       const res = await api<PlayerDashboardData>('/api/player-auth/dashboard')
       applyDashboardData(res)
-    } catch {
-      setUnauth(true)
+    } catch (err: any) {
+      if (err?.status === 401) {
+        setUnauth(true)
+      } else {
+        toast.error(err instanceof Error ? err.message : 'Failed to load dashboard')
+      }
     } finally {
       setLoading(false)
     }
@@ -238,8 +242,13 @@ export function PlayerDashboardPage({
         setUnauth(false)
         applyDashboardData(res)
       })
-      .catch(() => {
-        if (alive) setUnauth(true)
+      .catch((err: any) => {
+        if (!alive) return
+        if (err?.status === 401) {
+          setUnauth(true)
+        } else {
+          toast.error(err instanceof Error ? err.message : 'Failed to load dashboard')
+        }
       })
       .finally(() => {
         if (alive) setLoading(false)

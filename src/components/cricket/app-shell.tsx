@@ -76,6 +76,12 @@ export function AppShell() {
       (seg[0] === 'player' &&
         (seg[1] === 'login' || seg[1] === 'forgot-password' || seg[1] === 'register')))
 
+  useEffect(() => {
+    if (isPlayerSignedIn && (seg[0] === 'login' || (seg[0] === 'player' && seg[1] === 'login'))) {
+      navigate('/player/dashboard')
+    }
+  }, [isPlayerSignedIn, seg, navigate])
+
   const publicNavItems = [
     { key: 'home', label: 'Home', footerLabel: 'Home (Live Matches)', icon: Home, to: '/' },
     { key: 'matches', label: 'Matches', footerLabel: 'Matches (List)', icon: CalendarDays, to: '/matches' },
@@ -187,36 +193,52 @@ export function AppShell() {
       )
     }
 
-    if (isPlayerSignedIn) {
-      return (
-        <PlayerDashboardPage
-          initialTab={seg[0] === 'player' ? route.query.get('tab') : null}
-          navigate={navigate}
-          onAuthChanged={playerSession.refresh}
-          playerSession={playerSession}
-        />
-      )
-    }
-
     if (seg[0] === 'teams') return <TeamsPage navigate={navigate} />
     if (seg[0] === 'team' && seg[1]) return <TeamDetailPage teamId={seg[1]} navigate={navigate} />
     if (seg[0] === 'points-table') return <PointsTablePage navigate={navigate} />
     if (seg[0] === 'leaderboards') return <LeaderboardsPage navigate={navigate} />
+    if (seg[0] === 'awards') return <AwardsPage navigate={navigate} />
+
     if (seg[0] === 'login' || (seg[0] === 'player' && seg[1] === 'login')) {
+      if (isPlayerSignedIn) {
+        return (
+          <PlayerDashboardPage
+            initialTab={route.query.get('tab')}
+            navigate={navigate}
+            onAuthChanged={playerSession.refresh}
+            playerSession={playerSession}
+          />
+        )
+      }
       return (
         <PlayerLoginPage
           key="login"
           navigate={navigate}
           onAuthenticated={playerSession.refresh}
           onAdminAuthenticated={session.refresh}
+          onSessionSync={playerSession.setSessionSync}
         />
       )
     }
     if (seg[0] === 'player' && seg[1] === 'forgot-password') {
-      return <PlayerLoginPage key="forgot-password" initialMode="FORGOT_PASSWORD" navigate={navigate} onAuthenticated={playerSession.refresh} />
+      return (
+        <PlayerLoginPage
+          key="forgot-password"
+          initialMode="FORGOT_PASSWORD"
+          navigate={navigate}
+          onAuthenticated={playerSession.refresh}
+          onSessionSync={playerSession.setSessionSync}
+        />
+      )
     }
     if (seg[0] === 'player' && seg[1] === 'register') {
-      return <PlayerRegisterPage navigate={navigate} onAuthenticated={playerSession.refresh} />
+      return (
+        <PlayerRegisterPage
+          navigate={navigate}
+          onAuthenticated={playerSession.refresh}
+          onSessionSync={playerSession.setSessionSync}
+        />
+      )
     }
     if (seg[0] === 'player' && (!seg[1] || seg[1] === 'dashboard')) {
       return (
@@ -228,7 +250,18 @@ export function AppShell() {
         />
       )
     }
-    if (seg[0] === 'awards') return <AwardsPage navigate={navigate} />
+
+    if (isPlayerSignedIn) {
+      return (
+        <PlayerDashboardPage
+          initialTab={seg[0] === 'player' ? route.query.get('tab') : null}
+          navigate={navigate}
+          onAuthChanged={playerSession.refresh}
+          playerSession={playerSession}
+        />
+      )
+    }
+
     return <HomePage matches={matches} loading={loading} navigate={navigate} />
   }
 
@@ -254,13 +287,18 @@ export function AppShell() {
     view = (
       <div className="min-h-screen bg-[#F4F5F7] text-[#111827]">
         {seg[0] === 'player' && seg[1] === 'register' ? (
-          <PlayerRegisterPage navigate={navigate} onAuthenticated={playerSession.refresh} />
+          <PlayerRegisterPage
+            navigate={navigate}
+            onAuthenticated={playerSession.refresh}
+            onSessionSync={playerSession.setSessionSync}
+          />
         ) : seg[0] === 'player' && seg[1] === 'forgot-password' ? (
           <PlayerLoginPage
             key="forgot-password"
             initialMode="FORGOT_PASSWORD"
             navigate={navigate}
             onAuthenticated={playerSession.refresh}
+            onSessionSync={playerSession.setSessionSync}
           />
         ) : (
           <PlayerLoginPage
@@ -268,6 +306,7 @@ export function AppShell() {
             navigate={navigate}
             onAuthenticated={playerSession.refresh}
             onAdminAuthenticated={session.refresh}
+            onSessionSync={playerSession.setSessionSync}
           />
         )}
       </div>

@@ -27,6 +27,53 @@ const SOCKET_URL = (
 
 const ADMIN_UNAUTH_EVENT = 'npl:admin-unauth'
 
+export const PLAYER_TOKEN_STORAGE_KEY = 'cricket_player_access_token'
+export const ADMIN_TOKEN_STORAGE_KEY = 'cricket_admin_access_token'
+
+export function getPlayerToken(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    return localStorage.getItem(PLAYER_TOKEN_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setPlayerToken(token: string | null) {
+  if (typeof window === 'undefined') return
+  try {
+    if (token) {
+      localStorage.setItem(PLAYER_TOKEN_STORAGE_KEY, token)
+    } else {
+      localStorage.removeItem(PLAYER_TOKEN_STORAGE_KEY)
+    }
+  } catch {
+    // Ignore storage quota errors in private browsing
+  }
+}
+
+export function getAdminToken(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    return localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setAdminToken(token: string | null) {
+  if (typeof window === 'undefined') return
+  try {
+    if (token) {
+      localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token)
+    } else {
+      localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY)
+    }
+  } catch {
+    // Ignore storage quota errors in private browsing
+  }
+}
+
 let silentRefreshPromise: Promise<boolean> | null = null
 
 async function silentPlayerRefresh(): Promise<boolean> {
@@ -34,12 +81,20 @@ async function silentPlayerRefresh(): Promise<boolean> {
 
   silentRefreshPromise = (async () => {
     try {
+      const headers: Record<string, string> = {}
+      const curToken = getPlayerToken()
+      if (curToken) headers['authorization'] = `Bearer ${curToken}`
+
       const res = await fetch(`${API_BASE}/api/player-auth/refresh`, {
         method: 'POST',
         credentials: 'include',
+        headers,
       })
       const data = await res.json().catch(() => null)
-      return Boolean(res.ok && data?.ok && data?.data?.refreshed)
+      if (res.ok && data?.ok && data?.data?.accessToken) {
+        setPlayerToken(data.data.accessToken)
+      }
+      return Boolean(res.ok && data?.ok && (data?.data?.refreshed || data?.data?.accessToken))
     } catch {
       return false
     } finally {
@@ -54,10 +109,24 @@ export async function api<T>(path: string, init?: RequestInit & { json?: unknown
   const { json, ...rest } = init ?? {}
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`
 
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    ...((rest.headers as Record<string, string>) ?? {}),
+  }
+
+  const isAdminPath = path.startsWith('/api/admin') || path.startsWith('/admin') || path.startsWith('/api/auth/')
+  const playerToken = getPlayerToken()
+  const adminToken = getAdminToken()
+  const token = isAdminPath ? (adminToken || playerToken) : (playerToken || adminToken)
+
+  if (token && !headers['authorization'] && !headers['Authorization']) {
+    headers['authorization'] = `Bearer ${token}`
+  }
+
   const res = await fetch(url, {
     ...rest,
     credentials: 'include',
-    headers: { 'content-type': 'application/json', ...(rest.headers ?? {}) },
+    headers,
     body: json !== undefined ? JSON.stringify(json) : rest.body,
   })
   const data = (await res.json().catch(() => null)) as { ok?: boolean; data?: T; error?: string } | null
@@ -84,6 +153,7 @@ export async function api<T>(path: string, init?: RequestInit & { json?: unknown
       typeof window !== 'undefined' &&
       (path.startsWith('/api/admin') || path.startsWith('/admin'))
     ) {
+      setAdminToken(null)
       window.dispatchEvent(new Event(ADMIN_UNAUTH_EVENT))
     }
     throw new ApiError(data?.error ?? `Request failed (${res.status})`, res.status)
@@ -353,7 +423,8 @@ export function useAdminSession(): AdminSession {
   }, [refresh])
 
   const logout = useCallback(async () => {
-    await api('/api/auth/logout', { method: 'POST' })
+    setAdminToken(null)
+    await api('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
     await refresh()
   }, [refresh])
 
@@ -405,6 +476,7 @@ export interface PlayerSession {
   } | null
   loading: boolean
   refresh: () => Promise<void>
+  setSessionSync?: (payload: { user: PlayerSessionUser | null; player: PlayerSessionProfile | null }) => void
   logout: () => Promise<void>
 }
 
@@ -497,12 +569,25 @@ export function usePlayerSession(): PlayerSession {
     }
   }, [refresh])
 
+  const setSessionSync = useCallback((payload: { user: PlayerSessionUser | null; player: PlayerSessionProfile | null }) => {
+    if (!mounted.current) return
+    wasAuthedRef.current = Boolean(payload.player)
+    setState((prev) => ({
+      ...prev,
+      isAuthenticated: Boolean(payload.player),
+      user: payload.user,
+      player: payload.player,
+    }))
+    setLoading(false)
+  }, [])
+
   const logout = useCallback(async () => {
-    await api('/api/player-auth/logout', { method: 'POST' })
+    setPlayerToken(null)
+    await api('/api/player-auth/logout', { method: 'POST' }).catch(() => undefined)
     await refresh()
   }, [refresh])
 
-  return { ...state, loading, refresh, logout }
+  return { ...state, loading, refresh, setSessionSync, logout }
 }
 
 // ---------------------------------------------------------------------------

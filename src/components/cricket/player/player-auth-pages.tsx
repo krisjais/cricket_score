@@ -16,7 +16,13 @@ import {
   UserCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { api } from '@/lib/client'
+import {
+  api,
+  setPlayerToken,
+  setAdminToken,
+  type PlayerSessionUser,
+  type PlayerSessionProfile,
+} from '@/lib/client'
 import { AplLogo } from '@/components/cricket/apl-logo'
 import { Button } from '@/components/ui/button'
 import { PlayerAvatarField } from './player-avatar-field'
@@ -430,18 +436,20 @@ interface OtpSendResult {
 }
 
 type UnifiedLoginResponse =
-  | { role: 'ADMIN'; username: string }
+  | { role: 'ADMIN'; username: string; token?: string }
   | { role: 'PLAYER'; user: unknown; player: unknown; accessToken: string }
 
 export function PlayerLoginPage({
   navigate,
   onAuthenticated,
   onAdminAuthenticated,
+  onSessionSync,
   initialMode = 'SIGN_IN',
 }: {
   navigate: (to: string) => void
   onAuthenticated: () => Promise<void>
   onAdminAuthenticated?: () => Promise<void>
+  onSessionSync?: (payload: { user: PlayerSessionUser | null; player: PlayerSessionProfile | null }) => void
   initialMode?: 'SIGN_IN' | 'FORGOT_PASSWORD'
 }) {
   const [mode, setMode] = useState<'SIGN_IN' | 'FORGOT_PASSWORD'>(initialMode)
@@ -511,10 +519,19 @@ export function PlayerLoginPage({
         json: { identifier: cleanIdentifier, password },
       })
       if (res.role === 'ADMIN') {
+        if ('token' in res && typeof res.token === 'string') {
+          setAdminToken(res.token)
+        }
         await onAdminAuthenticated?.()
         toast.success(`Signed in as Admin (${res.username})`)
         navigate('/admin')
         return
+      }
+      if (res.accessToken) {
+        setPlayerToken(res.accessToken)
+      }
+      if (res.user && res.player) {
+        onSessionSync?.({ user: res.user as any, player: res.player as any })
       }
       await onAuthenticated()
       toast.success('Signed in to your player profile')
@@ -929,9 +946,11 @@ export function PlayerLoginPage({
 export function PlayerRegisterPage({
   navigate,
   onAuthenticated,
+  onSessionSync,
 }: {
   navigate: (to: string) => void
   onAuthenticated: () => Promise<void>
+  onSessionSync?: (payload: { user: PlayerSessionUser | null; player: PlayerSessionProfile | null }) => void
 }) {
   const [step, setStep] = useState<'DETAILS' | 'VERIFY_OTP'>('DETAILS')
   const [name, setName] = useState('')
@@ -1036,7 +1055,7 @@ export function PlayerRegisterPage({
 
     setSubmitting(true)
     try {
-      await api('/api/player-auth/register', {
+      const res = await api<{ user: any; player: any; accessToken?: string }>('/api/player-auth/register', {
         method: 'POST',
         json: {
           name: name.trim(),
@@ -1054,6 +1073,12 @@ export function PlayerRegisterPage({
           otpChannel: 'EMAIL',
         },
       })
+      if (res?.accessToken) {
+        setPlayerToken(res.accessToken)
+      }
+      if (res?.user && res?.player) {
+        onSessionSync?.({ user: res.user as any, player: res.player as any })
+      }
       await onAuthenticated()
       toast.success('Registration complete! Welcome to Alliance Premier League.')
       navigate('/player/dashboard')
