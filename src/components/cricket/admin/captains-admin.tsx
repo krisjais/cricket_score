@@ -17,6 +17,7 @@ import {
   Calendar,
   Eye,
   ArrowRightLeft,
+  Trash2,
 } from 'lucide-react'
 import { api, fmtDate } from '@/lib/client'
 import { formatCricketLabel } from '../player/player-types'
@@ -237,6 +238,11 @@ export function CaptainsAdmin() {
   const [removeTarget, setRemoveTarget] = useState<CaptainOverviewItem | null>(null)
   const [removeReason, setRemoveReason] = useState('')
   const [savingRemove, setSavingRemove] = useState(false)
+
+  // Delete Dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<CaptainOverviewItem | null>(null)
+  const [savingDelete, setSavingDelete] = useState(false)
 
   // Lineup Review Dialog
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
@@ -471,6 +477,25 @@ export function CaptainsAdmin() {
       toast.error(err?.message || 'Failed to remove captain')
     } finally {
       setSavingRemove(false)
+    }
+  }
+
+  // Handle Delete
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return
+    setSavingDelete(true)
+    try {
+      await api(`/api/captains/admin/assignments/${deleteTarget.id}`, {
+        method: 'DELETE',
+      })
+      toast.success('Captaincy assignment deleted successfully.')
+      setDeleteDialogOpen(false)
+      setDeleteTarget(null)
+      loadData()
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to delete captaincy assignment')
+    } finally {
+      setSavingDelete(false)
     }
   }
 
@@ -830,15 +855,34 @@ export function CaptainsAdmin() {
                                     setRemoveReason('')
                                     setRemoveDialogOpen(true)
                                   }}
-                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
                                 >
                                   <span>Revoke</span>
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeleteTarget(item)
+                                    setDeleteDialogOpen(true)
+                                  }}
+                                  title="Delete assignment"
+                                  className="h-8 w-8 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer inline-flex items-center justify-center shadow-2xs"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                </button>
                               </>
                             ) : (
-                              <span className="text-[11px] font-medium text-gray-400 italic">
-                                Historical
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDeleteTarget(item)
+                                  setDeleteDialogOpen(true)
+                                }}
+                                className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                <span>Delete</span>
+                              </button>
                             )}
                           </div>
                         </div>
@@ -966,16 +1010,35 @@ export function CaptainsAdmin() {
                                     setRemoveReason('')
                                     setRemoveDialogOpen(true)
                                   }}
-                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-rose-700 bg-rose-50/80 hover:bg-rose-100 hover:text-rose-900 border border-rose-200 cursor-pointer inline-flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-amber-700 bg-amber-50/80 hover:bg-amber-100 hover:text-amber-900 border border-amber-200 cursor-pointer inline-flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                                 >
                                   <span>Revoke</span>
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeleteTarget(item)
+                                    setDeleteDialogOpen(true)
+                                  }}
+                                  title="Delete assignment"
+                                  className="h-8 w-8 rounded-lg text-rose-700 bg-rose-50/80 hover:bg-rose-100 hover:text-rose-900 border border-rose-200 cursor-pointer inline-flex items-center justify-center transition-colors shadow-2xs"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                                </button>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-end">
-                                <span className="text-[11px] font-medium text-gray-400 italic">
-                                  Historical
-                                </span>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeleteTarget(item)
+                                    setDeleteDialogOpen(true)
+                                  }}
+                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-rose-700 bg-rose-50/80 hover:bg-rose-100 hover:text-rose-900 border border-rose-200 cursor-pointer inline-flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                                  <span>Delete</span>
+                                </button>
                               </div>
                             )}
                           </td>
@@ -1775,6 +1838,40 @@ export function CaptainsAdmin() {
               className="rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold cursor-pointer"
             >
               {savingRemove ? 'Revoking...' : 'Revoke Captaincy'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* DIALOG: DELETE CAPTAINCY ASSIGNMENT CONFIRMATION */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="rounded-3xl p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-black text-[#111827] flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-rose-600" />
+              Delete Captaincy Record
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-gray-600 space-y-2">
+              <p>
+                Are you sure you want to permanently delete the captaincy assignment for{' '}
+                <strong>{deleteTarget?.player?.name ?? 'Unknown Player'}</strong> from{' '}
+                <strong>{deleteTarget?.team?.name ?? 'Unknown Team'}</strong> (
+                {deleteTarget?.season?.name ?? 'Unknown Season'})?
+              </p>
+              <p className="text-[11px] text-rose-600 font-semibold">
+                This will permanently delete this record from the database. This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl text-xs">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={savingDelete}
+              className="rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold cursor-pointer"
+            >
+              {savingDelete ? 'Deleting...' : 'Delete Permanently'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
