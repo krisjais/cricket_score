@@ -52,10 +52,21 @@ export interface LiveView {
   maxWickets: number
 }
 
+export interface MatchUmpire {
+  name: string
+  teamId?: string | null
+  teamName?: string | null
+  playerId?: string | null
+}
+
 export interface MatchSummary {
   id: string
   format: string
   totalOvers: number
+  maxOversPerBowler?: number | null
+  maxBowlersWithMaxOvers?: number | null
+  mainUmpire?: MatchUmpire | null
+  legUmpire?: MatchUmpire | null
   venue: string | null
   status: string
   seasonId?: string | null

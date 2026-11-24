@@ -169,12 +169,12 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
               <p className="text-xs font-bold text-[#6b7280] mt-0.5">{players.length} players listed</p>
             </div>
             {team.seasons && team.seasons.length > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <label htmlFor="team-season-filter" className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                   Season Roster
                 </label>
                 <Select value={seasonId || 'ALL'} onValueChange={(val) => setSeasonId(val === 'ALL' ? '' : val)}>
-                  <SelectTrigger className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] h-9 min-w-[200px]">
+                  <SelectTrigger className="rounded-xl border border-[#E5E7EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] h-9 w-full sm:w-auto sm:min-w-[200px]">
                     <SelectValue placeholder="Current Squad & All-Time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -191,7 +191,61 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="table-wrapper" tabIndex={0}>
+          {/* Mobile Card List (Zero Horizontal Scrolling) */}
+          <div className="md:hidden divide-y divide-[#E5E7EB]">
+            {players.length === 0 ? (
+              <div className="py-10 text-center text-xs text-gray-500">
+                No squad memberships recorded for this selection yet.
+              </div>
+            ) : (
+              players.map((p) => {
+                const s = team.stats[p.id]
+                return (
+                  <div key={p.id} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/players/${encodeURIComponent(p.id)}`)}
+                          className="hover:text-[#7A1426] hover:underline cursor-pointer text-left font-bold text-sm text-[#111827] truncate"
+                        >
+                          {p.name}
+                        </button>
+                        {team.captain === p.name && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-[#7A1426]/20 border border-[#7A1426]/40 text-[#916922] shrink-0">
+                            Captain
+                          </span>
+                        )}
+                      </div>
+                      <span className="inline-block text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] text-[#7A1426] shrink-0">
+                        {ROLE_LABEL[p.role] ?? p.role}
+                      </span>
+                    </div>
+
+                    {hasAnyStat && (
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-gray-100 text-gray-600">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                          {seasonId ? 'Season Record' : 'Tournament Record'}
+                        </span>
+                        {s && s.matches > 0 ? (
+                          <div className="font-bold text-[#111827] tabular-nums">
+                            <span className="text-[#7A1426]">{s.runs} runs</span>
+                            {s.wickets > 0 && <span className="text-emerald-700 ml-1.5">• {s.wickets} wkts</span>}
+                            <span className="ml-1.5 text-[11px] font-normal text-[#6b7280]">({s.matches} mat)</span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-[#9ca3af]">No matches yet</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto" tabIndex={0} role="region" aria-label="Squad Roster">
             <Table>
               <TableHeader className="bg-[#F3F4F6]">
                 <TableRow className="border-b border-[#E5E7EB]">
@@ -232,24 +286,24 @@ export function TeamDetailPage({ teamId, navigate }: { teamId: string; navigate:
                             )}
                           </div>
                         </TableCell>
-                    <TableCell className="text-right">
-                      <span className="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] text-[#7A1426]">
-                        {ROLE_LABEL[p.role] ?? p.role}
-                      </span>
-                    </TableCell>
-                    {hasAnyStat && (
-                      <TableCell className="pr-6 text-right tabular-nums text-xs">
-                        {s && s.matches > 0 ? (
-                          <div className="font-bold text-[#111827]">
-                            <span className="text-[#7A1426]">{s.runs} runs</span>
-                            {s.wickets > 0 && <span className="text-emerald-700 ml-1.5">• {s.wickets} wkts</span>}
-                            <span className="ml-1.5 text-[11px] font-normal text-[#6b7280]">({s.matches} mat)</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-[#9ca3af]">No matches yet</span>
+                        <TableCell className="text-right">
+                          <span className="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] text-[#7A1426]">
+                            {ROLE_LABEL[p.role] ?? p.role}
+                          </span>
+                        </TableCell>
+                        {hasAnyStat && (
+                          <TableCell className="pr-6 text-right tabular-nums text-xs">
+                            {s && s.matches > 0 ? (
+                              <div className="font-bold text-[#111827]">
+                                <span className="text-[#7A1426]">{s.runs} runs</span>
+                                {s.wickets > 0 && <span className="text-emerald-700 ml-1.5">• {s.wickets} wkts</span>}
+                                <span className="ml-1.5 text-[11px] font-normal text-[#6b7280]">({s.matches} mat)</span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-[#9ca3af]">No matches yet</span>
+                            )}
+                          </TableCell>
                         )}
-                      </TableCell>
-                    )}
                       </TableRow>
                     )
                   })

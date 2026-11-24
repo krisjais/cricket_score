@@ -252,6 +252,8 @@ export interface InningsStats {
   commentary: CommentaryItem[]
   live: LiveInningsState | null
   complete: boolean
+  mainUmpire?: { name: string; teamId?: string | null; teamName?: string | null; playerId?: string | null } | null
+  legUmpire?: { name: string; teamId?: string | null; teamName?: string | null; playerId?: string | null } | null
 }
 
 interface MutableBatter {
@@ -637,8 +639,11 @@ export function maxWicketsFor(squadSize: number): number {
   return Math.max(squadSize - 1, 1)
 }
 
-/** Max overs a single bowler may bowl (standard restriction: totalOvers / 5). */
-export function maxOversPerBowler(totalOvers: number): number {
+/** Max overs a single bowler may bowl (strict standard: totalOvers / 5, or custom setting). */
+export function maxOversPerBowler(totalOvers: number, customMax?: number | null): number {
+  if (customMax !== undefined && customMax !== null && Number.isFinite(customMax) && customMax > 0) {
+    return Math.floor(customMax)
+  }
   return Math.max(1, Math.ceil(totalOvers / 5))
 }
 

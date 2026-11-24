@@ -17,6 +17,7 @@ import { PlayerCareerAdminPanel } from '@/components/cricket/admin/player-career
 import { CaptainsAdmin } from '@/components/cricket/admin/captains-admin'
 import { ScoringConsole } from '@/components/cricket/admin/scoring-console'
 import { PointsTablePage } from '@/components/cricket/points-table-page'
+import { AdminPortalSkeleton } from '@/components/cricket/skeletons'
 import { cn } from '@/lib/utils'
 
 const PRIORITY: Record<string, number> = {
@@ -59,12 +60,12 @@ export function AdminPage({
     }
   }, [session.loading, session.isAdmin, navigate])
 
-  if (session.loading || !session.isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F5F7]">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#7A1426] border-t-transparent" />
-      </div>
-    )
+  if (session.loading) {
+    return <AdminPortalSkeleton />
+  }
+
+  if (!session.isAdmin) {
+    return null
   }
 
   const liveCount = matches.filter((m) => m.status === 'LIVE').length
@@ -78,8 +79,8 @@ export function AdminPage({
   return (
     <div
       className={cn(
-        'flex flex-col md:flex-row min-h-screen text-[#111827]',
-        tab === 'scoring' ? 'bg-[#070B14] h-screen overflow-hidden' : 'bg-[#F4F5F7]'
+        'flex flex-col md:flex-row min-h-screen md:h-screen md:overflow-hidden text-[#111827]',
+        tab === 'scoring' ? 'bg-[#070B14]' : 'bg-[#F4F5F7]'
       )}
     >
       {/* Dark Left Sidebar (Dashboard & Scorer Modes) */}
@@ -99,7 +100,7 @@ export function AdminPage({
       {/* Right Content Area */}
       <main
         className={cn(
-          'flex-1 min-w-0',
+          'flex-1 min-w-0 transition-all duration-300 ease-in-out md:h-screen md:overflow-y-auto',
           tab === 'scoring'
             ? 'h-[calc(100dvh-3.25rem)] md:h-screen overflow-hidden flex flex-col bg-[#070B14]'
             : 'overflow-x-hidden'
@@ -128,6 +129,7 @@ export function AdminPage({
                 scorerSubView={scorerSubView}
                 onSelectSubView={setScorerSubView}
                 onSelectMatch={setSelectedId}
+                onExit={() => setTab('matches')}
               />
             ) : (
               <div className="m-auto bg-[#0D1526] border border-[#172136] rounded-2xl p-8 sm:p-12 text-center text-slate-400 max-w-md">

@@ -1,5 +1,4 @@
 'use client'
-/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -18,6 +17,7 @@ import {
   Calendar,
   Eye,
   ArrowRightLeft,
+  Trash2,
 } from 'lucide-react'
 import { api, fmtDate } from '@/lib/client'
 import { formatCricketLabel } from '../player/player-types'
@@ -238,6 +238,11 @@ export function CaptainsAdmin() {
   const [removeTarget, setRemoveTarget] = useState<CaptainOverviewItem | null>(null)
   const [removeReason, setRemoveReason] = useState('')
   const [savingRemove, setSavingRemove] = useState(false)
+
+  // Delete Dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<CaptainOverviewItem | null>(null)
+  const [savingDelete, setSavingDelete] = useState(false)
 
   // Lineup Review Dialog
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false)
@@ -472,6 +477,33 @@ export function CaptainsAdmin() {
       toast.error(err?.message || 'Failed to remove captain')
     } finally {
       setSavingRemove(false)
+    }
+  }
+
+  // Handle Delete
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return
+    setSavingDelete(true)
+    try {
+      try {
+        await api(`/api/captains/admin/assignments/${deleteTarget.id}`, {
+          method: 'DELETE',
+        })
+      } catch (delErr: any) {
+        // Fallback to POST /api/captains/admin/delete
+        await api('/api/captains/admin/delete', {
+          method: 'POST',
+          json: { assignmentId: deleteTarget.id },
+        })
+      }
+      toast.success('Captaincy assignment deleted successfully.')
+      setDeleteDialogOpen(false)
+      setDeleteTarget(null)
+      loadData()
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to delete captaincy assignment')
+    } finally {
+      setSavingDelete(false)
     }
   }
 
@@ -724,8 +756,152 @@ export function CaptainsAdmin() {
                 No captaincy records found matching your filters.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <>
+                {/* Mobile Card List (Zero horizontal scrolling) */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {assignments.map((item) => {
+                    const isActive = item.status === 'active'
+                    return (
+                      <div key={item.id} className="p-4 space-y-3 hover:bg-gray-50/60 transition-colors">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className="h-3 w-3 rounded-full shrink-0"
+                              style={{ backgroundColor: item.team?.color || '#7A1426' }}
+                            />
+                            <span className="font-bold text-sm text-[#111827] truncate">
+                              {item.team?.name ?? 'Unknown Team'}
+                            </span>
+                            <span className="text-[11px] text-gray-400 shrink-0">
+                              ({item.team?.shortName})
+                            </span>
+                          </div>
+
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold shrink-0 ${
+                              item.status === 'active'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : item.status === 'completed'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                item.status === 'active'
+                                ? 'bg-emerald-500 animate-pulse'
+                                : item.status === 'completed'
+                                ? 'bg-blue-500'
+                                : 'bg-rose-500'
+                              }`}
+                            />
+                            {item.status.toUpperCase()}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3 bg-[#F9FAFB] border border-gray-100 rounded-xl p-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <SquadPlayerAvatar
+                              name={item.player?.name ?? 'Unknown Player'}
+                              avatarUrl={item.player?.avatarUrl}
+                              brand="maroon"
+                              size="md"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-bold text-sm text-[#111827] truncate">
+                                {item.player?.name ?? 'Unknown Player'}
+                              </div>
+                              <div className="text-[10px] text-gray-400">
+                                {item.player?.playerCode ? `${item.player.playerCode} • ` : ''}
+                                {item.player?.role}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <div className="font-semibold text-xs text-gray-800">
+                              {item.season?.name ?? 'Unknown Season'}
+                            </div>
+                            <div className="text-[10px] text-gray-400">
+                              {item.season?.year}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 text-[11px] text-gray-500 pt-1">
+                          <div>
+                            <span className="text-gray-400 text-[10px] block">Assigned</span>
+                            <span>{fmtDate(item.assignedAt)}</span>
+                          </div>
+                          {item.endedAt && (
+                            <div className="text-right">
+                              <span className="text-gray-400 text-[10px] block">Ended</span>
+                              <span>{fmtDate(item.endedAt)}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            {isActive ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReplaceTarget(item)
+                                    setReplacePlayerId('')
+                                    setReplaceReason('')
+                                    setReplacePlayerSearchQuery('')
+                                    setReplaceDialogOpen(true)
+                                  }}
+                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                                >
+                                  <ArrowRightLeft className="h-3.5 w-3.5" />
+                                  <span>Replace</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRemoveTarget(item)
+                                    setRemoveReason('')
+                                    setRemoveDialogOpen(true)
+                                  }}
+                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                                >
+                                  <span>Revoke</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeleteTarget(item)
+                                    setDeleteDialogOpen(true)
+                                  }}
+                                  title="Delete assignment"
+                                  className="h-8 w-8 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer inline-flex items-center justify-center shadow-2xs"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDeleteTarget(item)
+                                  setDeleteDialogOpen(true)
+                                }}
+                                className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                                <span>Delete</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs">
                   <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                     <tr>
                       <th className="py-3 px-4">Team</th>
@@ -842,16 +1018,35 @@ export function CaptainsAdmin() {
                                     setRemoveReason('')
                                     setRemoveDialogOpen(true)
                                   }}
-                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-rose-700 bg-rose-50/80 hover:bg-rose-100 hover:text-rose-900 border border-rose-200 cursor-pointer inline-flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-amber-700 bg-amber-50/80 hover:bg-amber-100 hover:text-amber-900 border border-amber-200 cursor-pointer inline-flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
                                 >
                                   <span>Revoke</span>
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeleteTarget(item)
+                                    setDeleteDialogOpen(true)
+                                  }}
+                                  title="Delete assignment"
+                                  className="h-8 w-8 rounded-lg text-rose-700 bg-rose-50/80 hover:bg-rose-100 hover:text-rose-900 border border-rose-200 cursor-pointer inline-flex items-center justify-center transition-colors shadow-2xs"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                                </button>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-end">
-                                <span className="text-[11px] font-medium text-gray-400 italic">
-                                  Historical
-                                </span>
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setDeleteTarget(item)
+                                    setDeleteDialogOpen(true)
+                                  }}
+                                  className="h-8 rounded-lg px-2.5 text-[11px] font-bold text-rose-700 bg-rose-50/80 hover:bg-rose-100 hover:text-rose-900 border border-rose-200 cursor-pointer inline-flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-rose-600 shrink-0" />
+                                  <span>Delete</span>
+                                </button>
                               </div>
                             )}
                           </td>
@@ -861,7 +1056,8 @@ export function CaptainsAdmin() {
                   </tbody>
                 </table>
               </div>
-            )}
+            </>
+          )}
           </div>
         </div>
       )}
@@ -876,8 +1072,72 @@ export function CaptainsAdmin() {
                 No Playing XI submissions from captains yet.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <>
+                {/* Mobile Card List (Zero horizontal scrolling) */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {lineupSubmissions.map((sub) => (
+                    <div key={sub.id} className="p-4 space-y-2.5 hover:bg-gray-50/60 transition-colors">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="font-bold text-sm text-[#111827]">
+                          vs {sub.match?.opponent?.name ?? 'Opponent'}
+                        </div>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            sub.status === 'APPROVED'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : sub.status === 'SUBMITTED'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : sub.status === 'REJECTED'
+                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  : 'bg-gray-50 text-gray-600 border border-gray-200'
+                          }`}
+                        >
+                          {sub.status}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {fmtDate(sub.match?.matchDate ?? null)} • {sub.match?.venue || 'Venue TBA'}
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-xs pt-1">
+                        <div>
+                          <span className="font-bold text-[#111827]">{sub.team?.name ?? 'Team'}</span>
+                          <span className="text-[10px] text-gray-400 block">By: {sub.captain?.name ?? 'Captain'}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-bold text-[#7A1426] text-xs">
+                            {sub.playingXIPlayers.length} / 11 Players
+                          </span>
+                          {sub.substitutePlayers.length > 0 && (
+                            <span className="text-[10px] text-gray-400 block">
+                              +{sub.substitutePlayers.length} Subs
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t border-gray-100 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setReviewTarget(sub)
+                            setReviewStatus(sub.status === 'APPROVED' ? 'APPROVED' : 'APPROVED')
+                            setReviewNotes(sub.reviewNotes || '')
+                            setApplyToMatch(true)
+                            setReviewDialogOpen(true)
+                          }}
+                          className="h-8 rounded-lg px-2.5 text-xs font-bold text-[#7A1426] hover:text-[#5E0E1D] hover:bg-[#7A1426]/10 border-[#7A1426]/20 cursor-pointer inline-flex items-center justify-center gap-1.5"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-current shrink-0" />
+                          <span>Review XI</span>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs">
                   <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                     <tr>
                       <th className="py-3 px-4">Match Date & Opponent</th>
@@ -964,7 +1224,8 @@ export function CaptainsAdmin() {
                   </tbody>
                 </table>
               </div>
-            )}
+            </>
+          )}
           </div>
         </div>
       )}
@@ -979,8 +1240,59 @@ export function CaptainsAdmin() {
                 No captaincy audit events recorded yet.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <>
+                {/* Mobile Card List (Zero horizontal scrolling) */}
+                <div className="md:hidden divide-y divide-gray-100">
+                  {auditLogs.map((log) => (
+                    <div key={log.id} className="p-4 space-y-2.5 hover:bg-gray-50/60 transition-colors">
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            log.action === 'ASSIGN'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : log.action === 'REPLACE'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : log.action === 'REMOVE'
+                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  : 'bg-gray-100 text-gray-700 border border-gray-200'
+                          }`}
+                        >
+                          {log.action}
+                        </span>
+                        <span className="text-[10px] text-gray-400">{fmtDate(log.performedAt)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <div>
+                          <span className="font-bold text-[#111827]">{log.team?.name}</span>
+                          <span className="text-[10px] text-gray-400 block">{log.season?.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-gray-400 block">By</span>
+                          <span className="font-semibold text-gray-700">{log.performedBy}</span>
+                        </div>
+                      </div>
+                      <div className="bg-[#F9FAFB] border border-gray-100 rounded-xl p-2 text-xs flex items-center justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] text-gray-400 block">Previous</span>
+                          <span className="text-gray-600">{log.previousCaptain?.name || '—'}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-gray-400 block">New Captain</span>
+                          <span className="font-bold text-[#111827]">{log.newCaptain?.name || '—'}</span>
+                        </div>
+                      </div>
+                      {log.reason && (
+                        <div className="text-[11px] text-gray-500 italic">
+                          Note: {log.reason}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs">
                   <thead className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                     <tr>
                       <th className="py-3 px-4">Action</th>
@@ -1036,7 +1348,8 @@ export function CaptainsAdmin() {
                   </tbody>
                 </table>
               </div>
-            )}
+            </>
+          )}
           </div>
         </div>
       )}
@@ -1533,6 +1846,40 @@ export function CaptainsAdmin() {
               className="rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold cursor-pointer"
             >
               {savingRemove ? 'Revoking...' : 'Revoke Captaincy'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* DIALOG: DELETE CAPTAINCY ASSIGNMENT CONFIRMATION */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="rounded-3xl p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-black text-[#111827] flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-rose-600" />
+              Delete Captaincy Record
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-gray-600 space-y-2">
+              <p>
+                Are you sure you want to permanently delete the captaincy assignment for{' '}
+                <strong>{deleteTarget?.player?.name ?? 'Unknown Player'}</strong> from{' '}
+                <strong>{deleteTarget?.team?.name ?? 'Unknown Team'}</strong> (
+                {deleteTarget?.season?.name ?? 'Unknown Season'})?
+              </p>
+              <p className="text-[11px] text-rose-600 font-semibold">
+                This will permanently delete this record from the database. This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl text-xs">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={savingDelete}
+              className="rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold cursor-pointer"
+            >
+              {savingDelete ? 'Deleting...' : 'Delete Permanently'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

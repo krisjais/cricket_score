@@ -1,8 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Award, BadgeCheck, BarChart3, Shield, Trophy } from 'lucide-react'
-import { api } from '@/lib/client'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  Award,
+  BadgeCheck,
+  BarChart3,
+  Crown,
+  RefreshCcw,
+  Shield,
+  Sparkles,
+  Trophy,
+} from 'lucide-react'
+import { api, getSocket } from '@/lib/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
@@ -11,6 +20,14 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select'
+import {
+  CricketBatIcon,
+  CricketBallIcon,
+  CricketStumpsIcon,
+} from '@/components/cricket/cricket-graphics'
+import { TeamLogo, PlayerAvatar } from '@/components/cricket/ui-bits'
+import { LeaderboardsPageSkeleton } from '@/components/cricket/skeletons'
+import { cn } from '@/lib/utils'
 import { SeasonDto, TournamentDto } from './player/player-types'
 
 type LeaderboardGroup = 'batting' | 'bowling' | 'fielding' | 'overall'
@@ -45,6 +62,7 @@ interface LeaderboardEntry {
   inningsBatted: number
   runs: number
   ballsFaced: number
+  fours: number
   sixes: number
   fifties: number
   hundreds: number
@@ -53,6 +71,7 @@ interface LeaderboardEntry {
   strikeRate: number
   overs: string
   wickets: number
+  runsConceded: number
   bowlingAverage: number | null
   economy: number
   bestBowlingDisplay: string
@@ -68,6 +87,15 @@ interface LeaderboardPayload {
   scope: string
   qualification: string
   totalVerifiedMatches: number
+  totalMatches?: number
+  honors?: {
+    bestBatsman: LeaderboardEntry | null
+    bestBowler: LeaderboardEntry | null
+    bestFielder: LeaderboardEntry | null
+    playerOfTournament: LeaderboardEntry | null
+    mostSixes?: LeaderboardEntry | null
+    mostFours?: LeaderboardEntry | null
+  }
   entries: LeaderboardEntry[]
 }
 
@@ -75,6 +103,165 @@ interface TeamOption {
   id: string
   name: string
   shortName: string
+}
+
+const SPOTLIGHT_THEMES = {
+  gold: {
+    topBar: 'from-[#B45309] via-[#D97706] to-[#F59E0B]',
+    iconBg: 'bg-amber-600 text-white',
+    badgeText: 'text-amber-800',
+    statText: 'text-amber-700',
+    avatarRing: 'ring-2 ring-amber-500/25',
+    highlightBg: 'bg-amber-50/40',
+  },
+  maroon: {
+    topBar: 'from-[#7A1426] via-[#9E1C34] to-[#C89B3C]',
+    iconBg: 'bg-[#7A1426] text-white',
+    badgeText: 'text-[#7A1426]',
+    statText: 'text-[#7A1426]',
+    avatarRing: 'ring-2 ring-[#7A1426]/20',
+    highlightBg: 'bg-[#7A1426]/[0.03]',
+  },
+  slate: {
+    topBar: 'from-[#121826] via-[#1E293B] to-[#334155]',
+    iconBg: 'bg-[#121826] text-white',
+    badgeText: 'text-[#121826]',
+    statText: 'text-[#121826]',
+    avatarRing: 'ring-2 ring-slate-800/15',
+    highlightBg: 'bg-slate-50/50',
+  },
+  teal: {
+    topBar: 'from-[#0F766E] via-[#0D9488] to-[#14B8A6]',
+    iconBg: 'bg-teal-700 text-white',
+    badgeText: 'text-teal-800',
+    statText: 'text-teal-700',
+    avatarRing: 'ring-2 ring-teal-600/20',
+    highlightBg: 'bg-teal-50/40',
+  },
+} as const
+
+function LeaderboardSpotlightCard({
+  title,
+  subtitle,
+  badgeLabel,
+  player,
+  accent,
+  icon,
+  statValue,
+  statUnit,
+  miniStats,
+  emptyText,
+  navigate,
+}: {
+  title: string
+  subtitle: string
+  badgeLabel: string
+  player: LeaderboardEntry | null
+  accent: 'gold' | 'maroon' | 'slate' | 'teal'
+  icon: React.ReactNode
+  statValue: string
+  statUnit: string
+  miniStats: Array<{ label: string; value: string | number }>
+  emptyText: string
+  navigate: (to: string) => void
+}) {
+  const theme = SPOTLIGHT_THEMES[accent]
+
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white shadow-2xs overflow-hidden flex flex-col transition-all hover:shadow-xs">
+      <div className={cn('h-1.5 w-full bg-gradient-to-r', theme.topBar)} />
+      <div className={cn('px-4 pt-3.5 pb-3 border-b border-gray-100 flex items-center justify-between gap-2', theme.highlightBg)}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs', theme.iconBg)}>
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <div className={cn('text-xs font-extrabold uppercase tracking-wider truncate', theme.badgeText)}>
+              {title}
+            </div>
+            <div className="text-[11px] text-gray-500 font-medium truncate">{subtitle}</div>
+          </div>
+        </div>
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-600">
+          {badgeLabel}
+        </span>
+      </div>
+
+      <div className="p-4 flex-1 flex flex-col justify-between gap-4">
+        {player ? (
+          <>
+            <div className="flex items-center gap-3">
+              <PlayerAvatar name={player.name} avatarUrl={player.avatarUrl} size="lg" ringClass={theme.avatarRing} />
+              <div className="min-w-0 flex-1">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/players/${encodeURIComponent(player.playerId)}`)}
+                  className="font-extrabold text-base text-[#111827] hover:text-[#7A1426] hover:underline cursor-pointer text-left truncate max-w-full block leading-snug"
+                >
+                  {player.name}
+                </button>
+                {player.team ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/team/${player.team!.id}`)}
+                    className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-[#7A1426] cursor-pointer"
+                  >
+                    <TeamLogo
+                      name={player.team.name}
+                      shortName={player.team.shortName}
+                      color={player.team.color}
+                      size="xs"
+                    />
+                    <span className="truncate">{player.team.name}</span>
+                  </button>
+                ) : (
+                  <span className="mt-1 text-[11px] text-gray-400 flex items-center gap-1">
+                    <Shield className="w-3 h-3" /> Independent
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-[#F8F9FB] border border-gray-200/80 p-3 space-y-2.5">
+              <div className="flex items-baseline justify-between">
+                <div className="flex items-baseline gap-1.5">
+                  <span className={cn('text-2xl font-extrabold tabular-nums leading-none', theme.statText)}>
+                    {statValue}
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                    {statUnit}
+                  </span>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  Leader
+                </span>
+              </div>
+
+              {miniStats.length > 0 && (
+                <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-gray-200/70">
+                  {miniStats.map((m) => (
+                    <div key={m.label} className="text-center">
+                      <div className="text-xs font-extrabold text-[#111827] tabular-nums">
+                        {m.value}
+                      </div>
+                      <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                        {m.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="py-8 text-center text-xs text-gray-400 font-medium leading-relaxed">
+            {emptyText}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function getPrimaryMetric(category: string, entry: LeaderboardEntry): { value: string | number; label: string } {
@@ -124,6 +311,27 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
   const [teams, setTeams] = useState<TeamOption[]>([])
   const [data, setData] = useState<LeaderboardPayload | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const fetchLeaderboards = useCallback((silent = false) => {
+    if (!silent) setRefreshing(true)
+    const params = new URLSearchParams({ category, scope })
+    if (scope === 'SEASON' && seasonId) params.set('seasonId', seasonId)
+    if (scope === 'TOURNAMENT' && tournamentId) params.set('tournamentId', tournamentId)
+    if (scope === 'TEAM' && teamId) params.set('teamId', teamId)
+
+    return api<LeaderboardPayload>(`/api/leaderboards?${params.toString()}`)
+      .then((res) => {
+        setData(res)
+      })
+      .catch(() => {
+        // preserve previous state if transient error
+      })
+      .finally(() => {
+        setLoading(false)
+        setRefreshing(false)
+      })
+  }, [category, scope, seasonId, tournamentId, teamId])
 
   useEffect(() => {
     Promise.all([
@@ -141,27 +349,26 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
   }, [])
 
   useEffect(() => {
-    let alive = true
-    const params = new URLSearchParams({ category, scope })
-    if (scope === 'SEASON' && seasonId) params.set('seasonId', seasonId)
-    if (scope === 'TOURNAMENT' && tournamentId) params.set('tournamentId', tournamentId)
-    if (scope === 'TEAM' && teamId) params.set('teamId', teamId)
+    setLoading(true)
+    void fetchLeaderboards(true)
+  }, [fetchLeaderboards])
 
-    api<LeaderboardPayload>(`/api/leaderboards?${params.toString()}`)
-      .then((res) => {
-        if (alive) setData(res)
-      })
-      .catch(() => {
-        if (alive) setData(null)
-      })
-      .finally(() => {
-        if (alive) setLoading(false)
-      })
-
-    return () => {
-      alive = false
+  useEffect(() => {
+    const sock = getSocket()
+    const onConnect = () => sock.emit('subscribe:matches')
+    const onUpdate = () => {
+      void fetchLeaderboards(true)
     }
-  }, [category, scope, seasonId, tournamentId, teamId])
+    sock.on('connect', onConnect)
+    sock.on('matches:update', onUpdate)
+    sock.on('match:update', onUpdate)
+    if (sock.connected) sock.emit('subscribe:matches')
+    return () => {
+      sock.off('connect', onConnect)
+      sock.off('matches:update', onUpdate)
+      sock.off('match:update', onUpdate)
+    }
+  }, [fetchLeaderboards])
 
   const groupCategories = CATEGORIES.filter((c) => c.group === group)
 
@@ -171,25 +378,161 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
     if (first) setCategory(first.key)
   }
 
+  if (loading && !data) {
+    return <LeaderboardsPageSkeleton />
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-3xl bg-[#121826] text-white px-6 py-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-amber-300 text-[11px] font-bold uppercase tracking-widest mb-1">
-            <BarChart3 className="w-4 h-4" /> Official Career Rankings
+            <BarChart3 className="w-4 h-4" /> Official Career Rankings &amp; Live Leaders
           </div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight">Player Leaderboards</h1>
           <p className="text-xs text-gray-300 mt-1">
-            Computed exclusively from finalized &amp; admin-verified match scorecards with minimum qualification criteria.
+            Real-time tournament rankings computed from live and verified match scorecards.
           </p>
         </div>
-        {data && (
-          <div className="rounded-2xl bg-white/10 border border-white/15 px-4 py-2.5 text-xs shrink-0">
-            <div className="text-gray-300">Verified Matches In Scope</div>
-            <div className="text-lg font-black tabular-nums">{data.totalVerifiedMatches}</div>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {data && (
+            <div className="rounded-2xl bg-white/10 border border-white/15 px-4 py-2.5 text-xs shrink-0">
+              <div className="text-gray-300">
+                {data.totalVerifiedMatches > 0 && data.totalMatches && data.totalVerifiedMatches !== data.totalMatches
+                  ? 'Verified / Tracked Matches'
+                  : 'Matches Tracked'}
+              </div>
+              <div className="text-lg font-black tabular-nums">
+                {data.totalVerifiedMatches > 0 && data.totalMatches && data.totalVerifiedMatches !== data.totalMatches
+                  ? `${data.totalVerifiedMatches} / ${data.totalMatches}`
+                  : `${data.totalMatches ?? data.totalVerifiedMatches}`}
+              </div>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => void fetchLeaderboards(false)}
+            disabled={refreshing}
+            className="p-2.5 rounded-2xl bg-white/10 border border-white/15 hover:bg-white/20 text-white transition-all cursor-pointer disabled:opacity-50 shrink-0"
+            title="Refresh live leaderboards"
+          >
+            <RefreshCcw className={cn('w-4 h-4', refreshing && 'animate-spin')} />
+          </button>
+        </div>
       </div>
+
+      {/* Tournament Leaders Spotlight Strip */}
+      {data?.honors && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <LeaderboardSpotlightCard
+            title="Best Batsman"
+            subtitle="Highest Run Scorer"
+            badgeLabel="Golden Bat"
+            player={data.honors.bestBatsman}
+            accent="gold"
+            icon={<CricketBatIcon size={15} />}
+            statValue={data.honors.bestBatsman ? String(data.honors.bestBatsman.runs) : '—'}
+            statUnit={data.honors.bestBatsman ? (data.honors.bestBatsman.runs === 1 ? 'Run' : 'Runs') : ''}
+            miniStats={
+              data.honors.bestBatsman
+                ? [
+                    { label: 'Balls', value: data.honors.bestBatsman.ballsFaced },
+                    { label: 'SR', value: data.honors.bestBatsman.strikeRate.toFixed(1) },
+                    { label: '4s / 6s', value: `${data.honors.bestBatsman.fours}/${data.honors.bestBatsman.sixes}` },
+                  ]
+                : []
+            }
+            emptyText="Top run scorer appears after batting stats"
+            navigate={navigate}
+          />
+          <LeaderboardSpotlightCard
+            title="Tournament MVP"
+            subtitle="All-Round Impact"
+            badgeLabel="#1 MVP"
+            player={data.honors.playerOfTournament}
+            accent="maroon"
+            icon={<Crown className="w-4 h-4" />}
+            statValue={data.honors.playerOfTournament ? String(data.honors.playerOfTournament.allRounderScore) : '—'}
+            statUnit={data.honors.playerOfTournament ? (data.honors.playerOfTournament.allRounderScore === 1 ? 'Point' : 'Points') : ''}
+            miniStats={
+              data.honors.playerOfTournament
+                ? [
+                    { label: 'Runs', value: data.honors.playerOfTournament.runs },
+                    { label: 'Wkts', value: data.honors.playerOfTournament.wickets },
+                    {
+                      label: 'Fielding',
+                      value:
+                        data.honors.playerOfTournament.catches +
+                        data.honors.playerOfTournament.runOuts +
+                        data.honors.playerOfTournament.stumpings,
+                    },
+                  ]
+                : []
+            }
+            emptyText="Runs, wickets & fielding earn MVP points"
+            navigate={navigate}
+          />
+          <LeaderboardSpotlightCard
+            title="Best Bowler"
+            subtitle="Most Wickets"
+            badgeLabel="Top Wickets"
+            player={data.honors.bestBowler}
+            accent="slate"
+            icon={<CricketBallIcon size={14} variant="white" />}
+            statValue={data.honors.bestBowler ? String(data.honors.bestBowler.wickets) : '—'}
+            statUnit={data.honors.bestBowler ? (data.honors.bestBowler.wickets === 1 ? 'Wicket' : 'Wickets') : ''}
+            miniStats={
+              data.honors.bestBowler
+                ? [
+                    { label: 'Overs', value: data.honors.bestBowler.overs },
+                    { label: 'Econ', value: data.honors.bestBowler.economy.toFixed(2) },
+                    { label: 'Runs', value: data.honors.bestBowler.runsConceded },
+                  ]
+                : []
+            }
+            emptyText="Leading wicket-taker appears on first dismissal"
+            navigate={navigate}
+          />
+          <LeaderboardSpotlightCard
+            title="Best Fielder"
+            subtitle="Catches & Run Outs"
+            badgeLabel="Safe Hands"
+            player={data.honors.bestFielder}
+            accent="teal"
+            icon={<CricketStumpsIcon size={15} broken />}
+            statValue={
+              data.honors.bestFielder
+                ? String(
+                    data.honors.bestFielder.catches +
+                      data.honors.bestFielder.runOuts +
+                      data.honors.bestFielder.stumpings
+                  )
+                : '—'
+            }
+            statUnit={
+              data.honors.bestFielder
+                ? data.honors.bestFielder.catches +
+                    data.honors.bestFielder.runOuts +
+                    data.honors.bestFielder.stumpings ===
+                  1
+                  ? 'Dismissal'
+                  : 'Dismissals'
+                : ''
+            }
+            miniStats={
+              data.honors.bestFielder
+                ? [
+                    { label: 'Catches', value: data.honors.bestFielder.catches },
+                    { label: 'Run-Outs', value: data.honors.bestFielder.runOuts },
+                    { label: 'Stumpings', value: data.honors.bestFielder.stumpings },
+                  ]
+                : []
+            }
+            emptyText="Leading fielder appears on first catch or run out"
+            navigate={navigate}
+          />
+        </div>
+      )}
 
       {/* Category Group & Filter Bar */}
       <Card className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xs overflow-hidden">
@@ -320,7 +663,7 @@ export function LeaderboardsPage({ navigate }: { navigate: (to: string) => void 
             </div>
           ) : !data || data.entries.length === 0 ? (
             <div className="px-5 py-12 text-center text-sm text-gray-500">
-              No players qualify for this leaderboard under current verified matches.
+              No players qualify for this leaderboard under current matches.
             </div>
           ) : (
             <>

@@ -37,6 +37,7 @@ import {
 } from 'lucide-react'
 import { api, ROLE_LABEL } from '@/lib/client'
 import { TeamLogo } from '@/components/cricket/ui-bits'
+import { TeamsPageSkeleton } from '@/components/cricket/skeletons'
 import { CricketBatIcon } from '@/components/cricket/cricket-graphics'
 import { useToast } from '@/hooks/use-toast'
 
@@ -202,11 +203,7 @@ export function TeamsAdmin({ defaultTab = 'teams' }: { defaultTab?: 'teams' | 'p
         {/* Inner 4-Column Card Grid */}
         <div className="p-4 sm:p-5">
           {!teams ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="h-44 animate-pulse rounded-2xl bg-[#E5E7EB]/50" />
-              ))}
-            </div>
+            <TeamsPageSkeleton />
           ) : teams.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-[#F9FAFB]/50 p-12 text-center space-y-3">
               <Shield className="mx-auto h-8 w-8 text-[#7A1426]" aria-hidden />

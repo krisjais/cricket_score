@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { MatchCard } from '@/components/cricket/match-card'
+import { MatchCardSkeleton } from '@/components/cricket/skeletons'
 import { Trophy, CalendarDays, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MatchSummary } from '@/lib/client'
@@ -111,7 +112,7 @@ export function MatchesPage({
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-40 animate-pulse rounded-2xl bg-gray-200/70" />
+            <MatchCardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (

@@ -6,9 +6,9 @@
  */
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { io, type Socket } from 'socket.io-client'
-import type { MatchStatePayload, MatchSummary } from '@/lib/match-state'
+import type { MatchStatePayload, MatchSummary, MatchUmpire } from '@/lib/match-state'
 
-export type { MatchStatePayload, MatchSummary }
+export type { MatchStatePayload, MatchSummary, MatchUmpire }
 
 export class ApiError extends Error {
   status: number
@@ -170,7 +170,7 @@ let socket: Socket | null = null
 export function getSocket(): Socket {
   if (!socket) {
     socket = io(SOCKET_URL, {
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 15,

@@ -11,6 +11,7 @@ import {
   ArrowLeftRight,
   ArrowRight,
   Ban,
+  CheckCircle2,
   Coins,
   Flag,
   Pause,
@@ -19,7 +20,9 @@ import {
   RotateCcw,
   ScrollText,
   ShieldAlert,
+  ShieldCheck,
   Undo2,
+  UserCheck,
   ExternalLink,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -51,6 +54,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { BallDot, BallDotsRow, LiveBadge, StatusBadge, TeamLogo } from '@/components/cricket/ui-bits'
+import { ScoringConsoleSkeleton } from '@/components/cricket/skeletons'
 import { StartInningsDialog, TossDialog } from '@/components/cricket/admin/matches-admin'
 import { api, fmtDate, useMatchChannel, type MatchSummary } from '@/lib/client'
 import type { MatchStatePayload } from '@/lib/match-state'
@@ -84,6 +88,7 @@ export function ScoringConsole({
   scorerSubView = 'score',
   onSelectSubView,
   onSelectMatch,
+  onExit,
 }: {
   matchId: string
   matches: MatchSummary[]
@@ -91,6 +96,7 @@ export function ScoringConsole({
   scorerSubView?: ScorerSubView
   onSelectSubView?: (view: ScorerSubView) => void
   onSelectMatch?: (id: string) => void
+  onExit?: () => void
 }) {
   const { toast } = useToast()
   const { state: payload, setLiveState, connected } = useMatchChannel(matchId, null)
@@ -102,7 +108,47 @@ export function ScoringConsole({
   const [bowlerDialogOpen, setBowlerDialogOpen] = useState(false)
   const [extraDialog, setExtraDialog] = useState<ExtraType | null>(null)
   const [undoOpen, setUndoOpen] = useState(false)
-  const [confirmAction, setConfirmAction] = useState<'END_INNINGS' | 'ABANDON' | null>(null)
+  const [confirmAction, setConfirmAction] = useState<'END_INNINGS' | 'END_MATCH' | 'ABANDON' | null>(null)
+  const [showRuleEdit, setShowRuleEdit] = useState(false)
+  const [ruleMaxOvers, setRuleMaxOvers] = useState<string>('2')
+  const [ruleQuotaMode, setRuleQuotaMode] = useState<'ONE_MAX' | 'STRICT_ONE'>('STRICT_ONE')
+  const [ruleSaving, setRuleSaving] = useState(false)
+
+  const [showUmpireEdit, setShowUmpireEdit] = useState(false)
+  const [umpireSaving, setUmpireSaving] = useState(false)
+  const [scorerTeams, setScorerTeams] = useState<any[]>([])
+
+  useEffect(() => {
+    if (showUmpireEdit && scorerTeams.length === 0) {
+      api<any[]>('/api/teams').then((res) => setScorerTeams(res)).catch(() => {})
+    }
+  }, [showUmpireEdit, scorerTeams.length])
+
+  const handleSwapUmpires = async () => {
+    if (!payload?.match) return
+    const curMatch = payload.match
+    const curInnings = Array.isArray(payload.innings)
+      ? payload.innings.find((i) => i.number === curMatch.currentInnings)
+      : null
+    const curMain = curInnings?.mainUmpire || curMatch.mainUmpire
+    const curLeg = curInnings?.legUmpire || curMatch.legUmpire
+    if (!curMain && !curLeg) return
+    setUmpireSaving(true)
+    try {
+      await api(`/api/matches/${curMatch.id}`, {
+        method: 'PATCH',
+        json: {
+          mainUmpire: curLeg,
+          legUmpire: curMain,
+        },
+      })
+      toast({ title: 'Umpires switched (Main ↔ Leg)' })
+    } catch (err: any) {
+      toast({ title: 'Failed to switch umpires', description: err.message, variant: 'destructive' })
+    } finally {
+      setUmpireSaving(false)
+    }
+  }
 
   const m = payload?.match
   const summary = matches.find((x) => x.id === matchId)
@@ -114,6 +160,18 @@ export function ScoringConsole({
   const ballsBowled = current?.totalDeliveries ?? 0
   const scoringBlocked =
     !live || busy || !!live.needsNewBatsman || live.overComplete || m?.status !== 'LIVE'
+
+  useEffect(() => {
+    if (m) {
+      if (m.maxBowlersWithMaxOvers === 1 && (m.maxOversPerBowler ?? 1) >= 2) {
+        setRuleQuotaMode('ONE_MAX')
+        setRuleMaxOvers(String(m.maxOversPerBowler ?? 2))
+      } else {
+        setRuleQuotaMode('STRICT_ONE')
+        setRuleMaxOvers('1')
+      }
+    }
+  }, [m?.id, m?.maxOversPerBowler, m?.maxBowlersWithMaxOvers])
 
   const call = async (
     path: string,
@@ -139,18 +197,99 @@ export function ScoringConsole({
     }
   }
 
-  const record = (input: BallEventInput) =>
-    call(`/api/matches/${matchId}/ball`, { method: 'POST', json: input })
+  const record = async (input: BallEventInput): Promise<boolean> => {
+    // Instantaneous optimistic update for regular scoring balls (0, 1, 2, 3, 4, 6)
+    if (payload && current && live && !input.wicketType && !input.extraType && typeof input.runsOffBat === 'number') {
+      const runs = input.runsOffBat
+      const legalBalls = current.legalBalls + 1
+      const totalRuns = current.runs + runs
+      const overComplete = (current.legalBalls % 6) + 1 >= 6
+      const rotates = runs % 2 === 1
+      const newStrikerId = rotates !== overComplete ? live.nonStrikerId : live.strikerId
+      const newNonStrikerId = rotates !== overComplete ? live.strikerId : live.nonStrikerId
+
+      const updatedBatting = current.batting.map((b) => {
+        if (b.id === live.strikerId) {
+          const bRuns = b.runs + runs
+          const bBalls = b.balls + 1
+          return {
+            ...b,
+            runs: bRuns,
+            balls: bBalls,
+            fours: b.fours + (runs === 4 ? 1 : 0),
+            sixes: b.sixes + (runs === 6 ? 1 : 0),
+            strikeRate: bBalls > 0 ? Math.round((bRuns * 1000) / bBalls) / 10 : 0,
+          }
+        }
+        return b
+      })
+
+      const updatedBowling = current.bowling.map((b) => {
+        if (b.id === live.bowlerId) {
+          const lBalls = b.legalBalls + 1
+          const rConceded = b.runsConceded + runs
+          return {
+            ...b,
+            legalBalls: lBalls,
+            runsConceded: rConceded,
+            overs: `${Math.floor(lBalls / 6)}.${lBalls % 6}`,
+            economy: lBalls > 0 ? Math.round((rConceded * 60) / lBalls) / 10 : 0,
+          }
+        }
+        return b
+      })
+
+      const newBall = {
+        label: String(runs),
+        kind: runs === 4 ? '4' : runs === 6 ? '6' : runs === 0 ? 'dot' : 'run',
+        runs,
+      }
+      const newThisOver = [...(live.thisOver || []), newBall]
+
+      const optimisticPayload: MatchStatePayload = {
+        ...payload,
+        match: {
+          ...payload.match,
+          scores: payload.match.scores.map((sc) =>
+            sc.number === current.number
+              ? { ...sc, runs: totalRuns, overs: `${Math.floor(legalBalls / 6)}.${legalBalls % 6}` }
+              : sc
+          ),
+        },
+        innings: payload.innings.map((inn) =>
+          inn.number === current.number
+            ? {
+                ...inn,
+                runs: totalRuns,
+                legalBalls,
+                oversDisplay: `${Math.floor(legalBalls / 6)}.${legalBalls % 6}`,
+                batting: updatedBatting,
+                bowling: updatedBowling,
+              }
+            : inn
+        ),
+        live: {
+          ...live,
+          strikerId: newStrikerId,
+          nonStrikerId: newNonStrikerId,
+          overComplete,
+          bowlerId: overComplete ? null : live.bowlerId,
+          lastOverBowlerId: overComplete ? live.bowlerId : live.lastOverBowlerId,
+          thisOver: overComplete ? [] : newThisOver,
+        },
+      }
+
+      setLiveState(optimisticPayload)
+    }
+
+    return call(`/api/matches/${matchId}/ball`, { method: 'POST', json: input })
+  }
 
   const action = (act: string, playerId?: string, okMsg?: string) =>
     call(`/api/matches/${matchId}/action`, { method: 'POST', json: { action: act, playerId } }, okMsg)
 
   if (!payload || !m) {
-    return (
-      <div className="h-full w-full flex items-center justify-center bg-[#F8F9FA]">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#7A1426] border-t-transparent" />
-      </div>
-    )
+    return <ScoringConsoleSkeleton />
   }
 
   const battingTeam = current ? (current.battingTeamId === m.teamA.id ? m.teamA : m.teamB) : m.teamA
@@ -339,32 +478,70 @@ export function ScoringConsole({
               <p className="text-sm font-medium text-gray-600">
                 Innings 1 closed. Target: <b className="text-[#7A1426]">{m.target}</b>. Start the second innings.
               </p>
-              <Button
-                className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer"
-                onClick={() => setStartOpen(true)}
-              >
-                <Play className="h-4 w-4 mr-1.5" /> Start Innings 2
-              </Button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+                <Button
+                  className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer px-4 py-2 w-full sm:w-auto"
+                  onClick={() => setStartOpen(true)}
+                >
+                  <Play className="h-4 w-4 mr-1.5" /> Start Innings 2
+                </Button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setConfirmAction('END_MATCH')}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold text-xs sm:text-sm hover:bg-gray-100 hover:text-gray-900 active:text-gray-900 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-40 w-full sm:w-auto"
+                  title="End Match"
+                >
+                  <CheckCircle2 className="h-4 w-4 text-[#7A1426]" />
+                  <span>End Match</span>
+                </button>
+              </div>
             </div>
           )}
 
           {(m.status === 'COMPLETED' || m.status === 'ABANDONED') && (
             <div className="m-auto max-w-md w-full p-6 bg-white border border-gray-200 rounded-2xl text-center space-y-3 shadow-sm">
-              <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                {m.status === 'COMPLETED' ? 'Match Completed' : 'Abandoned'}
-              </span>
-              <p className="text-base font-bold text-gray-900">{m.resultText ?? '—'}</p>
-              {ballsBowled > 0 && (
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200 inline-block">
+                  {m.status === 'COMPLETED' ? 'Match Completed' : 'Abandoned'}
+                </span>
+                <p className="text-base font-bold text-gray-900 mt-2">{m.resultText ?? '—'}</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
                 <Button
-                  variant="outline"
-                  size="sm"
+                  className="bg-[#7A1426] hover:bg-[#5E0E1D] text-white font-bold rounded-xl shadow-xs cursor-pointer px-4 py-2 text-xs sm:text-sm flex items-center justify-center w-full sm:w-auto"
                   disabled={busy}
-                  onClick={() => setUndoOpen(true)}
-                  className="bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-xs"
+                  onClick={async () => {
+                    try {
+                      await action('END_MATCH', undefined, 'Match ended successfully')
+                    } catch {
+                      // Already concluded
+                    }
+                    if (onExit) {
+                      onExit()
+                    } else if (onSelectSubView) {
+                      onSelectSubView('switch')
+                    } else {
+                      navigate?.('/admin?tab=matches')
+                    }
+                  }}
                 >
-                  <Undo2 className="h-3.5 w-3.5 mr-1.5" /> Undo last ball &amp; re-open
+                  <CheckCircle2 className="h-4 w-4 mr-1.5" /> End Match
                 </Button>
-              )}
+
+                {ballsBowled > 0 && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setUndoOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold text-xs sm:text-sm hover:bg-gray-100 hover:text-gray-900 active:text-gray-900 active:scale-95 transition-all shadow-xs cursor-pointer disabled:opacity-40 w-full sm:w-auto"
+                  >
+                    <Undo2 className="h-3.5 w-3.5 text-gray-600" />
+                    <span>Undo last ball &amp; re-open</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -434,6 +611,18 @@ export function ScoringConsole({
                       <span>End</span>
                     </button>
 
+                    {/* End Match Button */}
+                    <button
+                      type="button"
+                      disabled={busy || (m.status !== 'LIVE' && m.status !== 'PAUSED')}
+                      onClick={() => setConfirmAction('END_MATCH')}
+                      className="px-2 py-1 rounded-lg bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 text-[11px] font-semibold flex items-center gap-1 active:scale-95 transition-all cursor-pointer disabled:opacity-40 shadow-xs"
+                      title="End Match"
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-[#7A1426]" />
+                      <span>End Match</span>
+                    </button>
+
                     {/* LIVE Badge */}
                     {m.status === 'LIVE' ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 border border-rose-200 text-[#7A1426] font-extrabold text-[10px] tracking-wide">
@@ -478,6 +667,22 @@ export function ScoringConsole({
                       )}
                     </div>
                   </div>
+                  {(current.mainUmpire || m.mainUmpire || current.legUmpire || m.legUmpire) && (
+                    <div className="flex items-center justify-between pt-1.5 mt-2 border-t border-gray-100 text-[10px] text-gray-600">
+                      <span className="truncate">
+                        Umpires: <b className="text-gray-900">{current.mainUmpire?.name || m.mainUmpire?.name || '—'}</b> (Main) · <b className="text-gray-900">{current.legUmpire?.name || m.legUmpire?.name || '—'}</b> (Leg)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleSwapUmpires}
+                        disabled={umpireSaving}
+                        className="text-[#7A1426] font-bold underline shrink-0 ml-1.5 flex items-center gap-0.5"
+                      >
+                        <ArrowLeftRight className="h-2.5 w-2.5" />
+                        Swap
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* CARD 2: BATTERS & BOWLER TABLE */}
@@ -732,6 +937,24 @@ export function ScoringConsole({
                           • {m.venue}
                         </span>
                       )}
+                      {(current.mainUmpire || m.mainUmpire || current.legUmpire || m.legUmpire) && (
+                        <div className="flex items-center gap-1.5 text-xs text-gray-700 bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-lg">
+                          <ShieldCheck className="h-3.5 w-3.5 text-[#7A1426]" />
+                          <span>
+                            Umpires: <b>{current.mainUmpire?.name || m.mainUmpire?.name || '—'}</b> (Main) · <b>{current.legUmpire?.name || m.legUmpire?.name || '—'}</b> (Leg)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleSwapUmpires}
+                            disabled={umpireSaving}
+                            className="ml-1 text-[11px] font-bold text-[#7A1426] hover:text-[#5E0E1D] underline flex items-center gap-0.5 cursor-pointer"
+                            title="Swap Main and Leg Umpire"
+                          >
+                            <ArrowLeftRight className="h-3 w-3" />
+                            Swap
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {matches.length > 1 && (
@@ -788,6 +1011,18 @@ export function ScoringConsole({
                     >
                       <Flag className="w-3.5 h-3.5 text-[#7A1426]" />
                       <span>End Innings</span>
+                    </button>
+
+                    {/* End Match Button */}
+                    <button
+                      type="button"
+                      disabled={busy || (m.status !== 'LIVE' && m.status !== 'PAUSED')}
+                      onClick={() => setConfirmAction('END_MATCH')}
+                      className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer disabled:opacity-40 shadow-xs"
+                      title="End Match"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#7A1426]" />
+                      <span>End Match</span>
                     </button>
 
                     {/* Public Match Page Link */}
@@ -1198,6 +1433,7 @@ export function ScoringConsole({
       {startOpen && summary && (
         <StartInningsDialog
           match={summary}
+          matches={matches}
           onClose={() => setStartOpen(false)}
           onSubmit={async (data) => {
             const done = await call(
@@ -1219,6 +1455,97 @@ export function ScoringConsole({
                 Choose a bowler from the fielding team to deliver the over.
               </DialogDescription>
             </DialogHeader>
+
+            {/* Bowler Rule Indicator & Quick 1-Click Toggle */}
+            {m && (
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-200/90 text-xs space-y-2 mt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="font-bold text-gray-700">Bowler Limit:</span>{' '}
+                    <span className="text-[#7A1426] font-extrabold">
+                      {m.maxBowlersWithMaxOvers === 1 && m.maxOversPerBowler === 2
+                        ? '1 bowler can bowl 2 overs (only 1 bowler)'
+                        : (m.maxOversPerBowler ?? 1) === 1
+                        ? 'Strict: 1 over per bowler'
+                        : `${m.maxOversPerBowler} overs max per bowler`}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowRuleEdit(!showRuleEdit)}
+                    className="text-xs font-bold text-[#7A1426] hover:text-[#5E0E1D] underline cursor-pointer shrink-0"
+                  >
+                    {showRuleEdit ? 'Close' : 'Change Rule'}
+                  </button>
+                </div>
+
+                {showRuleEdit && (
+                  <div className="pt-2.5 border-t border-gray-200 space-y-2 animate-in fade-in duration-150">
+                    <p className="text-[11px] text-gray-500">
+                      Standard is strict 1 over per bowler. Select an option to apply to this match:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        disabled={ruleSaving}
+                        onClick={async () => {
+                          setRuleSaving(true)
+                          try {
+                            await api(`/api/matches/${m.id}`, {
+                              method: 'PATCH',
+                              json: { maxOversPerBowler: 1, maxBowlersWithMaxOvers: null },
+                            })
+                            setShowRuleEdit(false)
+                            toast({ title: 'Strict 1 over per bowler applied' })
+                          } catch (err: any) {
+                            toast({ title: 'Failed to update rule', description: err.message, variant: 'destructive' })
+                          } finally {
+                            setRuleSaving(false)
+                          }
+                        }}
+                        className={cn(
+                          "py-2 px-2.5 rounded-lg border text-xs font-bold text-center cursor-pointer transition-all",
+                          (m.maxOversPerBowler ?? 1) === 1 && !m.maxBowlersWithMaxOvers
+                            ? "bg-gray-900 text-white border-gray-900 shadow-xs"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        )}
+                      >
+                        Strict: 1 Over / Bowler
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={ruleSaving}
+                        onClick={async () => {
+                          setRuleSaving(true)
+                          try {
+                            await api(`/api/matches/${m.id}`, {
+                              method: 'PATCH',
+                              json: { maxOversPerBowler: 2, maxBowlersWithMaxOvers: 1 },
+                            })
+                            setShowRuleEdit(false)
+                            toast({ title: 'Rule updated: 1 bowler can bowl 2 overs' })
+                          } catch (err: any) {
+                            toast({ title: 'Failed to update rule', description: err.message, variant: 'destructive' })
+                          } finally {
+                            setRuleSaving(false)
+                          }
+                        }}
+                        className={cn(
+                          "py-2 px-2.5 rounded-lg border text-xs font-bold text-center cursor-pointer transition-all",
+                          m.maxBowlersWithMaxOvers === 1 && m.maxOversPerBowler === 2
+                            ? "bg-[#7A1426] text-white border-[#7A1426] shadow-xs"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        )}
+                      >
+                        Allow 1 Bowler 2 Overs
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grid gap-2 max-h-[320px] overflow-y-auto py-2">
               {live.bowlers.map((b) => (
                 <button
@@ -1320,10 +1647,16 @@ export function ScoringConsole({
         <AlertDialogContent className="bg-white border border-gray-200 text-gray-900 rounded-2xl shadow-lg">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-gray-900">
-              {confirmAction === 'END_INNINGS' ? 'End the innings now?' : 'Abandon this match?'}
+              {confirmAction === 'END_MATCH'
+                ? 'End this match now?'
+                : confirmAction === 'END_INNINGS'
+                ? 'End the innings now?'
+                : 'Abandon this match?'}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-500">
-              {confirmAction === 'END_INNINGS'
+              {confirmAction === 'END_MATCH'
+                ? 'The match will be officially concluded and the result finalized.'
+                : confirmAction === 'END_INNINGS'
                 ? m.currentInnings === 1
                   ? 'Innings 1 will be closed and the innings break begins.'
                   : 'Innings 2 will be closed and the match result finalized.'
@@ -1339,7 +1672,15 @@ export function ScoringConsole({
               onClick={async () => {
                 const kind = confirmAction
                 setConfirmAction(null)
-                if (kind) await action(kind, undefined, kind === 'ABANDON' ? 'Match abandoned' : 'Innings ended')
+                if (kind) {
+                  const label =
+                    kind === 'END_MATCH'
+                      ? 'Match ended'
+                      : kind === 'ABANDON'
+                      ? 'Match abandoned'
+                      : 'Innings ended'
+                  await action(kind, undefined, label)
+                }
               }}
             >
               Confirm
