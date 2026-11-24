@@ -132,7 +132,7 @@ export function AdminSidebar({
       {/* Brand Header & Toggle */}
       <div
         className={cn(
-          'border-b border-white/10 flex items-center transition-all duration-300',
+          'border-b border-white/10 flex items-center shrink-0 transition-all duration-300',
           isCollapsed ? 'px-2 py-3.5 justify-center' : 'px-4 py-4 justify-between'
         )}
       >
@@ -195,7 +195,7 @@ export function AdminSidebar({
       {/* Navigation Links */}
       <nav
         className={cn(
-          'flex-1 overflow-y-auto overscroll-contain py-4 space-y-1 transition-all duration-300',
+          'flex-1 min-h-0 overflow-y-auto overscroll-contain py-4 space-y-1 transition-all duration-300',
           isCollapsed ? 'px-2' : 'px-3'
         )}
       >
@@ -314,7 +314,7 @@ export function AdminSidebar({
       {/* Bottom Footer Actions */}
       <div
         className={cn(
-          'border-t border-white/10 space-y-1 transition-all duration-300',
+          'border-t border-white/10 shrink-0 space-y-1 transition-all duration-300',
           isCollapsed ? 'p-2' : 'p-3'
         )}
       >
@@ -434,7 +434,7 @@ export function AdminSidebar({
       {/* Desktop Left Dark Sidebar */}
       <aside
         className={cn(
-          'hidden md:flex flex-col shrink-0 h-screen sticky top-0 shadow-md transition-[width] duration-300 ease-in-out z-30 select-none overflow-hidden bg-[#121826]',
+          'hidden md:flex flex-col shrink-0 h-full md:h-screen sticky top-0 shadow-md transition-[width] duration-300 ease-in-out z-30 select-none overflow-hidden bg-[#121826]',
           collapsed ? 'w-[70px]' : 'w-60 lg:w-64'
         )}
       >

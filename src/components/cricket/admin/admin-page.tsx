@@ -79,8 +79,8 @@ export function AdminPage({
   return (
     <div
       className={cn(
-        'flex flex-col md:flex-row min-h-screen text-[#111827]',
-        tab === 'scoring' ? 'bg-[#070B14] h-screen overflow-hidden' : 'bg-[#F4F5F7]'
+        'flex flex-col md:flex-row min-h-screen md:h-screen md:overflow-hidden text-[#111827]',
+        tab === 'scoring' ? 'bg-[#070B14]' : 'bg-[#F4F5F7]'
       )}
     >
       {/* Dark Left Sidebar (Dashboard & Scorer Modes) */}
@@ -100,7 +100,7 @@ export function AdminPage({
       {/* Right Content Area */}
       <main
         className={cn(
-          'flex-1 min-w-0 transition-all duration-300 ease-in-out',
+          'flex-1 min-w-0 transition-all duration-300 ease-in-out md:h-screen md:overflow-y-auto',
           tab === 'scoring'
             ? 'h-[calc(100dvh-3.25rem)] md:h-screen overflow-hidden flex flex-col bg-[#070B14]'
             : 'overflow-x-hidden'

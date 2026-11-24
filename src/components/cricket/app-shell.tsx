@@ -246,7 +246,7 @@ export function AppShell() {
   let view: React.ReactNode
   if (isAdminRoute) {
     view = (
-      <div className="min-h-screen bg-[#F4F5F7]">
+      <div className="min-h-screen md:h-screen md:overflow-hidden bg-[#F4F5F7]">
         <AdminPage session={session} matches={matches} navigate={navigate} />
       </div>
     )
