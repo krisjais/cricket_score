@@ -485,9 +485,17 @@ export function CaptainsAdmin() {
     if (!deleteTarget) return
     setSavingDelete(true)
     try {
-      await api(`/api/captains/admin/assignments/${deleteTarget.id}`, {
-        method: 'DELETE',
-      })
+      try {
+        await api(`/api/captains/admin/assignments/${deleteTarget.id}`, {
+          method: 'DELETE',
+        })
+      } catch (delErr: any) {
+        // Fallback to POST /api/captains/admin/delete
+        await api('/api/captains/admin/delete', {
+          method: 'POST',
+          json: { assignmentId: deleteTarget.id },
+        })
+      }
       toast.success('Captaincy assignment deleted successfully.')
       setDeleteDialogOpen(false)
       setDeleteTarget(null)
